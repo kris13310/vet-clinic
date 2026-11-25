@@ -567,3 +567,41 @@ body.ov-lock { overflow: hidden; }
 .ov-home-notif small{font-size:11px;color:#87938d}
 @media(max-width:850px){.ov-home-art{font-size:42px}.ov-home-notifs{grid-template-columns:1fr}.ov-home-visit{flex-wrap:wrap}}
 @media(max-width:640px){.ov-home-welcome{min-height:0;padding:24px 20px}.ov-home-art{display:none}.ov-home-stats{grid-template-columns:1fr;gap:10px}.ov-home-stats article{padding:13px 15px}.ov-home-grid{grid-template-columns:1fr}.ov-home-updates{grid-column:auto}.ov-home-panel{padding:18px}.ov-home-visit>.ov-status{margin-left:72px}}
+
+
+/* ---------- Pet Owner settings redesign ---------- */
+.ov-settings-page { max-width: 1040px; }
+.ov-settings-account { display:flex; align-items:center; gap:22px; padding:26px 30px; margin:0 0 34px; border:1px solid var(--ov-line); border-radius:22px; background:linear-gradient(120deg,#f0fdf8,#fff 72%); }
+.ov-settings-avatar { width:72px; height:72px; flex:none; display:grid; place-items:center; border-radius:22px; background:#0f9d78; color:#fff; font-size:25px; font-weight:800; }
+.ov-settings-identity { flex:1; min-width:0; }
+.ov-settings-identity h3 { margin:5px 0 3px; font-size:21px; }
+.ov-settings-identity p { margin:0; color:var(--ov-muted); overflow-wrap:anywhere; }
+.ov-settings-identity small { display:block; margin-top:5px; color:var(--ov-muted); }
+.ov-settings-section { margin:0 0 30px; }
+.ov-settings-section > h3 { margin:7px 0 15px; font-size:21px; }
+.ov-settings-row { width:100%; display:flex; align-items:center; gap:17px; text-align:left; padding:19px 22px; border:1px solid var(--ov-line); border-bottom:0; background:var(--ov-card); color:var(--ov-ink); cursor:pointer; }
+.ov-settings-row:first-of-type { border-radius:17px 17px 0 0; }
+.ov-settings-row:last-of-type { border-bottom:1px solid var(--ov-line); border-radius:0 0 17px 17px; }
+.ov-settings-row:only-of-type { border:1px solid var(--ov-line); border-radius:17px; }
+.ov-settings-row:hover { background:#f8fffc; }
+.ov-settings-icon { width:46px; height:46px; flex:none; display:grid; place-items:center; border-radius:14px; background:#ecfdf5; font-size:21px; }
+.ov-settings-copy { display:grid; gap:4px; flex:1; min-width:0; }
+.ov-settings-copy b { font-size:15.5px; }
+.ov-settings-copy small { color:var(--ov-muted); font-size:13.5px; }
+.ov-settings-arrow { color:var(--ov-muted); font-size:27px; }
+.ov-settings-signout { display:flex; align-items:center; justify-content:space-between; gap:18px; padding:22px 25px; border:1px solid #fee2e2; border-radius:17px; background:#fffafa; }
+.ov-settings-signout > div { display:grid; gap:5px; }
+.ov-settings-signout small { color:var(--ov-muted); }
+.ov-password-form { display:grid; gap:17px; }
+.ov-password-form label { display:grid; gap:8px; font-weight:650; }
+.ov-password-form label small { color:var(--ov-muted); font-weight:400; }
+.ov-password-form .ov-actions { margin-top:4px; }
+.ov-msg.success { color:#047857; }
+@media(max-width:600px) {
+ .ov-settings-account { align-items:flex-start; flex-wrap:wrap; padding:20px; gap:15px; }
+ .ov-settings-identity { flex-basis:calc(100% - 90px); }
+ .ov-settings-account > .ov-btn { width:100%; }
+ .ov-settings-row { padding:16px; gap:12px; }
+ .ov-settings-copy small { font-size:12.5px; }
+ .ov-settings-signout { align-items:flex-start; flex-direction:column; }
+}
