@@ -520,7 +520,7 @@ function openReschedule(dbId) {
 
 function render() {
   if (!state.user) return login();
-  if (state.account?.role === "Pet Owner") { if (!ownerPageNames[state.page]) state.page = 'owner-appointments'; return renderOwnerDashboard(); }
+  if (state.account?.role === "Pet Owner") { if (!ownerPageNames[state.page]) state.page = 'owner-home'; return renderOwnerDashboard(); }
   if (!$(".app")) buildShell();
   const isAdmin = state.account?.role === 'Administrator';
   const usersNav = $('.nav[data-go="users"]');
