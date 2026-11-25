@@ -1748,7 +1748,7 @@ td.cc,
   display: grid;
   place-items: center;
   padding: 1em;
-  z-index: 90;
+  z-index: 300;
 }
 .mbox {
   background: #fff;
