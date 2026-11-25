@@ -71,6 +71,7 @@ try {
             $cur->execute([$id]);
             $row = $cur->fetch();
             if (!$row) return [404, 'Appointment not found.'];
+            if ($role === 'Veterinarian' && (int)$row['veterinarian_id'] !== $uid) return [403, 'This appointment is not assigned to your veterinarian account.'];
             if ($status === 'Completed') {
                 if ($role !== 'Veterinarian' || (int)$row['veterinarian_id'] !== $uid) {
                     return [403, 'Only the veterinarian assigned to this appointment can complete it.'];
@@ -105,10 +106,11 @@ try {
         if ($err) appt_reply(422, ['success'=>false,'message'=>$err]);
 
         $result = with_slot_lock($pdo, function () use ($pdo, $id, $date, $time) {
-            $cur = $pdo->prepare('SELECT id, status FROM appointments WHERE id=?');
+            $cur = $pdo->prepare('SELECT id, veterinarian_id, status FROM appointments WHERE id=?');
             $cur->execute([$id]);
             $row = $cur->fetch();
             if (!$row) return [404, 'Appointment not found.'];
+            if ($role === 'Veterinarian' && (int)$row['veterinarian_id'] !== $uid) return [403, 'This appointment is not assigned to your veterinarian account.'];
             if (in_array($row['status'], ['Completed','Cancelled'], true)) return [409, 'Completed or rejected appointments cannot be rescheduled.'];
             if (slot_is_taken($pdo, $date, $time, $id)) return [409, 'That date and time is already reserved. Choose another slot.'];
             $pdo->prepare('UPDATE appointments SET appointment_date=?, appointment_time=? WHERE id=?')->execute([$date, $time . ':00', $id]);
