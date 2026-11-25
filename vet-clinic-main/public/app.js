@@ -336,7 +336,7 @@ async function loadAppointmentsFromDatabase() {
   const result = await response.json().catch(() => ({success:false,message:'Invalid server response.'}));
   if (!response.ok || !result.success) throw new Error(result.message || 'Unable to load appointments.');
   D.appointments = (result.appointments || []).map(a => ({
-    dbId: Number(a.id), petId: Number(a.pet_id), pet: a.pet_name || 'Unknown pet',
+    dbId: Number(a.id), petId: Number(a.pet_id), veterinarianId: Number(a.veterinarian_id || 0), pet: a.pet_name || 'Unknown pet',
     date: String(a.appointment_date || '').slice(0,10), time: String(a.appointment_time || '').slice(0,5),
     purpose: a.purpose || '', status: a.status || 'Pending', vet: a.veterinarian || 'Not assigned',
     owner: a.owner_name || '—', ownerEmail: a.owner_email || '', address: a.address || '—', phone: a.owner_phone || '',
@@ -447,10 +447,37 @@ function openClosureForm() {
 function apptActions(a) {
   if (!a.dbId) return `<small>Clinic action: ${esc(a.status)}</small>`;
   const b = (act, label, cls = "", title = "") => `<button class="btn ${cls}" data-act="${act}" data-i="${a.dbId}" title="${title || label}">${label}</button>`;
-  if (a.status === "Pending") return b("approve-appointment", "✓ Approve", "", "Approve appointment") + b("decline-appointment", "Reject", "red", "Reject appointment") + b("reschedule-appointment", "🔄 Reschedule", "ghost");
-  if (a.status === "Confirmed") return b("start-appointment", "▶ Start", "ghost") + b("complete-appointment", "✔ Complete", "") + b("reschedule-appointment", "🔄 Reschedule", "ghost");
-  if (a.status === "In Progress") return b("complete-appointment", "✔ Complete", "") + b("reschedule-appointment", "🔄 Reschedule", "ghost");
-  return `<small>Clinic action: ${esc(a.status)}</small>`;
+  const isVet = state.account?.role === 'Veterinarian' && Number(a.veterinarianId) === Number(state.account.id);
+  const report = isVet && a.status !== 'Cancelled' ? b('medical-report', '🩺 Medical Report', 'ghost') : '';
+  if (a.status === "Pending") return b("approve-appointment", "✓ Approve", "", "Approve appointment") + b("decline-appointment", "Reject", "red", "Reject appointment") + b("reschedule-appointment", "🔄 Reschedule", "ghost") + report;
+  if (a.status === "Confirmed") return b("start-appointment", "▶ Start", "ghost") + report + b("reschedule-appointment", "🔄 Reschedule", "ghost");
+  if (a.status === "In Progress") return report + b("reschedule-appointment", "🔄 Reschedule", "ghost");
+  return report || `<small>Clinic action: ${esc(a.status)}</small>`;
+}
+function openMedicalReport(dbId) {
+  const a = D.appointments.find(x => x.dbId === dbId);
+  if (!a) return;
+  if (state.account?.role !== 'Veterinarian' || Number(a.veterinarianId) !== Number(state.account.id)) return alert('Only the assigned veterinarian can submit this report.');
+  const m = modal(`<form><h2>Veterinarian Medical Report</h2><p class="mu"><b>${esc(a.pet)}</b> · ${esc(fmtDate(a.date))} at ${esc(fmtTime(a.time))}</p>
+    <div class="fg">
+      <label>Diagnosis<textarea name="diagnosis" required maxlength="5000" rows="3"></textarea></label>
+      <label>Symptoms<textarea name="symptoms" required maxlength="5000" rows="3"></textarea></label>
+      <label>Observations<textarea name="observations" maxlength="5000" rows="3"></textarea></label>
+      <label>Treatment<textarea name="treatment" required maxlength="5000" rows="3"></textarea></label>
+      <label>Medication<textarea name="medication" maxlength="5000" rows="3"></textarea></label>
+      <label>Recommendations<textarea name="recommendations" maxlength="5000" rows="3"></textarea></label>
+      <label>Follow-up date<input type="date" name="follow_up_date" min="${TODAY_ISO}"></label>
+    </div><div class="err" id="report-error"></div><div class="acts"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn" id="report-save">Save Report &amp; Complete Appointment</button></div></form>`);
+  const f=$('form',m), err=$('#report-error',m), btn=$('#report-save',m);
+  f.onsubmit=async e=>{
+    e.preventDefault(); btn.disabled=true; err.textContent='Saving…';
+    try {
+      const response=await fetch('api/medical_reports.php?action=save',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({appointment_id:dbId,...Object.fromEntries(new FormData(f))})});
+      const result=await response.json().catch(()=>({success:false,message:'Invalid server response.'}));
+      if(!response.ok||!result.success) throw new Error(result.message||'Unable to save report.');
+      m.remove(); await loadAppointmentsFromDatabase(); render(); toast(result.message);
+    } catch(ex) { err.textContent=ex.message; btn.disabled=false; }
+  };
 }
 async function apptSlotRequest(date, excludeId) {
   const response = await fetch('api/appointments.php?action=slots', {method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({date, exclude_id: excludeId})});
@@ -1150,6 +1177,7 @@ function act(a, k, i) {
   else if (a === 'avail-reload') { state.avail = null; state.availError = ''; pAvail(); }
   else if (a === 'avail-del') { if (confirm('Remove this closure? Owners will be able to book that time again.')) availRequest('delete', { id: i }).then((r) => { state.avail = null; state.availError = ''; state.holi = null; pAvail(); toast(r.message); }).catch((e) => alert(e.message)); }
   else if (a === 'start-appointment') { updateAppointmentStatus(i, 'In Progress').catch(e => alert(e.message)); }
+  else if (a === 'medical-report') { openMedicalReport(i); }
   else if (a === 'complete-appointment') { if (confirm('Mark this appointment as completed?')) updateAppointmentStatus(i, 'Completed').catch(e => alert(e.message)); }
   else if (a === 'reschedule-appointment') { openReschedule(i); }
   else if (a === 'owner-retry') { loadOwnerData().then(renderOwnerDashboard); }
