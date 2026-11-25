@@ -440,11 +440,22 @@ function ovPetForm(pet) {
     if (!PHOTO_OK.includes(f.type)) { err.textContent = 'Only JPG, PNG or WebP pictures are allowed.'; file.value = ''; return; }
     if (f.size > PHOTO_MAX) { err.textContent = 'That picture is ' + (f.size / 1048576).toFixed(1) + ' MB. The maximum is 2 MB.'; file.value = ''; return; }
     err.textContent = 'Opening picture editor…';
-    const cropped = await cropPetImage(f);
-    if (!cropped) { file.value = ''; err.textContent = 'Picture editing cancelled.'; return; }
-    const transfer = new DataTransfer(); transfer.items.add(cropped); file.files = transfer.files;
-    err.textContent = ''; form.elements.namedItem('remove_photo').value = '0';
-    prev.innerHTML = `<img class="ov-pimg xl" alt="Selected picture" src="${URL.createObjectURL(cropped)}">`;
+    try {
+      const cropped = await cropPetImage(f);
+      if (!cropped) { file.value = ''; err.textContent = 'Picture editing cancelled.'; return; }
+      if (typeof DataTransfer === 'undefined') throw new Error('Your browser cannot attach the edited picture. Please use an updated version of Chrome, Edge or Firefox.');
+      const transfer = new DataTransfer();
+      transfer.items.add(cropped);
+      file.files = transfer.files;
+      if (!file.files || !file.files.length) throw new Error('The edited picture could not be attached. Please choose it again.');
+      err.textContent = '';
+      form.elements.namedItem('remove_photo').value = '0';
+      prev.innerHTML = `<img class="ov-pimg xl" alt="Selected picture" src="${URL.createObjectURL(cropped)}">`;
+    } catch (error) {
+      console.error('Pet Owner picture editor failed:', error);
+      file.value = '';
+      err.textContent = error && error.message ? error.message : 'Could not open the picture editor. Please try another picture or refresh the page.';
+    }
   };
   form.elements.namedItem('species').oninput = () => { if (!file.files[0] && !(edit && p.photo_path && form.elements.namedItem('remove_photo').value !== '1')) prev.innerHTML = petImg({ species: species() }, 'xl'); };
   form.onsubmit = async e => {
