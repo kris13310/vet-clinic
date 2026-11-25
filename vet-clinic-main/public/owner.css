@@ -313,3 +313,14 @@ body.ov-lock { overflow: hidden; }
   .ov-appt-st { flex-wrap: wrap; row-gap: 10px; }
   .ov-appt-st .ov-btn { flex: 1 1 100%; width: 100%; }
 }
+
+
+/* Veterinarian report cards in the Pet Owner medical record page */
+.ov-record-report{padding:20px 0;border-top:1px solid var(--ov-line,#e7ece8)}
+.ov-record-report:first-of-type{border-top:0}
+.ov-record-report .ov-who{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.ov-record-report .ov-who small{display:block;color:var(--ov-muted,#718078);margin-top:3px}
+.ov-record-report .ov-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.ov-record-report .ov-grid>div{background:var(--ov-soft,#f6f8f6);border-radius:12px;padding:12px;min-width:0}
+.ov-record-report .ov-grid p{margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:640px){.ov-record-report .ov-grid{grid-template-columns:1fr}}
