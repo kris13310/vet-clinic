@@ -2136,3 +2136,11 @@ td.cc,
 .photo-pick { display: flex; align-items: center; gap: 1em; margin: 0 0 1em; }
 .photo-prev .tile { width: 4.6em; height: 4.6em; font-size: 1.8em; }
 .photo-btns { display: flex; gap: 0.5em; margin-top: 0.5em; flex-wrap: wrap; }
+
+
+/* User profile photo */
+.av img{width:100%;height:100%;display:block;object-fit:cover;border-radius:inherit}
+.profile-photo-row{display:flex;align-items:center;gap:18px;margin:14px 0 22px}
+.profile-photo-row>div:last-child{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.profile-photo-row small{width:100%;color:var(--mu)}
+#staff-profile-preview .av{display:grid;place-items:center;overflow:hidden}
