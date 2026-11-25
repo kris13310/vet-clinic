@@ -41,6 +41,11 @@ try {
         $v->execute($ids);
         $base['appointments'] = array_map(static function ($r) use ($doctor) { $r['veterinarian'] = doctor_display($doctor, $r['status'] === 'Completed', $r['stored_vet']); $r['can_cancel'] = owner_can_cancel((string)$r['status'], (string)$r['appointment_date'], (string)$r['appointment_time']); unset($r['stored_vet']); return $r; }, $a->fetchAll());
         $base['vaccinations'] = array_map(static function ($r) use ($doctor) { $r['veterinarian'] = doctor_display($doctor, true, $r['stored_vet'], 'Not recorded'); unset($r['stored_vet']); return $r; }, $v->fetchAll());
+        $reports = $pdo->prepare("SELECT r.id,r.appointment_id,r.pet_id,r.diagnosis,r.symptoms,r.observations,r.treatment,r.medication,r.recommendations,r.follow_up_date,r.created_at,u.full_name AS veterinarian,p.name AS pet_name,p.photo_path AS pet_photo,p.species AS pet_species,a.appointment_date,a.appointment_time,a.purpose
+            FROM medical_reports r JOIN pets p ON p.id=r.pet_id JOIN appointments a ON a.id=r.appointment_id LEFT JOIN users u ON u.id=r.veterinarian_id
+            WHERE r.pet_id IN ($marks) ORDER BY r.created_at DESC");
+        $reports->execute($ids);
+        $base['medical_reports'] = $reports->fetchAll();
         owner_reply(200, $base);
     }
 
