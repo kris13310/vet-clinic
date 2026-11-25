@@ -514,3 +514,56 @@ body.ov-lock { overflow: hidden; }
   .ov-actions { gap: 9px; }
   .ov-footer { text-align: center; }
 }
+
+/* Pet Owner information architecture and page redesign */
+.ov-home-welcome{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:220px;padding:34px 38px;margin-bottom:22px;border-radius:22px;background:linear-gradient(115deg,#102923 0%,#164c3d 58%,#26765d 100%);color:#fff;overflow:hidden;position:relative}
+.ov-home-welcome h2{font-size:clamp(28px,3vw,38px);line-height:1.12;margin:9px 0 10px;letter-spacing:-1px;color:#fff}
+.ov-home-welcome p{color:#d7e9e1;font-size:15px;margin:0 0 22px}
+.ov-home-welcome .ov-eyebrow{color:#a6d7c2}
+.ov-home-actions{display:flex;flex-wrap:wrap;gap:10px}
+.ov-home-actions .ov-btn{background:#fff;color:#174b3b;box-shadow:none}
+.ov-home-actions .ov-btn.ghost{color:#fff;background:#ffffff18;border-color:#ffffff70}
+.ov-home-art{font-size:58px;white-space:nowrap;opacity:.9;align-self:center;filter:drop-shadow(0 8px 12px #071d1740)}
+.ov-home-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:22px}
+.ov-home-stats article{display:flex;align-items:center;gap:14px;padding:19px 20px;background:#fff;border:1px solid #e6ece8;border-radius:17px;box-shadow:0 4px 14px #17392e0b}
+.ov-home-stats article>span{display:grid;place-items:center;width:48px;height:48px;border-radius:14px;background:#e8f4ee;font-size:23px}
+.ov-home-stats article div{display:grid;gap:1px;flex:1}
+.ov-home-stats article b{font-size:26px;line-height:1.1;color:#18352b}
+.ov-home-stats article small{font-size:13px;color:#718078}
+.ov-home-stats article button,.ov-home-link{border:0;background:none;color:#087f68;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.ov-home-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.ov-home-panel{min-width:0;background:#fff;border:1px solid #e6ece8;border-radius:18px;padding:23px;box-shadow:0 4px 14px #17392e0a}
+.ov-home-updates{grid-column:1/-1}
+.ov-home-panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+.ov-home-panel-head h3{margin:3px 0 0;font-size:19px;color:#18352b}
+.ov-home-icon{font-size:22px}
+.ov-home-visit{display:flex;align-items:center;gap:14px;padding:15px;background:#f5f9f6;border:1px solid #e8efea;border-radius:14px}
+.ov-home-visit>.ov-pimg{width:58px;height:58px;object-fit:cover;border-radius:13px;flex:none}
+.ov-home-visit>div{display:grid;gap:3px;min-width:0;flex:1}
+.ov-home-visit>div b{font-size:15px;color:#18352b}
+.ov-home-visit>div span{font-size:13px;color:#3f5c50}
+.ov-home-visit>div small{font-size:12px;color:#7a8981}
+.ov-home-visit>.ov-status{flex:none}
+.ov-home-panel>.ov-home-link{margin-top:15px}
+.ov-home-petlist{display:grid;gap:8px}
+.ov-home-pet{display:flex;align-items:center;gap:12px;width:100%;padding:10px;border:1px solid #edf1ee;border-radius:13px;background:#fff;text-align:left;cursor:pointer}
+.ov-home-pet:hover{background:#f6faf7;border-color:#d9e9df}
+.ov-home-pet>.ov-pimg{width:48px;height:48px;border-radius:12px;object-fit:cover}
+.ov-home-pet>span{display:grid;gap:2px;flex:1;min-width:0}
+.ov-home-pet>span b{color:#18352b;font-size:14px}
+.ov-home-pet>span small{color:#78867f;font-size:12px}
+.ov-home-pet>i{font-style:normal;color:#087f68;font-size:22px}
+.ov-home-empty{display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:18px 4px}
+.ov-home-empty>span{font-size:29px}
+.ov-home-empty>b{color:#18352b;font-size:16px}
+.ov-home-empty>p{color:#77867e;font-size:13px;margin:0 0 8px}
+.ov-home-empty.compact{padding:8px 4px}
+.ov-home-notifs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.ov-home-notif{display:flex;gap:10px;padding:13px;background:#f7faf8;border-radius:12px;min-width:0}
+.ov-home-notif>span{color:#0a9675;font-size:12px;padding-top:3px}
+.ov-home-notif>div{min-width:0}
+.ov-home-notif b{font-size:13px;color:#18352b}
+.ov-home-notif p{font-size:12px;color:#62736b;margin:4px 0;overflow-wrap:anywhere}
+.ov-home-notif small{font-size:11px;color:#87938d}
+@media(max-width:850px){.ov-home-art{font-size:42px}.ov-home-notifs{grid-template-columns:1fr}.ov-home-visit{flex-wrap:wrap}}
+@media(max-width:640px){.ov-home-welcome{min-height:0;padding:24px 20px}.ov-home-art{display:none}.ov-home-stats{grid-template-columns:1fr;gap:10px}.ov-home-stats article{padding:13px 15px}.ov-home-grid{grid-template-columns:1fr}.ov-home-updates{grid-column:auto}.ov-home-panel{padding:18px}.ov-home-visit>.ov-status{margin-left:72px}}
