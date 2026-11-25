@@ -29,7 +29,7 @@ try {
         $p = $pdo->prepare('SELECT id,name,species,breed,age,gender,notes,photo_path,created_at FROM pets WHERE LOWER(TRIM(owner_email))=LOWER(TRIM(?)) ORDER BY name');
         $p->execute([$email]); $pets = $p->fetchAll();
         $ids = array_map(static fn($x) => (int)$x['id'], $pets);
-        $profile = $pdo->prepare('SELECT full_name AS name,email,phone,address FROM users WHERE id=?'); $profile->execute([$uid]); $prof = $profile->fetch() ?: [];
+        $profile = $pdo->prepare('SELECT full_name AS name,email,phone,address,avatar_path FROM users WHERE id=?'); $profile->execute([$uid]); $prof = $profile->fetch() ?: [];
         $doctor = current_doctor($pdo);
         $base = ['success'=>true,'profile'=>$prof,'doctor'=>$doctor ? ['name'=>$doctor['name']] : null,'pets'=>$pets,'appointments'=>[],'vaccinations'=>[],'unread'=>$unread(),'today'=>date('Y-m-d'),
                  'schedule'=>['open'=>CLINIC_OPEN,'close'=>CLINIC_CLOSE,'slot_minutes'=>SLOT_MINUTES,'window_days'=>BOOKING_WINDOW_DAYS]];
@@ -236,19 +236,25 @@ try {
     /* ---- Update personal information ---- */
     if ($action === 'profile') {
         $name = trim((string)($data['name'] ?? '')); $newEmail = trim((string)($data['email'] ?? '')); $phone = trim((string)($data['phone'] ?? '')); $address = trim((string)($data['address'] ?? ''));
+        $current = $pdo->prepare('SELECT avatar_path FROM users WHERE id=?'); $current->execute([$uid]); $oldAvatar = $current->fetchColumn() ?: null;
+        $newAvatar = $oldAvatar;
+        if (!empty($_FILES['photo']) && (int)($_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) $newAvatar = save_pet_photo($_FILES['photo'], 'user_');
+        if (!empty($data['remove_photo']) && $data['remove_photo'] === '1') $newAvatar = null;
         if ($name === '' || !filter_var($newEmail, FILTER_VALIDATE_EMAIL)) owner_reply(422, ['success'=>false,'message'=>'Enter a valid name and email.']);
         if (mb_strlen($name) > 120 || mb_strlen($newEmail) > 190 || mb_strlen($phone) > 40 || mb_strlen($address) > 255) owner_reply(422, ['success'=>false,'message'=>'One of the fields is too long.']);
         $check = $pdo->prepare('SELECT id FROM users WHERE LOWER(email)=LOWER(?) AND id<>?'); $check->execute([$newEmail, $uid]);
         if ($check->fetch()) owner_reply(409, ['success'=>false,'message'=>'That email is already used by another account.']);
         $pdo->beginTransaction();
         try {
-            $pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=? WHERE id=?')->execute([$name, $newEmail, $phone, $address, $uid]);
+            $pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=?,avatar_path=? WHERE id=?')->execute([$name, $newEmail, $phone, $address, $newAvatar, $uid]);
             // Pets are linked by email, so keep them linked when the owner changes it.
             $pdo->prepare('UPDATE pets SET owner_email=?,owner_name=?,owner_phone=?,address=? WHERE LOWER(TRIM(owner_email))=LOWER(TRIM(?))')->execute([$newEmail, $name, $phone, $address, $email]);
             $pdo->commit();
         } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
         $_SESSION['account']['name'] = $name; $_SESSION['account']['full_name'] = $name; $_SESSION['account']['email'] = $newEmail;
-        owner_reply(200, ['success'=>true,'user'=>['name'=>$name,'email'=>$newEmail,'phone'=>$phone,'address'=>$address,'username'=>(string)($account['username'] ?? '')]]);
+        $_SESSION['account']['avatar_path'] = $newAvatar;
+        if ($newAvatar !== $oldAvatar) delete_pet_photo($oldAvatar);
+        owner_reply(200, ['success'=>true,'user'=>['name'=>$name,'email'=>$newEmail,'phone'=>$phone,'address'=>$address,'avatar_path'=>$newAvatar,'username'=>(string)($account['username'] ?? '')]]);
     }
 
     owner_reply(400, ['success'=>false,'message'=>'Unknown owner action.']);
