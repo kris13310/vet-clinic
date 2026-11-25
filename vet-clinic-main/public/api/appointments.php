@@ -57,15 +57,18 @@ try {
         $status = (string)($input['status'] ?? '');
         if (!$id || !in_array($status, ['Confirmed','Cancelled','In Progress','Completed'], true)) appt_reply(422, ['success'=>false,'message'=>'Invalid appointment or status.']);
 
-        $result = with_slot_lock($pdo, function () use ($pdo, $id, $status) {
-            $cur = $pdo->prepare('SELECT id, status, appointment_date, appointment_time FROM appointments WHERE id=?');
+        $result = with_slot_lock($pdo, function () use ($pdo, $id, $status, $role, $uid) {
+            $cur = $pdo->prepare('SELECT id, veterinarian_id, status, appointment_date, appointment_time FROM appointments WHERE id=?');
             $cur->execute([$id]);
             $row = $cur->fetch();
             if (!$row) return [404, 'Appointment not found.'];
             if ($status === 'Completed') {
-                $report = $pdo->prepare('SELECT 1 FROM medical_reports WHERE appointment_id=?');
-                $report->execute([$id]);
-                if (!$report->fetchColumn()) return [409, 'Submit the veterinarian medical report before completing this appointment.'];
+                if ($role !== 'Veterinarian' || (int)$row['veterinarian_id'] !== $uid) {
+                    return [403, 'Only the veterinarian assigned to this appointment can complete it.'];
+                }
+                $report = $pdo->prepare('SELECT 1 FROM medical_reports WHERE appointment_id=? AND veterinarian_id=?');
+                $report->execute([$id, $uid]);
+                if (!$report->fetchColumn()) return [409, 'Submit the assigned veterinarian medical report before completing this appointment.'];
             }
             if ($row['status'] === $status) return [200, 'Appointment status updated.']; // nothing changed -> no duplicate notification
 
