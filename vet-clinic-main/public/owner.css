@@ -324,3 +324,10 @@ body.ov-lock { overflow: hidden; }
 .ov-record-report .ov-grid>div{background:var(--ov-soft,#f6f8f6);border-radius:12px;padding:12px;min-width:0}
 .ov-record-report .ov-grid p{margin:6px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:640px){.ov-record-report .ov-grid{grid-template-columns:1fr}}
+
+
+.save-success-overlay{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:20px;background:rgba(16,28,22,.38);animation:saveFade .15s ease-out}
+.save-success-card{width:min(100%,360px);padding:28px 24px;border-radius:20px;background:#fff;color:#20352b;text-align:center;box-shadow:0 18px 60px rgba(0,0,0,.2);animation:savePop .18s ease-out}
+.save-success-icon{display:grid;place-items:center;width:58px;height:58px;margin:0 auto 14px;border-radius:50%;background:#e3f3e9;color:#26734b;font-size:32px;font-weight:800}
+.save-success-card h3{margin:0 0 8px;font-size:20px}.save-success-card p{margin:0;color:#617168}
+@keyframes saveFade{from{opacity:0}to{opacity:1}}@keyframes savePop{from{transform:scale(.96)}to{transform:scale(1)}}
