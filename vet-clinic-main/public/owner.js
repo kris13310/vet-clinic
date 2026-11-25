@@ -26,11 +26,11 @@ async function ownerRequest(action = 'data', data = null, query = '') {
   if (!response.ok || !result.success) throw new Error(result.message || 'Request failed.');
   return result;
 }
-const emptyOwnerData = () => ({ doctor: null, profile: {}, pets: [], appointments: [], vaccinations: [], notifications: [], unread: 0, today: '', schedule: {} });
+const emptyOwnerData = () => ({ doctor: null, profile: {}, pets: [], appointments: [], vaccinations: [], medical_reports: [], notifications: [], unread: 0, today: '', schedule: {} });
 async function loadOwnerData() {
   try {
     const r = await ownerRequest('data');
-    ownerData = { doctor: r.doctor || null, profile: r.profile || {}, pets: r.pets || [], appointments: r.appointments || [], vaccinations: r.vaccinations || [], medical_reports: r.medical_reports || [], notifications: ownerData.notifications || [], unread: r.unread || 0, today: r.today || '', schedule: r.schedule || {} };
+    ownerData = { doctor: r.doctor || null, profile: r.profile || {}, pets: r.pets || [], appointments: r.appointments || [], vaccinations: r.vaccinations || [], medical_reports: r.medical_reports || [], notifications: [], unread: r.unread || 0, today: r.today || '', schedule: r.schedule || {} };
     ownerLoadError = '';
     try { const n = await ownerRequest('notifications'); ownerData.notifications = n.notifications || []; ownerData.unread = n.unread || 0; } catch (e) { /* bell still works from the count */ }
   } catch (e) { ownerLoadError = e.message; ownerData = emptyOwnerData(); }
@@ -208,7 +208,8 @@ function ovStartPolling() {
       if (fresh.length || ownerData.unread > prev) {
         toast('🔔 ' + (fresh[0]?.title || 'You have a new notification'));
         const r = await ownerRequest('data');
-        ownerData.appointments = r.appointments || []; ownerData.vaccinations = r.vaccinations || []; ownerData.pets = r.pets || [];
+        ownerData.appointments = r.appointments || []; ownerData.vaccinations = r.vaccinations || []; ownerData.pets = r.pets || []; ownerData.medical_reports = r.medical_reports || [];
+        if (!document.querySelector('.ov-modal')) renderOwnerDashboard();
         if (state.page === 'owner-appointments') { ovRenderApptList(); ovRenderStats(); ovLoadMonth(true); }
       }
       ovRefreshNotifUi();
@@ -218,7 +219,7 @@ function ovStartPolling() {
 
 /* Pet Owner landing page: overview, quick actions and live account summaries. */
 function ovPageHome() {
-  const name = String((state.account || {}).name || (state.account || {}).full_name || 'there').trim().split(/\\s+/)[0];
+  const name = String((state.account || {}).name || (state.account || {}).full_name || 'there').trim().split(/\s+/)[0];
   const today = ownerToday();
   const upcoming = ownerData.appointments.filter(a => ovIsActive(a) && String(a.appointment_date).slice(0,10) >= today).sort((a,b) => (String(a.appointment_date)+a.appointment_time).localeCompare(String(b.appointment_date)+b.appointment_time));
   const next = upcoming[0], pets = ownerData.pets.slice(0,3), recent = ownerData.notifications.slice(0,3);
