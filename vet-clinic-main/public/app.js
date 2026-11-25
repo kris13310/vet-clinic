@@ -960,7 +960,7 @@ function pSettings() {
     try {
       const res = await recordRequest("settings", "save", Object.fromEntries(new FormData(e.target)));
       Object.assign(D.settings, Object.fromEntries(new FormData(e.target)));
-      toast(res.message || "Settings saved.");
+      showSaveSuccess(res.message || "Settings saved.");
     } catch (er) { alert(er.message); }
     btn.disabled = false;
   };
