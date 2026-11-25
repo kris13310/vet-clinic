@@ -232,11 +232,17 @@ function slot_closure(array $partial, string $time): ?array {
 
 /* ===== Pet pictures live in Supabase Storage (Vercel containers have no permanent disk) ===== */
 function storage_bucket(): string { return (string)(getenv('SUPABASE_BUCKET') ?: 'pet-photos'); }
-function storage_public_prefix(): string { return rtrim((string)getenv('SUPABASE_URL'), '/') . '/storage/v1/object/public/' . storage_bucket() . '/'; }
+/** Normalize SUPABASE_URL to the project root; /rest/v1 is not part of the Storage API base URL. */
+function supabase_project_url(): string {
+    $url = rtrim(trim((string)getenv('SUPABASE_URL')), '/');
+    $url = preg_replace('#/(?:rest/v1|storage/v1)$#i', '', $url) ?? $url;
+    return rtrim($url, '/');
+}
+function storage_public_prefix(): string { return supabase_project_url() . '/storage/v1/object/public/' . rawurlencode(storage_bucket()) . '/'; }
 /** Calls the Supabase Storage REST API with the server-side service key. Returns [httpCode, body, curlError]. */
 function storage_call(string $method, string $path, ?string $body = null, ?string $mime = null): array {
     $key = (string)getenv('SUPABASE_SERVICE_KEY');
-    $ch = curl_init(rtrim((string)getenv('SUPABASE_URL'), '/') . '/storage/v1/' . ltrim($path, '/'));
+    $ch = curl_init(supabase_project_url() . '/storage/v1/' . ltrim($path, '/'));
     // legacy service_role keys are JWTs (start with "eyJ") and are also sent as a Bearer token; the newer sb_secret_... keys go in apikey only
     $headers = ['apikey: ' . $key];
     if (str_starts_with($key, 'eyJ')) $headers[] = 'Authorization: Bearer ' . $key;
@@ -255,13 +261,13 @@ function storage_upload(string $tmpFile, string $name, string $mime): string {
     if ($data === false) throw new RuntimeException('The picture could not be read. Please try again.');
     [$code, $resp, $err] = storage_call('POST', 'object/' . rawurlencode(storage_bucket()) . '/' . rawurlencode($name), $data, $mime);
     if ($code < 200 || $code >= 300) { error_log("Storage upload failed ($code): $err $resp"); throw new RuntimeException('The picture could not be saved. Please try again later.'); }
-    return storage_public_prefix() . $name;
+    return storage_public_prefix() . rawurlencode($name);
 }
 /** Deletes an uploaded pet picture. Only ever touches files inside our own bucket. */
 function delete_pet_photo(?string $path): void {
     $prefix = storage_public_prefix();
     if (!$path || strncmp($path, $prefix, strlen($prefix)) !== 0) return;
-    $name = substr($path, strlen($prefix));
+    $name = rawurldecode(substr($path, strlen($prefix)));
     if (!preg_match('/^[A-Za-z0-9_.-]+$/', $name)) return;
     storage_call('DELETE', 'object/' . rawurlencode(storage_bucket()) . '/' . rawurlencode($name));
 }
