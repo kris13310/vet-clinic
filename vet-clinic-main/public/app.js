@@ -290,6 +290,7 @@ function who() {
   return {
     name,
     role,
+    avatar: (state.account && state.account.avatar_path) || '',
     short: parts[0] === "Dr." ? "Dr. " + parts[parts.length - 1] : parts[0],
     ini: (parts.length > 1
       ? parts[0][0] + parts[parts.length - 1][0]
@@ -304,7 +305,7 @@ function buildShell() {
     <aside class="sb">
       <div class="sb-brand"><span class="sb-logo">${PAW("#fff")}</span><span><b>Olongapo City</b><small>Veterinary Office</small></span></div>
       <nav>${NAV.map((n) => (n[1] ? `<button class="nav" data-go="${n[0]}"><i>${n[1]}</i>${n[2]}</button>` : `<div class="sb-label">${n[0]}</div>`)).join("")}</nav>
-      <div class="sb-user"><span class="av">${esc(me.ini)}</span><span class="sb-ut"><b>${esc(me.short)}</b><small>${esc(me.role)}</small></span><button data-act="logout" title="Log out" aria-label="Log out">🚪</button></div>
+      <div class="sb-user"><span class="av">${me.avatar ? `<img src="${esc(me.avatar)}" alt="">` : esc(me.ini)}</span><span class="sb-ut"><b>${esc(me.short)}</b><small>${esc(me.role)}</small></span><button data-act="logout" title="Log out" aria-label="Log out">🚪</button></div>
     </aside>
     <div class="ov" data-menu="1"></div>
     <div class="mn">
@@ -314,7 +315,7 @@ function buildShell() {
         <div class="hd-r">
           <div class="qs"><span>🔍</span><input id="qs" placeholder="Quick search..." aria-label="Quick search"></div>
           <button class="bell" data-act="bell" aria-label="Notifications">🔔<i></i></button>
-          <div class="me"><span class="av">${esc(me.ini)}</span><span class="me-t"><b>${esc(me.short)}</b><small>${esc(me.role)}</small></span></div>
+          <div class="me"><span class="av">${me.avatar ? `<img src="${esc(me.avatar)}" alt="">` : esc(me.ini)}</span><span class="me-t"><b>${esc(me.short)}</b><small>${esc(me.role)}</small></span></div>
         </div>
       </header>
       <main class="ct" id="content"></main>
