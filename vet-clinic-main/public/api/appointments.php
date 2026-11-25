@@ -9,6 +9,8 @@ function appt_reply(int $code, array $body): never { http_response_code($code); 
 $account = $_SESSION['account'] ?? null;
 if (!is_array($account) || empty($account['id'])) appt_reply(401, ['success'=>false,'message'=>'Please sign in again.']);
 if (!in_array(($account['role'] ?? ''), ['Administrator','Veterinarian','Veterinary Staff'], true)) appt_reply(403, ['success'=>false,'message'=>'Clinic staff access only.']);
+$role = (string)($account['role'] ?? '');
+$uid = (int)$account['id'];
 
 try {
     $action = (string)($_GET['action'] ?? 'list');
