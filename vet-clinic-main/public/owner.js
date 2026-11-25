@@ -492,19 +492,27 @@ function ovPageRecords() {
 }
 function ovPageProfile() {
   const me = state.account || {}, p = ownerData.profile || {}, name = p.name || me.name || '';
+  const avatar = p.avatar_path ? `<img class="ov-pimg xl" src="${esc(p.avatar_path)}" alt="Profile picture">` : `<div class="ov-avatar lg">${esc(ovInitials(name))}</div>`;
   return `<div class="ov-intro"><div><span class="ov-eyebrow">ACCOUNT DETAILS</span><h2>Personal Information</h2><p>Keep your contact information current for clinic updates.</p></div></div>
-  <form class="ov-card ov-narrow" id="owner-profile-form"><div class="ov-profile-head"><div class="ov-avatar lg">${esc(ovInitials(name))}</div><div><h3>${esc(name || 'Pet Owner')}</h3><p>Pet Owner account</p></div></div>
+  <form class="ov-card ov-narrow" id="owner-profile-form" enctype="multipart/form-data"><div class="ov-profile-head"><div id="owner-avatar-preview">${avatar}</div><div><h3>${esc(name || 'Pet Owner')}</h3><p>Pet Owner account</p><label class="ov-btn ghost sm">Change profile picture<input type="file" name="photo" id="owner-profile-photo" accept="image/jpeg,image/png,image/webp" hidden></label><button class="ov-btn ghost sm" type="button" id="owner-profile-remove">Remove picture</button></div></div>
     <div class="ov-grid"><label>Full name<input name="name" required maxlength="120" value="${esc(name)}"></label><label>Email address<input name="email" type="email" required value="${esc(p.email || me.email || '')}"></label>
     <label>Phone number<input name="phone" maxlength="40" value="${esc(p.phone || '')}" placeholder="e.g. 09XX XXX XXXX"></label><label>Home address<textarea name="address" rows="3" maxlength="255" placeholder="Barangay, city">${esc(p.address || '')}</textarea></label></div>
-    <div class="ov-actions"><span id="owner-profile-msg" class="ov-msg" role="status"></span><button class="ov-btn" type="submit">Save personal information</button></div></form>`;
+    <input type="hidden" name="remove_photo" value="0"><div class="ov-actions"><span id="owner-profile-msg" class="ov-msg" role="status"></span><button class="ov-btn" type="submit">Save personal information</button></div></form>`;
 }
 function ovInitProfile() {
   const form = $('#owner-profile-form'); if (!form) return;
+  const photo = $('#owner-profile-photo'), preview = $('#owner-avatar-preview'), remove = $('#owner-profile-remove');
+  photo.onchange = () => {
+    const f=photo.files?.[0]; if(!f)return;
+    if(!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size>2*1024*1024){photo.value='';$('#owner-profile-msg').textContent='Choose a JPG, PNG or WebP image up to 2 MB.';return;}
+    const img=new Image(), url=URL.createObjectURL(f); img.onload=()=>{const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');canvas.width=canvas.height=512;const scale=Math.max(512/img.width,512/img.height),w=img.width*scale,h=img.height*scale;ctx.drawImage(img,(512-w)/2,(512-h)/2,w,h);canvas.toBlob(blob=>{if(!blob)return;const cropped=new File([blob],'profile.jpg',{type:'image/jpeg'});const dt=new DataTransfer();dt.items.add(cropped);photo.files=dt.files;preview.innerHTML=`<img class="ov-pimg xl" alt="Profile picture preview" src="${URL.createObjectURL(cropped)}">`;form.elements.remove_photo.value='0';},'image/jpeg',.9);URL.revokeObjectURL(url);};img.src=url;
+  };
+  remove.onclick=()=>{photo.value='';form.elements.remove_photo.value='1';preview.innerHTML=`<div class="ov-avatar lg">${esc(ovInitials(form.elements.name.value))}</div>`;};
   form.onsubmit = async e => {
     e.preventDefault(); const msg = $('#owner-profile-msg'); msg.textContent = 'Saving…'; msg.className = 'ov-msg';
     try {
-      const r = await ownerRequest('profile', Object.fromEntries(new FormData(form)));
-      state.account = { ...state.account, name: r.user.name, full_name: r.user.name, email: r.user.email };
+      const r = await ownerRequest('profile', new FormData(form));
+      state.account = { ...state.account, name: r.user.name, full_name: r.user.name, email: r.user.email, avatar_path: r.user.avatar_path || null };
       await loadOwnerData(); showSaveSuccess('Personal information saved.'); renderOwnerDashboard();
     } catch (err) { msg.textContent = err.message; msg.className = 'ov-msg error'; }
   };
