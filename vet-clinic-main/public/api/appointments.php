@@ -15,7 +15,16 @@ try {
 
     /* ---------- List every appointment (unchanged behaviour) ---------- */
     if ($action === 'list') {
-        $q = $pdo->query("SELECT a.id,a.pet_id,a.veterinarian_id,a.appointment_date,a.appointment_time,a.purpose,a.status,a.cancelled_by,a.notes,p.name pet_name,p.owner_name,p.owner_email,p.owner_phone,p.address,u.full_name AS stored_vet FROM appointments a JOIN pets p ON p.id=a.pet_id LEFT JOIN users u ON u.id=a.veterinarian_id ORDER BY a.appointment_date DESC,a.appointment_time DESC");
+        $sql = "SELECT a.id,a.pet_id,a.veterinarian_id,a.appointment_date,a.appointment_time,a.purpose,a.status,a.cancelled_by,a.notes,p.name pet_name,p.owner_name,p.owner_email,p.owner_phone,p.address,u.full_name AS stored_vet
+                FROM appointments a
+                JOIN pets p ON p.id=a.pet_id
+                LEFT JOIN users u ON u.id=a.veterinarian_id";
+        if (($account['role'] ?? '') === 'Veterinarian') {
+            $q = $pdo->prepare($sql . " WHERE a.veterinarian_id=? ORDER BY a.appointment_date DESC,a.appointment_time DESC");
+            $q->execute([(int)$account['id']]);
+        } else {
+            $q = $pdo->query($sql . " ORDER BY a.appointment_date DESC,a.appointment_time DESC");
+        }
         $doctor = current_doctor($pdo);
         $rows = array_map(static function ($r) use ($doctor) {
             $r['veterinarian'] = doctor_display($doctor, $r['status'] === 'Completed', $r['stored_vet']);
