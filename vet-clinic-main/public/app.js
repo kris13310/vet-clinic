@@ -1071,7 +1071,7 @@ async function cropPetImage(file) {
     const m = modal(`<div class="photo-cropper"><h2>Adjust Pet Picture</h2><p class="mu">Drag the picture to reposition it. Use the slider to zoom in or out.</p><canvas id="pet-crop-canvas" width="420" height="420" style="display:block;width:min(100%,420px);aspect-ratio:1;margin:12px auto;border-radius:14px;background:#eef2ef;touch-action:none;cursor:grab"></canvas><label>Zoom <input id="pet-crop-zoom" type="range" min="1" max="3" step="0.01" value="1"></label><div class="acts"><button type="button" class="btn ghost" id="pet-crop-cancel">Cancel</button><button type="button" class="btn" id="pet-crop-apply">Use Cropped Picture</button></div></div>`);
     // The cropper is opened from inside the Pet Owner Add/Edit Pet dialog.
     // Force it above that dialog so it cannot be hidden behind the form.
-    m.style.setProperty('z-index', '10000', 'important');
+    m.style.setProperty('z-index', '20000', 'important');
     const canvas = $('#pet-crop-canvas',m), ctx = canvas && canvas.getContext('2d'), zoom = $('#pet-crop-zoom',m), apply = $('#pet-crop-apply',m);
     const img = new Image();
     let base=1, scale=1, x=0, y=0, dragging=false, lastX=0, lastY=0;
