@@ -454,7 +454,7 @@ function ovPetForm(pet) {
     if (err.textContent) { perr.textContent = 'Please fix the picture first.'; return; }
     const fd = new FormData(form); if (edit) fd.append('id', p.id);
     btn.disabled = true; btn.textContent = 'Saving…';
-    try { const r = await ownerRequest('pet_save', fd); m.close(); await loadOwnerData(); toast(r.message || 'Pet saved.'); renderOwnerDashboard(); }
+    try { const r = await ownerRequest('pet_save', fd); m.close(); await loadOwnerData(); showSaveSuccess(r.message || 'Pet saved.'); renderOwnerDashboard(); }
     catch (er) { perr.textContent = er.message; btn.disabled = false; btn.textContent = edit ? 'Save changes' : 'Add pet'; }
   };
   form.elements.namedItem('name').focus();
@@ -505,7 +505,7 @@ function ovInitProfile() {
     try {
       const r = await ownerRequest('profile', Object.fromEntries(new FormData(form)));
       state.account = { ...state.account, name: r.user.name, full_name: r.user.name, email: r.user.email };
-      await loadOwnerData(); toast('Personal information saved.'); renderOwnerDashboard();
+      await loadOwnerData(); showSaveSuccess('Personal information saved.'); renderOwnerDashboard();
     } catch (err) { msg.textContent = err.message; msg.className = 'ov-msg error'; }
   };
 }
