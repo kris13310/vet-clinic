@@ -435,12 +435,16 @@ function ovPetForm(pet) {
   $('#ov-choose', m).onclick = () => file.click();
   const rm = $('#ov-removephoto', m);
   if (rm) rm.onclick = () => { file.value = ''; form.elements.namedItem('remove_photo').value = '1'; prev.innerHTML = petImg({ species: species() }, 'xl'); rm.remove(); err.textContent = ''; };
-  file.onchange = () => {
+  file.onchange = async () => {
     err.textContent = ''; const f = file.files[0]; if (!f) return;
     if (!PHOTO_OK.includes(f.type)) { err.textContent = 'Only JPG, PNG or WebP pictures are allowed.'; file.value = ''; return; }
     if (f.size > PHOTO_MAX) { err.textContent = 'That picture is ' + (f.size / 1048576).toFixed(1) + ' MB. The maximum is 2 MB.'; file.value = ''; return; }
-    form.elements.namedItem('remove_photo').value = '0';
-    prev.innerHTML = `<img class="ov-pimg xl" alt="Selected picture" src="${URL.createObjectURL(f)}">`;
+    err.textContent = 'Opening picture editor…';
+    const cropped = await cropPetImage(f);
+    if (!cropped) { file.value = ''; err.textContent = 'Picture editing cancelled.'; return; }
+    const transfer = new DataTransfer(); transfer.items.add(cropped); file.files = transfer.files;
+    err.textContent = ''; form.elements.namedItem('remove_photo').value = '0';
+    prev.innerHTML = `<img class="ov-pimg xl" alt="Selected picture" src="${URL.createObjectURL(cropped)}">`;
   };
   form.elements.namedItem('species').oninput = () => { if (!file.files[0] && !(edit && p.photo_path && form.elements.namedItem('remove_photo').value !== '1')) prev.innerHTML = petImg({ species: species() }, 'xl'); };
   form.onsubmit = async e => {
