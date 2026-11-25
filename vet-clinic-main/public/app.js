@@ -1010,12 +1010,14 @@ const fieldHtml = (f, v) =>
       : `<input name="${f.k}" type="${f.type || "text"}" value="${f.type === "password" ? "" : esc(v)}" placeholder="${esc(f.ph || "")}" ${f.type === "password" ? 'autocomplete="new-password"' : ""} ${f.opt ? "" : "required"}>`
   }</label>`;
 
-async function saveRecord(k, v, old) {
+async function saveRecord(k, v, old, submittedFormData = null) {
   if (k === "users") return apiJson("api/users.php?action=save", { ...v, id: old ? old.id : 0 });
   if (k === "appointments") return apiJson("api/appointments.php?action=create", { pet_id: Number(v.petId), date: v.date, time: v.time, purpose: v.purpose, status: v.status });
   if (k === "pets") {
-    const fd = new FormData();
-    Object.entries({ ...v, id: old ? old.id : 0 }).forEach(([key, val]) => fd.append(key, val));
+    // Preserve the actual File object in the original multipart form data.
+    const fd = submittedFormData || new FormData();
+    if (!submittedFormData) Object.entries(v).forEach(([key, val]) => fd.append(key, val));
+    fd.set("id", String(old ? old.id : 0));
     return recordRequest(k, "save", fd);
   }
   return recordRequest(k, "save", { ...v, id: old ? old.id : 0 });
@@ -1045,7 +1047,8 @@ function form(k, i) {
   }
   $("form", m).onsubmit = async (e) => {
     e.preventDefault();
-    const v = Object.fromEntries(new FormData(e.target)),
+    const submittedFormData = new FormData(e.target),
+      v = Object.fromEntries(submittedFormData),
       fail = (t) => ($("#ferr", m).textContent = t),
       btn = e.submitter || $(".acts .btn:not(.ghost)", m);
     for (const f of fs) v[f.k] = f.type === "password" ? String(v[f.k] ?? "") : String(v[f.k] ?? "").trim();
@@ -1054,7 +1057,7 @@ function form(k, i) {
     if (k === "users" && v.password && v.password.length < 8) return fail("Password must be at least 8 characters.");
     btn.disabled = true;
     try {
-      const res = await saveRecord(k, v, edit ? D[k][i] : null);
+      const res = await saveRecord(k, v, edit ? D[k][i] : null, submittedFormData);
       m.remove();
       await reloadAfter(k);
       toast(res.message || (edit ? "Changes saved." : "Record added."));
