@@ -549,8 +549,56 @@ function ovInitProfile() {
   };
 }
 function ovPageSettings() {
-  const rows = [['🔐', 'Account security', 'Your account is protected by your password. To change it, contact the veterinary office administrator.', ''], ['🔔', 'Notifications', 'You are notified in this portal when an appointment is approved, rejected, rescheduled or completed.', '<button class="ov-btn ghost sm" data-go="owner-notifications">Open →</button>'], ['📨', 'Contact information', 'Clinic communications use the email saved to your account.', '<button class="ov-btn ghost sm" data-go="owner-profile">Edit details →</button>'], ['🚪', 'Sign out', 'Sign out of this device when you finish.', '<button class="ov-btn danger sm" data-act="logout">Log out</button>']];
-  return `<div class="ov-intro"><div><span class="ov-eyebrow">PREFERENCES</span><h2>Settings</h2><p>Manage your account and sign-in preferences.</p></div></div>${rows.map(([ic, t, d, b]) => `<section class="ov-card ov-setting"><span class="ov-setting-ic">${ic}</span><div><h3>${t}</h3><p>${d}</p></div>${b}</section>`).join('')}`;
+  const me = state.account || {};
+  const profile = ownerData.profile || {};
+  const name = profile.name || me.name || me.full_name || 'Pet Owner';
+  const email = profile.email || me.email || 'No email saved';
+  const username = me.username || 'Not available';
+  return `
+    <div class="ov-settings-page">
+      <div class="ov-intro"><div><span class="ov-eyebrow">ACCOUNT</span><h2>Settings</h2><p>Manage your personal details and keep your account secure.</p></div></div>
+      <section class="ov-settings-account">
+        <div class="ov-settings-avatar">${esc(ovInitials(name))}</div>
+        <div class="ov-settings-identity"><span class="ov-eyebrow">SIGNED IN AS</span><h3>${esc(name)}</h3><p>${esc(email)}</p><small>@${esc(username)} · Pet Owner</small></div>
+        <button class="ov-btn ghost sm" data-go="owner-profile">Edit profile</button>
+      </section>
+      <div class="ov-settings-section"><span class="ov-eyebrow">ACCOUNT PREFERENCES</span><h3>Account and security</h3>
+        <button class="ov-settings-row" data-go="owner-profile"><span class="ov-settings-icon">👤</span><span class="ov-settings-copy"><b>Personal information</b><small>Update your name, email, phone number and address</small></span><span class="ov-settings-arrow">›</span></button>
+        <button class="ov-settings-row" data-oact="password"><span class="ov-settings-icon">🔐</span><span class="ov-settings-copy"><b>Change password</b><small>Update the password you use to sign in</small></span><span class="ov-settings-arrow">›</span></button>
+      </div>
+      <div class="ov-settings-section"><span class="ov-eyebrow">UPDATES</span><h3>Notifications</h3>
+        <button class="ov-settings-row" data-go="owner-notifications"><span class="ov-settings-icon">🔔</span><span class="ov-settings-copy"><b>Appointment notifications</b><small>View approval, rescheduling and appointment updates</small></span><span class="ov-settings-arrow">›</span></button>
+      </div>
+      <div class="ov-settings-signout"><div><b>Sign out</b><small>End your current session on this device.</small></div><button class="ov-btn danger sm" data-act="logout">Log out</button></div>
+    </div>`;
+}
+function ovPasswordForm() {
+  const modal = ovModal(`
+    <div class="ov-mhead"><div><span class="ov-eyebrow">ACCOUNT SECURITY</span><h2>Change password</h2><p>Choose a new password for your account.</p></div><button class="ov-x" data-close aria-label="Close">×</button></div>
+    <form id="ov-password-form" class="ov-password-form">
+      <label>Current password<input type="password" name="current_password" autocomplete="current-password" required></label>
+      <label>New password<input type="password" name="new_password" autocomplete="new-password" minlength="8" required><small>Use at least 8 characters.</small></label>
+      <label>Confirm new password<input type="password" name="confirm_password" autocomplete="new-password" minlength="8" required></label>
+      <p class="ov-msg" id="ov-password-msg" aria-live="polite"></p>
+      <div class="ov-actions"><button type="button" class="ov-btn ghost" data-close>Cancel</button><button type="submit" class="ov-btn">Update password</button></div>
+    </form>`, true);
+  const form = modal.querySelector('#ov-password-form');
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const msg = form.querySelector('#ov-password-msg');
+    const submit = form.querySelector('[type="submit"]');
+    const data = Object.fromEntries(new FormData(form).entries());
+    if (data.new_password !== data.confirm_password) { msg.textContent = 'The new passwords do not match.'; msg.className = 'ov-msg error'; return; }
+    submit.disabled = true; submit.textContent = 'Updating…'; msg.textContent = '';
+    try {
+      const result = await ownerRequest('password', data);
+      msg.textContent = result.message || 'Password updated successfully.';
+      msg.className = 'ov-msg success';
+      form.reset();
+      setTimeout(() => modal.close(), 1000);
+    } catch (err) { msg.textContent = err.message; msg.className = 'ov-msg error'; }
+    finally { submit.disabled = false; submit.textContent = 'Update password'; }
+  });
 }
 
 /* =====================================================================
@@ -571,6 +619,7 @@ document.addEventListener('click', e => {
   else if (a === 'cal-prev' || a === 'cal-next') { const [y, m] = ov.month.split('-').map(Number), d = new Date(y, m - 1 + (a === 'cal-next' ? 1 : -1), 1); ov.month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; ovLoadMonth(); }
   else if (a === 'cal-day') ovPickDate(v);
   else if (a === 'slot') { ov.time = v; ovRenderSlots(); ovRenderSummary(); }
+  else if (a === 'password') ovPasswordForm();
   else if (a === 'pet-add') ovPetForm();
   else if (a === 'pet-view') { const p = pet(); if (p) ovPetView(p); }
   else if (a === 'pet-edit') { const p = pet(); if (p) ovPetForm(p); }
