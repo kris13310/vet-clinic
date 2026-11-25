@@ -62,6 +62,11 @@ try {
             $cur->execute([$id]);
             $row = $cur->fetch();
             if (!$row) return [404, 'Appointment not found.'];
+            if ($status === 'Completed') {
+                $report = $pdo->prepare('SELECT 1 FROM medical_reports WHERE appointment_id=?');
+                $report->execute([$id]);
+                if (!$report->fetchColumn()) return [409, 'Submit the veterinarian medical report before completing this appointment.'];
+            }
             if ($row['status'] === $status) return [200, 'Appointment status updated.']; // nothing changed -> no duplicate notification
 
             // Re-opening a rejected request must not collide with someone who took the slot meanwhile.
