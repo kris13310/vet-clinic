@@ -233,6 +233,24 @@ try {
         owner_reply(200, ['success'=>true,'message'=>'Pet deleted.']);
     }
 
+    /* ---- Change the signed-in pet owner's password ---- */
+    if ($action === 'password') {
+        $currentPassword = (string)($data['current_password'] ?? '');
+        $newPassword = (string)($data['new_password'] ?? '');
+        $confirmPassword = (string)($data['confirm_password'] ?? '');
+        if ($currentPassword === '' || $newPassword === '' || $confirmPassword === '') owner_reply(422, ['success'=>false,'message'=>'Complete all password fields.']);
+        if (strlen($newPassword) < 8) owner_reply(422, ['success'=>false,'message'=>'Your new password must be at least 8 characters.']);
+        if (!hash_equals($newPassword, $confirmPassword)) owner_reply(422, ['success'=>false,'message'=>'The new passwords do not match.']);
+        if (hash_equals($currentPassword, $newPassword)) owner_reply(422, ['success'=>false,'message'=>'Choose a password different from your current one.']);
+        $check = $pdo->prepare('SELECT password_hash FROM users WHERE id=?');
+        $check->execute([$uid]);
+        $hash = $check->fetchColumn();
+        if (!$hash || !password_verify($currentPassword, (string)$hash)) owner_reply(403, ['success'=>false,'message'=>'Your current password is incorrect.']);
+        $updated = password_hash($newPassword, PASSWORD_DEFAULT);
+        $pdo->prepare('UPDATE users SET password_hash=? WHERE id=?')->execute([$updated, $uid]);
+        owner_reply(200, ['success'=>true,'message'=>'Your password has been updated.']);
+    }
+
     /* ---- Update personal information ---- */
     if ($action === 'profile') {
         $name = trim((string)($data['name'] ?? '')); $newEmail = trim((string)($data['email'] ?? '')); $phone = trim((string)($data['phone'] ?? '')); $address = trim((string)($data['address'] ?? ''));
