@@ -309,7 +309,7 @@ function owner_can_cancel(string $status, string $date, string $time): bool {
 const PHOTO_MAX_BYTES = 2 * 1024 * 1024;                       // 2 MB
 const PHOTO_TYPES = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
 /** Validates an uploaded image, stores it in Supabase Storage and returns its public URL. Throws RuntimeException with a user-friendly message. */
-function save_pet_photo(array $file): string {
+function save_pet_photo(array $file, string $prefix = 'pet_'): string {
     $err = (int)($file['error'] ?? UPLOAD_ERR_NO_FILE);
     if ($err === UPLOAD_ERR_INI_SIZE || $err === UPLOAD_ERR_FORM_SIZE) throw new RuntimeException('The picture is too large. Maximum size is 2 MB.');
     if ($err !== UPLOAD_ERR_OK) throw new RuntimeException('The picture could not be uploaded. Please try again.');
@@ -329,6 +329,7 @@ function save_pet_photo(array $file): string {
     if (!isset(PHOTO_TYPES[$mime])) throw new RuntimeException('Only JPG, PNG or WebP pictures are allowed.');
     if (($info[0] ?? 0) < 50 || ($info[1] ?? 0) < 50 || ($info[0] ?? 0) > 8000 || ($info[1] ?? 0) > 8000) throw new RuntimeException('The picture dimensions are not supported (min 50px, max 8000px).');
 
-    $name = 'pet_' . bin2hex(random_bytes(12)) . '.' . PHOTO_TYPES[$mime];
+    if (!preg_match('/^[a-z][a-z0-9_-]{0,15}_$/', $prefix)) throw new RuntimeException('Invalid image type.');
+    $name = $prefix . bin2hex(random_bytes(12)) . '.' . PHOTO_TYPES[$mime];
     return storage_upload($tmp, $name, $mime); // Supabase Storage: returns the picture's public URL
 }
