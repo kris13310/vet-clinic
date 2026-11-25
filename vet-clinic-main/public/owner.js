@@ -6,7 +6,7 @@
    TODAY, TODAY_ISO, MONTHS, WEEKDAYS, fmtLong.
    ===================================================================== */
 
-let ownerData = { doctor: null, profile: {}, pets: [], appointments: [], vaccinations: [], notifications: [], unread: 0, today: '', schedule: {} };
+let ownerData = { doctor: null, profile: {}, pets: [], appointments: [], vaccinations: [], medical_reports: [], notifications: [], unread: 0, today: '', schedule: {} };
 let ownerLoadError = '';
 let ovPoll = null;
 const ov = { uid: null, filter: 'all', nfilter: 'all', month: '', cal: { days: {}, loading: false, error: '' }, date: '', time: '', slots: [], slotsLoading: false, slotsOpen: true, dayState: 'open', dayLabel: '', petChoice: '', bellOpen: false, menuOpen: false };
@@ -30,7 +30,7 @@ const emptyOwnerData = () => ({ doctor: null, profile: {}, pets: [], appointment
 async function loadOwnerData() {
   try {
     const r = await ownerRequest('data');
-    ownerData = { doctor: r.doctor || null, profile: r.profile || {}, pets: r.pets || [], appointments: r.appointments || [], vaccinations: r.vaccinations || [], notifications: ownerData.notifications || [], unread: r.unread || 0, today: r.today || '', schedule: r.schedule || {} };
+    ownerData = { doctor: r.doctor || null, profile: r.profile || {}, pets: r.pets || [], appointments: r.appointments || [], vaccinations: r.vaccinations || [], medical_reports: r.medical_reports || [], notifications: ownerData.notifications || [], unread: r.unread || 0, today: r.today || '', schedule: r.schedule || {} };
     ownerLoadError = '';
     try { const n = await ownerRequest('notifications'); ownerData.notifications = n.notifications || []; ownerData.unread = n.unread || 0; } catch (e) { /* bell still works from the count */ }
   } catch (e) { ownerLoadError = e.message; ownerData = emptyOwnerData(); }
@@ -481,9 +481,10 @@ function ovPetDelete(p) {
    Medical records, personal information, settings
    ===================================================================== */
 function ovPageRecords() {
-  const v = ownerData.vaccinations;
-  return `<div class="ov-intro"><div><span class="ov-eyebrow">HEALTH HISTORY</span><h2>Medical Records</h2><p>Vaccination history and upcoming due dates for your pets.</p></div></div>
-  <section class="ov-card">${v.length ? `<div class="ov-tablewrap"><table class="ov-table"><thead><tr><th>Pet</th><th>Vaccine</th><th>Date given</th><th>Next due</th><th>Veterinarian</th><th>Notes</th></tr></thead><tbody>${v.map(x => `<tr><td><div class="ov-who">${petImg({ photo_path: x.pet_photo, species: x.pet_species, name: x.pet_name }, 'xs')}<b>${esc(x.pet_name)}</b></div></td><td>💉 ${esc(x.vaccine)}</td><td>${esc(ownerDate(x.date_given))}</td><td>${esc(ownerDate(x.next_due))} ${x.next_due && String(x.next_due) < ownerToday() ? ownerBadge('Overdue') : ''}</td><td>${esc(ovVet(x.veterinarian))}</td><td>${esc(x.notes || '—')}</td></tr>`).join('')}</tbody></table></div>` : `<div class="ov-empty"><span>💚</span><b>No medical records yet</b><p>Vaccination and medical history recorded by the clinic will appear here.</p></div>`}</section>`;
+  const v = ownerData.vaccinations, reports = ownerData.medical_reports || [];
+  return `<div class="ov-intro"><div><span class="ov-eyebrow">HEALTH HISTORY</span><h2>Medical Records</h2><p>View veterinarian reports, vaccination history and follow-up instructions for your pets.</p></div></div>
+  <section class="ov-card"><h3>Veterinarian Medical Reports</h3>${reports.length ? reports.map(r => `<article class="ov-record-report"><div class="ov-who">${petImg({photo_path:r.pet_photo,species:r.pet_species,name:r.pet_name},'xs')}<div><b>${esc(r.pet_name)}</b><small>${esc(ownerDate(r.appointment_date))} · ${esc(r.veterinarian || 'Veterinarian')}</small></div></div><div class="ov-grid"><div><b>Diagnosis</b><p>${esc(r.diagnosis)}</p></div><div><b>Symptoms</b><p>${esc(r.symptoms)}</p></div><div><b>Observations</b><p>${esc(r.observations || '—')}</p></div><div><b>Treatment</b><p>${esc(r.treatment)}</p></div><div><b>Medication</b><p>${esc(r.medication || '—')}</p></div><div><b>Recommendations</b><p>${esc(r.recommendations || '—')}</p></div><div><b>Follow-up date</b><p>${esc(r.follow_up_date ? ownerDate(r.follow_up_date) : 'Not scheduled')}</p></div></div></article>`).join('') : `<div class="ov-empty"><span>🩺</span><b>No veterinarian reports yet</b><p>Reports submitted after your pet's consultation will appear here.</p></div>`}</section>
+  <section class="ov-card"><h3>Vaccination History</h3>${v.length ? `<div class="ov-tablewrap"><table class="ov-table"><thead><tr><th>Pet</th><th>Vaccine</th><th>Date given</th><th>Next due</th><th>Veterinarian</th><th>Notes</th></tr></thead><tbody>${v.map(x => `<tr><td><div class="ov-who">${petImg({ photo_path: x.pet_photo, species: x.pet_species, name: x.pet_name }, 'xs')}<b>${esc(x.pet_name)}</b></div></td><td>💉 ${esc(x.vaccine)}</td><td>${esc(ownerDate(x.date_given))}</td><td>${esc(ownerDate(x.next_due))} ${x.next_due && String(x.next_due) < ownerToday() ? ownerBadge('Overdue') : ''}</td><td>${esc(ovVet(x.veterinarian))}</td><td>${esc(x.notes || '—')}</td></tr>`).join('')}</tbody></table></div>` : `<div class="ov-empty"><span>💚</span><b>No vaccination records yet</b><p>Vaccination records recorded by the clinic will appear here.</p></div>`}</section>`;
 }
 function ovPageProfile() {
   const me = state.account || {}, p = ownerData.profile || {}, name = p.name || me.name || '';
