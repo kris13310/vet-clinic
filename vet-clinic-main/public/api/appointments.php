@@ -37,7 +37,7 @@ try {
         $purpose = trim((string)($input['purpose'] ?? '')); $status = (string)($input['status'] ?? 'Pending');
         if (!$petId || $purpose === '') appt_reply(422, ['success'=>false,'message'=>'Choose a pet and enter the purpose of the visit.']);
         if (mb_strlen($purpose) > 255) appt_reply(422, ['success'=>false,'message'=>'The purpose is too long (max 255 characters).']);
-        if (!in_array($status, ['Pending','Confirmed','In Progress','Completed'], true)) appt_reply(422, ['success'=>false,'message'=>'Choose a valid status.']);
+        if (!in_array($status, ['Pending','Confirmed','In Progress'], true)) appt_reply(422, ['success'=>false,'message'=>'Choose a valid status.']);
         $err = validate_slot($pdo, $date, $time, true);
         if ($err) appt_reply(422, ['success'=>false,'message'=>$err]);
 
