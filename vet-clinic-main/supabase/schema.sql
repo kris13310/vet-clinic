@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
   email         VARCHAR(190) NOT NULL,
   phone         VARCHAR(40),
   address       VARCHAR(255),
+  avatar_path   TEXT,
   password_hash VARCHAR(255) NOT NULL,
   role          VARCHAR(20)  NOT NULL DEFAULT 'Veterinary Staff'
                 CHECK (role IN ('Administrator','Veterinarian','Veterinary Staff','Pet Owner')),
