@@ -331,3 +331,186 @@ body.ov-lock { overflow: hidden; }
 .save-success-icon{display:grid;place-items:center;width:58px;height:58px;margin:0 auto 14px;border-radius:50%;background:#e3f3e9;color:#26734b;font-size:32px;font-weight:800}
 .save-success-card h3{margin:0 0 8px;font-size:20px}.save-success-card p{margin:0;color:#617168}
 @keyframes saveFade{from{opacity:0}to{opacity:1}}@keyframes savePop{from{transform:scale(.96)}to{transform:scale(1)}}
+
+
+/* =====================================================================
+   Pet Owner Portal usability refresh
+   Additive overrides: preserve existing page behaviour and components.
+   ===================================================================== */
+.ov-app {
+  --ov-bg: #f5f8f7;
+  --ov-card: #ffffff;
+  --ov-line: #e5ece9;
+  --ov-ink: #172b27;
+  --ov-text: #42534e;
+  --ov-muted: #71817b;
+  --ov-p: #087f68;
+  --ov-p2: #12a982;
+  --ov-soft: #e5f5ef;
+  background: var(--ov-bg);
+  color: var(--ov-text);
+  line-height: 1.6;
+}
+.ov-side {
+  background: #102923;
+  padding: 26px 18px 18px;
+}
+.ov-brand { padding-bottom: 22px; }
+.ov-brand-mark { border-radius: 15px; box-shadow: 0 8px 22px #0b8b6b44; }
+.ov-side-label { color: #91aaa1; font-size: 11px; letter-spacing: 1.5px; }
+.ov-nav {
+  min-height: 50px;
+  border-radius: 12px;
+  font-size: 14.5px;
+  gap: 12px;
+}
+.ov-nav.active {
+  background: #087f68;
+  box-shadow: 0 5px 14px #087f6840;
+}
+.ov-nav:focus-visible, .ov-user:focus-visible, .ov-bell:focus-visible,
+.ov-top-avatar:focus-visible, .ov-btn:focus-visible, .ov-icon:focus-visible,
+.ov-tab:focus-visible, .ov-day:focus-visible, .ov-slot:focus-visible {
+  outline: 3px solid #35c6a0;
+  outline-offset: 3px;
+}
+.ov-help {
+  background: #ffffff0a;
+  border-color: #ffffff1c;
+}
+.ov-main { background: var(--ov-bg); }
+.ov-top {
+  height: 82px;
+  background: #ffffffed;
+  border-bottom-color: #e8efec;
+}
+.ov-top h1 { font-size: 25px; letter-spacing: -.45px; }
+.ov-date { background: #f5f8f7; }
+.ov-content {
+  max-width: 1560px;
+  padding-top: 32px;
+  padding-bottom: 44px;
+}
+.ov-intro { align-items: center; margin-bottom: 24px; }
+.ov-intro h2 { font-size: clamp(25px, 2.2vw, 30px); letter-spacing: -.65px; }
+.ov-intro p { max-width: 680px; font-size: 15.5px; line-height: 1.65; }
+.ov-eyebrow, .ov-crumb { letter-spacing: 1.3px; }
+.ov-card {
+  border-color: #e6eeea;
+  border-radius: 18px;
+  padding: clamp(20px, 2.2vw, 30px);
+  box-shadow: 0 3px 14px #183c3010;
+}
+.ov-card-head { margin-bottom: 22px; }
+.ov-card-head h3 { font-size: 19px; }
+.ov-card-head p { font-size: 14px; }
+.ov-btn {
+  min-height: 46px;
+  padding: 0 20px;
+  border-radius: 12px;
+  background: #087f68;
+  box-shadow: 0 4px 12px #087f6826;
+  font-size: 14.5px;
+}
+.ov-btn:hover { background: #066b58; }
+.ov-btn.sm { min-height: 40px; padding-inline: 14px; font-size: 13.5px; }
+.ov-btn.ghost { color: #087f68; border-color: #dce8e2; }
+.ov-btn.danger { color: #b42318; border-color: #f3d4d1; background: #fff8f7; }
+.ov-app input:not([type=radio]):not([type=file]), .ov-app select,
+.ov-app textarea, .ov-modal input:not([type=file]), .ov-modal select, .ov-modal textarea {
+  min-height: 48px;
+  border: 1px solid #d7e2dc;
+  border-radius: 11px;
+  font-size: 15px;
+}
+.ov-app textarea, .ov-modal textarea { min-height: 100px; }
+.ov-app input:focus, .ov-app select:focus, .ov-app textarea:focus,
+.ov-modal input:focus, .ov-modal select:focus, .ov-modal textarea:focus {
+  border-color: #12a982;
+  box-shadow: 0 0 0 3px #12a98220;
+}
+.ov-stats { gap: 14px; }
+.ov-stat {
+  padding: 19px;
+  border-radius: 16px;
+  box-shadow: 0 3px 12px #183c300c;
+}
+.ov-stat-ic { width: 50px; height: 50px; border-radius: 14px; font-size: 23px; }
+.ov-stat strong { font-size: 29px; }
+.ov-stat small { font-size: 13px; }
+.ov-step { padding: 24px 0; }
+.ov-step h4 { font-size: 17px; margin-bottom: 17px; }
+.ov-num { width: 31px; height: 31px; font-size: 14px; }
+.ov-petgrid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 18px; }
+.ov-pet {
+  border-color: #e4ece7;
+  border-radius: 18px;
+  box-shadow: 0 3px 14px #183c300d;
+}
+.ov-pet:hover { transform: translateY(-2px); box-shadow: 0 10px 25px #183c3017; }
+.ov-pet-ph { aspect-ratio: 16 / 10; }
+.ov-pet-b { padding: 20px 21px 8px; }
+.ov-pet-b h3 { font-size: 21px; }
+.ov-pet-b > p { font-size: 14px; }
+.ov-chips { gap: 7px; }
+.ov-chips span { padding: 6px 10px; font-size: 12.5px; }
+.ov-pet-next { font-size: 13.5px; }
+.ov-pet-a { padding: 15px 20px 20px; gap: 8px; }
+.ov-pet-a .ov-btn { flex: 1 1 100px; }
+.ov-appt {
+  border-radius: 15px;
+  border-color: #e4ece7;
+  box-shadow: 0 2px 10px #183c3008;
+  padding: 18px 20px;
+  gap: 16px;
+}
+.ov-appt-main > b { font-size: 17px; }
+.ov-appt-main > span, .ov-meta { font-size: 14px; }
+.ov-appt-st { min-width: 160px; }
+.ov-status { padding: 5px 11px; font-size: 12px; }
+.ov-tabs { gap: 8px; }
+.ov-tab { min-height: 40px; padding: 0 14px; font-size: 13.5px; }
+.ov-notif { padding: 17px; gap: 14px; }
+.ov-notif-ic { width: 42px; height: 42px; font-size: 20px; border-radius: 12px; }
+.ov-notif-b p { font-size: 14px; }
+.ov-empty { padding: 40px 18px; }
+.ov-empty > span { font-size: 40px; }
+.ov-empty b { font-size: 17px; }
+.ov-empty p { font-size: 14px; }
+.ov-modal {
+  z-index: 10050;
+  padding: 16px;
+  background: #10292399;
+}
+.ov-mbox {
+  max-height: min(90dvh, 900px);
+  border-radius: 20px;
+  padding: clamp(20px, 3vw, 30px);
+}
+.ov-mhead { margin-bottom: 20px; }
+.ov-mhead h2 { font-size: 23px; }
+.ov-photo { padding: 16px; gap: 18px; }
+.ov-footer { font-size: 12.5px; padding-top: 18px; padding-bottom: 18px; }
+@media (max-width: 900px) {
+  .ov-side { padding: 22px 16px 16px; }
+  .ov-top { height: 72px; padding-inline: 16px; }
+  .ov-top h1 { font-size: 21px; }
+  .ov-content { padding: 24px 16px 36px; }
+  .ov-intro { align-items: flex-start; }
+}
+@media (max-width: 640px) {
+  .ov-intro { gap: 14px; }
+  .ov-intro > .ov-btn { width: 100%; }
+  .ov-card { padding: 18px 15px; }
+  .ov-stats { gap: 9px; }
+  .ov-stat { padding: 14px; gap: 9px; }
+  .ov-stat strong { font-size: 25px; }
+  .ov-stat small { font-size: 11.5px; }
+  .ov-petgrid { gap: 14px; }
+  .ov-pet-a .ov-btn { flex: 1 1 100%; }
+  .ov-appt { padding: 15px; }
+  .ov-mbox { max-height: 92dvh; padding: 20px 16px; }
+  .ov-photo-prev { width: 116px; height: 116px; }
+  .ov-actions { gap: 9px; }
+  .ov-footer { text-align: center; }
+}
