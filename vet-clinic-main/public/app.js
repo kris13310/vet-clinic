@@ -275,6 +275,7 @@ const NAV = [
   ["SYSTEM"],
   ["users", "👥", "Users"],
   ["settings", "⚙️", "Settings"],
+  ["profile", "👤", "My Profile"],
 ];
 const NAV_LABEL = Object.fromEntries(
   NAV.filter((n) => n[1]).map((n) => [n[0], n[2]]),
@@ -329,6 +330,7 @@ const PAGES = {
   adoption: pAdopt,
   users: pUsers,
   settings: pSettings,
+  profile: pProfile,
 };
 
 async function loadAppointmentsFromDatabase() {
@@ -920,6 +922,28 @@ function pUsers() {
     ${rows.length ? table(["Name", "Role", "Username", "Email", "Status", "Actions"], items.map((u) => `<tr>${cell("Name", `<div class="who"><span class="av sm">${ini(u.name)}</span><b>${esc(u.name)}</b></div>`)}${cell("Role", esc(u.role))}${cell("Username", esc(u.username))}${cell("Email", esc(u.email))}${cell("Status", badge(u.status))}${cell("Actions", acts("users", u.i))}</tr>`).join(""), foot) : `<div class="card">${empty("No users found.")}</div>`}`;
 }
 
+/* ===== Signed-in staff profile ===== */
+async function pProfile() {
+  $("#content").innerHTML = `<div class="card"><p class="mu">Loading your profile…</p></div>`;
+  try {
+    const r = await apiJson("api/profile.php");
+    const u = r.user;
+    $("#content").innerHTML = `<form class="card sform" id="staff-profile-form" enctype="multipart/form-data">
+      <h3>My Profile</h3><p class="mu">Update your own account details and profile picture.</p>
+      <div class="profile-photo-row"><div id="staff-profile-preview">${u.avatar_path ? `<img class="av lg" style="object-fit:cover" src="${esc(u.avatar_path)}" alt="Profile picture">` : `<span class="av lg">${esc((u.full_name||'U').split(/\\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase())}</span>`}</div>
+      <div><label class="btn ghost">Change picture<input type="file" name="photo" id="staff-profile-photo" accept="image/jpeg,image/png,image/webp" hidden></label><button class="btn ghost" type="button" id="staff-profile-remove">Remove picture</button><small>JPG, PNG or WebP. Maximum 2 MB.</small></div></div>
+      <label>Full Name<input name="full_name" required maxlength="120" value="${esc(u.full_name)}"></label>
+      <label>Email<input name="email" type="email" required maxlength="190" value="${esc(u.email)}"></label>
+      <label>Phone<input name="phone" maxlength="40" value="${esc(u.phone||'')}"></label>
+      <label>Address<textarea name="address" maxlength="255" rows="3">${esc(u.address||'')}</textarea></label>
+      <input type="hidden" name="remove_photo" value="0"><div class="acts"><span class="mu" id="staff-profile-msg"></span><button class="btn">Save Profile</button></div></form>`;
+    const f=$("#staff-profile-form"),photo=$("#staff-profile-photo"),preview=$("#staff-profile-preview");
+    photo.onchange=async()=>{const file=photo.files?.[0];if(!file)return;if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>2*1024*1024){photo.value="";$("#staff-profile-msg").textContent="Choose a JPG, PNG or WebP image up to 2 MB.";return;}const cropped=await cropPetImage(file);if(!cropped){photo.value="";return;}const dt=new DataTransfer();dt.items.add(cropped);photo.files=dt.files;preview.innerHTML=`<img class="av lg" style="object-fit:cover" src="${URL.createObjectURL(cropped)}" alt="Profile preview">`;f.elements.remove_photo.value="0";};
+    $("#staff-profile-remove").onclick=()=>{photo.value="";f.elements.remove_photo.value="1";preview.textContent=(f.elements.full_name.value||"U").split(/\\s+/).map(x=>x[0]).slice(0,2).join("").toUpperCase();};
+    f.onsubmit=async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;$("#staff-profile-msg").textContent="Saving…";try{const saved=await apiJson("api/profile.php?action=save",new FormData(f));state.account={...state.account,name:saved.user.full_name,full_name:saved.user.full_name,email:saved.user.email,avatar_path:saved.user.avatar_path};showSaveSuccess("Profile updated.");buildShell();render();}catch(err){$("#staff-profile-msg").textContent=err.message;b.disabled=false;}};
+  } catch(e) { $("#content").innerHTML=`<div class="card">${esc(e.message)}</div>`; }
+}
+
 /* ===== Settings ===== */
 function pSettings() {
   const s = D.settings;
@@ -963,7 +987,7 @@ const FORM = {
     F("date", "Date", { type: "date" }),
     F("time", "Time", { sel: D.slots.map((t) => [t, fmtTime(t)]) }),
     F("purpose", "Purpose", { full: 1 }),
-    F("status", "Status", { sel: ["Pending", "Confirmed", "In Progress", "Completed"] }),
+    F("status", "Status", { sel: ["Pending", "Confirmed", "In Progress"] }),
   ],
   vaccinations: () => [
     F("petId", "Pet", { sel: petOpts() }),
