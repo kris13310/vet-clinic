@@ -1065,23 +1065,64 @@ function modal(html) {
   return m;
 }
 async function cropPetImage(file) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
+    let objectUrl = '';
+    let settled = false;
     const m = modal(`<div class="photo-cropper"><h2>Adjust Pet Picture</h2><p class="mu">Drag the picture to reposition it. Use the slider to zoom in or out.</p><canvas id="pet-crop-canvas" width="420" height="420" style="display:block;width:min(100%,420px);aspect-ratio:1;margin:12px auto;border-radius:14px;background:#eef2ef;touch-action:none;cursor:grab"></canvas><label>Zoom <input id="pet-crop-zoom" type="range" min="1" max="3" step="0.01" value="1"></label><div class="acts"><button type="button" class="btn ghost" id="pet-crop-cancel">Cancel</button><button type="button" class="btn" id="pet-crop-apply">Use Cropped Picture</button></div></div>`);
-    const canvas = $('#pet-crop-canvas',m), ctx=canvas.getContext('2d'), zoom=$('#pet-crop-zoom',m), apply=$('#pet-crop-apply',m);
-    const img=new Image(); let base=1, scale=1, x=0, y=0, dragging=false, lastX=0, lastY=0, settled=false;
-    const finish=value=>{if(settled)return;settled=true;m.remove();resolve(value);};
-    $('#pet-crop-cancel',m).onclick=()=>finish(null);
-    img.onload=()=>{
-      base=Math.max(canvas.width/img.width,canvas.height/img.height); scale=base;
-      const draw=()=>{const w=img.width*scale,h=img.height*scale,limX=Math.max(0,(w-canvas.width)/2),limY=Math.max(0,(h-canvas.height)/2);x=Math.max(-limX,Math.min(limX,x));y=Math.max(-limY,Math.min(limY,y));ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,(canvas.width-w)/2+x,(canvas.height-h)/2+y,w,h);};
-      zoom.oninput=()=>{const old=scale;scale=base*Number(zoom.value);const ratio=scale/old;x*=ratio;y*=ratio;draw();};
-      canvas.onpointerdown=e=>{dragging=true;lastX=e.clientX;lastY=e.clientY;canvas.setPointerCapture(e.pointerId);canvas.style.cursor='grabbing';};
-      canvas.onpointermove=e=>{if(!dragging)return;const r=canvas.getBoundingClientRect();x+=(e.clientX-lastX)*canvas.width/r.width;y+=(e.clientY-lastY)*canvas.height/r.height;lastX=e.clientX;lastY=e.clientY;draw();};
-      canvas.onpointerup=canvas.onpointercancel=()=>{dragging=false;canvas.style.cursor='grab';};
-      draw();
-      apply.onclick=()=>{apply.disabled=true;canvas.toBlob(blob=>{if(!blob){finish(null);return;}finish(new File([blob],'pet-photo.jpg',{type:'image/jpeg',lastModified:Date.now()}));},'image/jpeg',0.92);};
+    const canvas = $('#pet-crop-canvas',m), ctx = canvas && canvas.getContext('2d'), zoom = $('#pet-crop-zoom',m), apply = $('#pet-crop-apply',m);
+    const img = new Image();
+    let base=1, scale=1, x=0, y=0, dragging=false, lastX=0, lastY=0;
+    const finish = value => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(loadTimeout);
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      m.remove();
+      resolve(value);
     };
-    img.onerror=()=>finish(null); img.src=URL.createObjectURL(file);
+    const fail = error => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(loadTimeout);
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      m.remove();
+      reject(error instanceof Error ? error : new Error('The picture could not be opened.'));
+    };
+    const loadTimeout = setTimeout(() => fail(new Error('The picture took too long to open. Please try another JPG, PNG or WebP image.')), 15000);
+    $('#pet-crop-cancel',m).onclick = () => finish(null);
+    m.addEventListener('click', e => { if (e.target === m) finish(null); }, true);
+    if (!canvas || !ctx || !zoom || !apply) { fail(new Error('The picture editor could not be initialized. Please refresh and try again.')); return; }
+    img.onload = () => {
+      try {
+        if (!img.naturalWidth || !img.naturalHeight) throw new Error('The selected picture is invalid or cannot be decoded.');
+        base = Math.max(canvas.width/img.naturalWidth, canvas.height/img.naturalHeight);
+        scale = base;
+        const draw = () => {
+          const w=img.naturalWidth*scale, h=img.naturalHeight*scale;
+          const limX=Math.max(0,(w-canvas.width)/2), limY=Math.max(0,(h-canvas.height)/2);
+          x=Math.max(-limX,Math.min(limX,x)); y=Math.max(-limY,Math.min(limY,y));
+          ctx.clearRect(0,0,canvas.width,canvas.height);
+          ctx.drawImage(img,(canvas.width-w)/2+x,(canvas.height-h)/2+y,w,h);
+        };
+        zoom.oninput = () => { const previous=scale; scale=base*Number(zoom.value); const ratio=scale/previous; x*=ratio; y*=ratio; draw(); };
+        canvas.onpointerdown = e => { dragging=true; lastX=e.clientX; lastY=e.clientY; canvas.setPointerCapture(e.pointerId); canvas.style.cursor='grabbing'; };
+        canvas.onpointermove = e => { if(!dragging)return; const r=canvas.getBoundingClientRect(); if(!r.width||!r.height)return; x+=(e.clientX-lastX)*canvas.width/r.width; y+=(e.clientY-lastY)*canvas.height/r.height; lastX=e.clientX; lastY=e.clientY; draw(); };
+        canvas.onpointerup = canvas.onpointercancel = () => { dragging=false; canvas.style.cursor='grab'; };
+        draw();
+        apply.onclick = () => {
+          apply.disabled = true;
+          try {
+            canvas.toBlob(blob => {
+              if (!blob) { fail(new Error('The edited picture could not be created. Please try another image.')); return; }
+              finish(new File([blob], 'pet-photo.jpg', {type:'image/jpeg',lastModified:Date.now()}));
+            }, 'image/jpeg', 0.92);
+          } catch (error) { fail(error); }
+        };
+      } catch (error) { fail(error); }
+    };
+    img.onerror = () => fail(new Error('This image format could not be opened. Please choose a JPG, PNG or WebP picture.'));
+    try { objectUrl = URL.createObjectURL(file); img.src = objectUrl; }
+    catch (error) { fail(error); }
   });
 }
 
