@@ -37,7 +37,7 @@ async function loadOwnerData() {
 }
 
 /* ---------- Formatting helpers ---------- */
-const ownerPageNames = { 'owner-appointments': 'Appointments', 'owner-pets': 'My Pets', 'owner-notifications': 'Notifications', 'owner-records': 'Medical Records', 'owner-profile': 'Personal Information', 'owner-settings': 'Settings' };
+const ownerPageNames = { 'owner-home': 'Overview', 'owner-appointments': 'Book Appointment', 'owner-pets': 'My Pets', 'owner-notifications': 'Notifications', 'owner-records': 'Medical Records', 'owner-profile': 'Personal Information', 'owner-settings': 'Settings' };
 const OV_LABEL = { Pending: 'Pending', Confirmed: 'Approved', 'In Progress': 'In Progress', Completed: 'Completed', Cancelled: 'Rejected', Overdue: 'Overdue', Recorded: 'Recorded' };
 const OV_HINT = { Pending: 'Waiting for clinic approval', Confirmed: 'Approved — see you then!', 'In Progress': 'Visit in progress', Completed: 'Visit completed', Cancelled: 'Rejected — please book another time' };
 /* The clinic has one doctor: the account whose role is Veterinarian. Show the name as "Dr. Name". */
@@ -100,15 +100,15 @@ function ovModal(html, wide = false) {
    Shell
    ===================================================================== */
 function renderOwnerDashboard() {
-  const page = ownerPageNames[state.page] ? state.page : 'owner-appointments'; state.page = page;
+  const page = ownerPageNames[state.page] ? state.page : 'owner-home'; state.page = page;
   const me = state.account || {};
   if (ov.uid !== me.id) { Object.assign(ov, { uid: me.id, filter: 'all', nfilter: 'all', month: '', date: '', time: '', slots: [], petChoice: '', bellOpen: false }); ov.cal = { days: {}, loading: false, error: '' }; }
   ov.menuOpen = false; ov.bellOpen = false;
   const displayName = me.name || me.full_name || me.username || 'Pet Owner';
   const upcoming = ownerData.appointments.filter(a => ovIsActive(a) && String(a.appointment_date).slice(0, 10) >= ownerToday());
-  const nav = [['owner-appointments', '📅', 'Appointments', upcoming.length], ['owner-pets', '🐾', 'My Pets', 0], ['owner-notifications', '🔔', 'Notifications', ownerData.unread], ['owner-records', '💉', 'Medical Records', 0], ['owner-profile', '👤', 'Personal Information', 0], ['owner-settings', '⚙️', 'Settings', 0]];
+  const nav = [['owner-home', '⌂', 'Overview', 0], ['owner-appointments', '＋', 'Book Appointment', upcoming.length], ['owner-pets', '🐾', 'My Pets', 0], ['owner-notifications', '🔔', 'Notifications', ownerData.unread], ['owner-records', '💉', 'Medical Records', 0], ['owner-profile', '👤', 'Personal Information', 0], ['owner-settings', '⚙️', 'Settings', 0]];
   const navHtml = nav.map(([id, ic, label, n]) => `<button class="ov-nav ${page === id ? 'active' : ''}" data-go="${id}"><span class="ov-nav-ic">${ic}</span><span class="ov-nav-t">${label}</span>${n ? `<em ${id === 'owner-notifications' ? 'id="ov-nav-notif"' : ''}>${n > 99 ? '99+' : n}</em>` : (id === 'owner-notifications' ? '<em id="ov-nav-notif" hidden></em>' : '')}</button>`).join('');
-  const builders = { 'owner-appointments': ovPageAppointments, 'owner-pets': ovPagePets, 'owner-notifications': ovPageNotifications, 'owner-records': ovPageRecords, 'owner-profile': ovPageProfile, 'owner-settings': ovPageSettings };
+  const builders = { 'owner-home': ovPageHome, 'owner-appointments': ovPageAppointments, 'owner-pets': ovPagePets, 'owner-notifications': ovPageNotifications, 'owner-records': ovPageRecords, 'owner-profile': ovPageProfile, 'owner-settings': ovPageSettings };
 
   app.innerHTML = `<div class="ov-app">
     <aside class="ov-side" aria-label="Main navigation">
@@ -216,6 +216,25 @@ function ovStartPolling() {
   }, 40000);
 }
 
+/* Pet Owner landing page: overview, quick actions and live account summaries. */
+function ovPageHome() {
+  const name = String((state.account || {}).name || (state.account || {}).full_name || 'there').trim().split(/\\s+/)[0];
+  const today = ownerToday();
+  const upcoming = ownerData.appointments.filter(a => ovIsActive(a) && String(a.appointment_date).slice(0,10) >= today).sort((a,b) => (String(a.appointment_date)+a.appointment_time).localeCompare(String(b.appointment_date)+b.appointment_time));
+  const next = upcoming[0], pets = ownerData.pets.slice(0,3), recent = ownerData.notifications.slice(0,3);
+  let html = '<section class="ov-home-welcome"><div><span class="ov-eyebrow">YOUR PET CARE SPACE</span><h2>Welcome back, '+esc(name)+'!</h2><p>Everything about your pets and clinic visits, all in one place.</p><div class="ov-home-actions"><button class="ov-btn" data-go="owner-appointments">＋ Book an appointment</button><button class="ov-btn ghost" data-go="owner-pets">Manage my pets</button></div></div><div class="ov-home-art" aria-hidden="true">🐾　🐶　🐱</div></section>';
+  html += '<section class="ov-home-stats"><article><span>🐾</span><div><b>'+ownerData.pets.length+'</b><small>My pets</small></div><button data-go="owner-pets">View →</button></article><article><span>📅</span><div><b>'+upcoming.length+'</b><small>Upcoming visits</small></div><button data-go="owner-appointments">View →</button></article><article><span>🔔</span><div><b>'+(ownerData.unread||0)+'</b><small>Unread updates</small></div><button data-go="owner-notifications">View →</button></article></section>';
+  html += '<div class="ov-home-grid"><section class="ov-home-panel"><div class="ov-home-panel-head"><div><span class="ov-eyebrow">DON’T MISS IT</span><h3>Your next visit</h3></div></div>';
+  if (next) { const pet = ownerData.pets.find(p => String(p.id) === String(next.pet_id)) || {}; html += '<div class="ov-home-visit">'+petImg(pet,'md')+'<div><b>'+esc(pet.name || next.pet_name || 'Your pet')+'</b><span>'+esc(ownerDate(next.appointment_date))+' · '+esc(ownerTime(next.appointment_time))+'</span><small>'+esc(next.purpose || 'Veterinary appointment')+'</small></div>'+ownerBadge(next.status)+'</div><button class="ov-home-link" data-go="owner-appointments">View appointment details →</button>'; }
+  else html += '<div class="ov-home-empty"><span>🗓️</span><b>No upcoming visits</b><p>Your next appointment will appear here after you book a visit.</p><button class="ov-btn" data-go="owner-appointments">Book a visit</button></div>';
+  html += '</section><section class="ov-home-panel"><div class="ov-home-panel-head"><div><span class="ov-eyebrow">YOUR COMPANIONS</span><h3>My pets</h3></div><button class="ov-home-link" data-go="owner-pets">See all →</button></div>';
+  if (pets.length) { html += '<div class="ov-home-petlist">'+pets.map(p => '<button class="ov-home-pet" data-oact="pet-view" data-v="'+p.id+'">'+petImg(p,'sm')+'<span><b>'+esc(p.name)+'</b><small>'+esc([p.species,p.breed].filter(Boolean).join(' · ') || 'Pet profile')+'</small></span><i>›</i></button>').join('')+'</div>'; if(ownerData.pets.length>3) html += '<button class="ov-home-link" data-go="owner-pets">View all '+ownerData.pets.length+' pets →</button>'; }
+  else html += '<div class="ov-home-empty"><span>🐾</span><b>Add your first pet</b><p>Create a profile to keep appointments and health records together.</p><button class="ov-btn" data-oact="pet-add">＋ Add a pet</button></div>';
+  html += '</section><section class="ov-home-panel ov-home-updates"><div class="ov-home-panel-head"><div><span class="ov-eyebrow">LATEST FROM THE CLINIC</span><h3>Recent updates</h3></div><button class="ov-home-link" data-go="owner-notifications">All updates →</button></div>';
+  if(recent.length) html += '<div class="ov-home-notifs">'+recent.map(n => '<div class="ov-home-notif"><span>'+(n.is_read?'○':'●')+'</span><div><b>'+esc(n.title)+'</b><p>'+esc(n.message)+'</p><small>'+esc(ovAgo(n.created_at))+'</small></div></div>').join('')+'</div>';
+  else html += '<div class="ov-home-empty compact"><span>🔔</span><b>You’re all caught up</b><p>Clinic updates will show here.</p></div>';
+  return html + '</section></div>';
+}
 /* =====================================================================
    Appointments page: availability booking + my appointments
    ===================================================================== */
