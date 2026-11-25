@@ -17,7 +17,17 @@ $uid = (int)$account['id']; $role = (string)($account['role'] ?? ''); $action = 
 try {
     if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'list') {
         if (!in_array($role, ['Administrator','Veterinarian','Veterinary Staff'], true)) report_reply(403, ['success'=>false,'message'=>'Clinic staff access only.']);
-        $q = $pdo->query("SELECT r.*, p.name AS pet_name, a.appointment_date, a.appointment_time, u.full_name AS veterinarian_name FROM medical_reports r JOIN pets p ON p.id=r.pet_id JOIN appointments a ON a.id=r.appointment_id JOIN users u ON u.id=r.veterinarian_id ORDER BY r.created_at DESC");
+        $sql = "SELECT r.*, p.name AS pet_name, a.appointment_date, a.appointment_time, u.full_name AS veterinarian_name
+                FROM medical_reports r
+                JOIN pets p ON p.id=r.pet_id
+                JOIN appointments a ON a.id=r.appointment_id
+                JOIN users u ON u.id=r.veterinarian_id";
+        if ($role === 'Veterinarian') {
+            $q = $pdo->prepare($sql . " WHERE r.veterinarian_id=? ORDER BY r.created_at DESC");
+            $q->execute([$uid]);
+        } else {
+            $q = $pdo->query($sql . " ORDER BY r.created_at DESC");
+        }
         report_reply(200, ['success'=>true,'reports'=>$q->fetchAll()]);
     }
     if ($_SERVER['REQUEST_METHOD'] !== 'POST' || $action !== 'save') report_reply(405, ['success'=>false,'message'=>'Unsupported report action.']);
@@ -35,8 +45,10 @@ try {
     try {
         $pdo->prepare("INSERT INTO medical_reports (appointment_id,pet_id,veterinarian_id,diagnosis,symptoms,observations,treatment,medication,recommendations,follow_up_date) VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT (appointment_id) DO UPDATE SET pet_id=EXCLUDED.pet_id,veterinarian_id=EXCLUDED.veterinarian_id,diagnosis=EXCLUDED.diagnosis,symptoms=EXCLUDED.symptoms,observations=EXCLUDED.observations,treatment=EXCLUDED.treatment,medication=EXCLUDED.medication,recommendations=EXCLUDED.recommendations,follow_up_date=EXCLUDED.follow_up_date,updated_at=now()")
             ->execute([$appointmentId,(int)$a['pet_id'],$uid,$diagnosis,$symptoms,$observations,$treatment,$medication,$recommendations,$followUp!==''?$followUp:null]);
-        $pdo->prepare("UPDATE appointments SET status='Completed' WHERE id=?")->execute([$appointmentId]); $pdo->commit();
+        $pdo->prepare("UPDATE appointments SET status='Completed' WHERE id=?")->execute([$appointmentId]);
+        // Keep the report, appointment completion, and owner notification atomic.
+        notify_appointment_owner($pdo,$appointmentId,'medical_report','Medical report available','The veterinarian has added a medical report for {pet}. You can view it in Medical Records.');
+        $pdo->commit();
     } catch(Throwable $e) { if($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
-    notify_appointment_owner($pdo,$appointmentId,'medical_report','Medical report available','The veterinarian has added a medical report for {pet}. You can view it in Medical Records.');
     report_reply(200,['success'=>true,'message'=>'Medical report saved. The appointment is now completed.']);
 } catch(Throwable $e) { error_log('Medical report API error: '.$e->getMessage()); report_reply(500,['success'=>false,'message'=>'Unable to save the medical report. Check that the medical_reports table exists.']); }
