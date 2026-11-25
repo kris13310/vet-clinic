@@ -1019,6 +1019,16 @@ const DEF = {
   users: () => ({ status: "Active", role: "Veterinarian" }),
 };
 
+
+function showSaveSuccess(message = 'Your changes have been saved.') {
+  const overlay = document.createElement('div');
+  overlay.className = 'save-success-overlay';
+  overlay.setAttribute('role','status');
+  overlay.setAttribute('aria-live','polite');
+  overlay.innerHTML = `<div class="save-success-card"><span class="save-success-icon">✓</span><h3>Saved Successfully</h3><p>${esc(message)}</p></div>`;
+  document.body.append(overlay);
+  setTimeout(() => overlay.remove(), 2000);
+}
 function modal(html) {
   const m = document.createElement("div");
   m.className = "modal";
@@ -1112,7 +1122,7 @@ function form(k, i) {
       const res = await saveRecord(k, v, edit ? D[k][i] : null, submittedFormData);
       m.remove();
       await reloadAfter(k);
-      toast(res.message || (edit ? "Changes saved." : "Record added."));
+      showSaveSuccess(res.message || (edit ? "Changes saved." : "Record added."));
       refresh();
     } catch (er) { fail(er.message); btn.disabled = false; }
   };
