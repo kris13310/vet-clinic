@@ -728,3 +728,12 @@ body.ov-lock { overflow: hidden; }
 .ov-app.theme-dark .ov-theme-toggle:hover { background: #1b3a34; }
 .ov-app.theme-dark .ov-side { background: #081321; }
 .ov-app.theme-dark .ov-nav.active { background: #087f68; }
+
+
+/* Consistent subtle border around images in the Pet Owner portal. */
+.ov-app img {
+  border: 2px solid #dce8e2;
+}
+.ov-app.theme-dark img {
+  border-color: #365448;
+}
