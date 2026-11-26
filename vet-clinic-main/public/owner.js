@@ -110,7 +110,7 @@ function renderOwnerDashboard() {
   const navHtml = nav.map(([id, ic, label, n]) => `<button class="ov-nav ${page === id ? 'active' : ''}" data-go="${id}"><span class="ov-nav-ic">${ic}</span><span class="ov-nav-t">${label}</span>${n ? `<em ${id === 'owner-notifications' ? 'id="ov-nav-notif"' : ''}>${n > 99 ? '99+' : n}</em>` : (id === 'owner-notifications' ? '<em id="ov-nav-notif" hidden></em>' : '')}</button>`).join('');
   const builders = { 'owner-home': ovPageHome, 'owner-appointments': ovPageAppointments, 'owner-pets': ovPagePets, 'owner-notifications': ovPageNotifications, 'owner-records': ovPageRecords, 'owner-profile': ovPageProfile, 'owner-settings': ovPageSettings };
 
-  app.innerHTML = `<div class="ov-app">
+  app.innerHTML = `<div class="ov-app${clinicThemeMode() === "dark" ? " theme-dark" : ""}">
     <aside class="ov-side" aria-label="Main navigation">
       <div class="ov-brand"><span class="ov-brand-mark">🐾</span><span><b>Olongapo Vet</b><small>Pet Owner Portal</small></span></div>
       <div class="ov-side-label">MY SPACE</div>
@@ -127,6 +127,7 @@ function renderOwnerDashboard() {
         <div class="ov-top-t"><span class="ov-crumb">PET OWNER PORTAL / ${esc(ownerPageNames[page].toUpperCase())}</span><h1>${esc(ownerPageNames[page])}</h1></div>
         <div class="ov-top-r">
           <span class="ov-date">${esc(fmtLong(TODAY))}</span>
+          <button class="ov-theme-toggle" type="button" data-theme-toggle="1" aria-label="Switch color theme">☾ Dark mode</button>
           <div class="ov-bellwrap">
             <button class="ov-bell" data-oact="bell" aria-label="Notifications" aria-haspopup="true">🔔<span class="ov-count" id="ov-bellcount" ${ownerData.unread ? '' : 'hidden'}>${ownerData.unread > 9 ? '9+' : ownerData.unread}</span></button>
             <div class="ov-bellpanel" id="ov-bellpanel" hidden></div>
@@ -138,6 +139,7 @@ function renderOwnerDashboard() {
       <footer class="ov-footer">Made with care for every companion <span>♥</span> <small>Olongapo City Veterinary Office</small></footer>
     </div></div>`;
 
+  applyClinicTheme();
   ovRenderBellPanel();
   if (page === 'owner-appointments') ovInitAppointments();
   if (page === 'owner-profile') ovInitProfile();

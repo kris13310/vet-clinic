@@ -2,6 +2,25 @@
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const app = $("#app");
+const CLINIC_THEME_KEY = "vetClinicTheme";
+function clinicThemeMode() {
+  try { return localStorage.getItem(CLINIC_THEME_KEY) === "dark" ? "dark" : "light"; }
+  catch (e) { return "light"; }
+}
+function applyClinicTheme() {
+  const dark = clinicThemeMode() === "dark";
+  $(".app")?.classList.toggle("theme-dark", dark);
+  $(".ov-app")?.classList.toggle("theme-dark", dark);
+  document.querySelectorAll("[data-theme-toggle]").forEach(button => {
+    button.textContent = dark ? "☀ Light mode" : "☾ Dark mode";
+    button.setAttribute("aria-label", dark ? "Switch to light mode" : "Switch to dark mode");
+    button.setAttribute("aria-pressed", dark ? "true" : "false");
+  });
+}
+function toggleClinicTheme() {
+  try { localStorage.setItem(CLINIC_THEME_KEY, clinicThemeMode() === "dark" ? "light" : "dark"); } catch (e) {}
+  applyClinicTheme();
+}
 const esc = (s) =>
   String(s ?? "").replace(
     /[&<>"']/g,
@@ -316,11 +335,13 @@ function buildShell() {
         <div class="hd-r">
           <div class="qs"><span>🔍</span><input id="qs" placeholder="Quick search..." aria-label="Quick search"></div>
           <button class="bell" data-act="bell" aria-label="Notifications">🔔<i></i></button>
+          <button class="theme-toggle" type="button" data-theme-toggle="1" aria-label="Switch color theme">☾ Dark mode</button>
           <div class="me"><span class="av">${me.avatar ? `<img src="${esc(me.avatar)}" alt="">` : esc(me.ini)}</span><span class="me-t"><b>${esc(me.short)}</b><small>${esc(me.role)}</small></span></div>
         </div>
       </header>
       <main class="ct" id="content"></main>
     </div></div>`;
+  applyClinicTheme();
 }
 
 const PAGES = {
@@ -534,6 +555,7 @@ function render() {
     return;
   }
   if (!$(".app")) buildShell();
+  applyClinicTheme();
   const isAdmin = state.account?.role === 'Administrator';
   const usersNav = $('.nav[data-go="users"]');
   if (usersNav) usersNav.classList.toggle('hidden', !isAdmin);
@@ -1392,11 +1414,12 @@ async function loadUsersFromDatabase() {
 /* ===== Event delegation (one set of listeners for the whole app) ===== */
 app.addEventListener("click", (e) => {
   const t = e.target.closest(
-    "[data-go],[data-act],[data-set],[data-pg],[data-day],[data-cal],[data-menu]",
+    "[data-go],[data-act],[data-set],[data-pg],[data-day],[data-cal],[data-menu],[data-theme-toggle]",
   );
   if (!t) return;
   const d = t.dataset;
-  if (d.menu) $(".app").classList.toggle("open");
+  if (d.themeToggle) toggleClinicTheme();
+  else if (d.menu) $(".app").classList.toggle("open");
   else if (d.go) go(d.go);
   else if (d.set) {
     const [k, ...v] = d.set.split(":");

@@ -631,3 +631,100 @@ body.ov-lock { overflow: hidden; }
 .ov-record-report{padding:20px 0;border-top:1px solid var(--ov-line,#e8eee9)}
 .ov-record-report:first-of-type{border-top:0}
 @media(max-width:640px){.ov-settings-account{align-items:flex-start;flex-wrap:wrap;padding:18px}.ov-settings-identity{flex-basis:calc(100% - 84px)}.ov-settings-account>.ov-btn{margin-left:82px}.ov-settings-section{padding:18px}.ov-settings-signout{align-items:flex-start;flex-direction:column}.ov-settings-row{gap:10px}}
+
+
+/* Persistent Pet Owner dark mode. The emerald active-menu color is shared with Admin / Staff. */
+.ov-app.theme-dark {
+  --ov-bg: #0b1220;
+  --ov-card: #111c2e;
+  --ov-line: #29364a;
+  --ov-ink: #e5edf7;
+  --ov-text: #cbd5e1;
+  --ov-muted: #9aa9bc;
+  --ov-soft: #17352f;
+  background: var(--ov-bg);
+  color: var(--ov-text);
+  color-scheme: dark;
+}
+.ov-app.theme-dark .ov-main,
+.ov-app.theme-dark .ov-content,
+.ov-app.theme-dark .ov-footer { background: #0b1220; color: #cbd5e1; }
+.ov-app.theme-dark .ov-top {
+  background: #111c2e;
+  border-color: #29364a;
+  color: #e5edf7;
+}
+.ov-app.theme-dark .ov-top h1,
+.ov-app.theme-dark .ov-content h1,
+.ov-app.theme-dark .ov-content h2,
+.ov-app.theme-dark .ov-content h3,
+.ov-app.theme-dark .ov-content h4,
+.ov-app.theme-dark .ov-content b { color: #e5edf7; }
+.ov-app.theme-dark .ov-card,
+.ov-app.theme-dark .ov-stat,
+.ov-app.theme-dark .ov-pet,
+.ov-app.theme-dark .ov-appt,
+.ov-app.theme-dark .ov-notif,
+.ov-app.theme-dark .ov-home-panel,
+.ov-app.theme-dark .ov-settings-account,
+.ov-app.theme-dark .ov-settings-section,
+.ov-app.theme-dark .ov-record-card,
+.ov-app.theme-dark .ov-panel {
+  background: #111c2e;
+  border-color: #29364a;
+  color: #cbd5e1;
+  box-shadow: 0 5px 18px #00000020;
+}
+.ov-app.theme-dark .ov-date,
+.ov-app.theme-dark .ov-burger,
+.ov-app.theme-dark .ov-top-avatar,
+.ov-app.theme-dark .ov-icon,
+.ov-app.theme-dark .ov-tab,
+.ov-app.theme-dark .ov-filter,
+.ov-app.theme-dark .ov-home-visit,
+.ov-app.theme-dark .ov-home-pet,
+.ov-app.theme-dark .ov-settings-row,
+.ov-app.theme-dark .ov-settings-icon,
+.ov-app.theme-dark .ov-settings-avatar {
+  background: #172438;
+  color: #dbe5f2;
+  border-color: #35445b;
+}
+.ov-app.theme-dark .ov-settings-row:hover,
+.ov-app.theme-dark .ov-home-pet:hover { background: #1b3a34; }
+.ov-app.theme-dark .ov-settings-signout {
+  background: #241b25;
+  border-color: #57333a;
+}
+.ov-app.theme-dark .ov-settings-signout b,
+.ov-app.theme-dark .ov-settings-signout strong { color: #fca5a5; }
+.ov-app.theme-dark input:not([type=radio]):not([type=file]),
+.ov-app.theme-dark select,
+.ov-app.theme-dark textarea,
+.ov-app.theme-dark .ov-modal input,
+.ov-app.theme-dark .ov-modal select,
+.ov-app.theme-dark .ov-modal textarea {
+  background: #0f1a2b;
+  color: #e5edf7;
+  border-color: #35445b;
+  color-scheme: dark;
+}
+.ov-app.theme-dark input::placeholder,
+.ov-app.theme-dark textarea::placeholder { color: #8494aa; }
+.ov-app.theme-dark table,
+.ov-app.theme-dark th,
+.ov-app.theme-dark td { border-color: #29364a; color: #cbd5e1; }
+.ov-app.theme-dark th { background: #172438; color: #aebbd0; }
+.ov-app.theme-dark .ov-empty,
+.ov-app.theme-dark .ov-empty-state,
+.ov-app.theme-dark .ov-home-empty { color: #9aa9bc; }
+.ov-app.theme-dark .ov-home-visit,
+.ov-app.theme-dark .ov-home-notif { border-color: #29364a; }
+.ov-app.theme-dark .ov-theme-toggle {
+  background: #172438;
+  color: #a7f3d0;
+  border-color: #365448;
+}
+.ov-app.theme-dark .ov-theme-toggle:hover { background: #1b3a34; }
+.ov-app.theme-dark .ov-side { background: #081321; }
+.ov-app.theme-dark .ov-nav.active { background: #087f68; }
