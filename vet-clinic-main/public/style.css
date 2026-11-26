@@ -2742,3 +2742,73 @@ html.theme-dark .app-loading__mark::after {
   border-color: #365448;
   border-top-color: #28a982;
 }
+
+
+/* Minimal neutral loading screen. The portal brand uses emerald in navigation,
+   but the loading surface stays calm and neutral instead of becoming a green splash. */
+.app-loading {
+  background: #f4f5f6;
+  color: #26312c;
+  padding: 24px;
+}
+.app-loading__content {
+  width: min(100%, 360px);
+  min-height: 0;
+  padding: 34px 30px 28px;
+  gap: 0;
+  border: 1px solid #e1e5e2;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(20, 30, 24, .06);
+}
+.app-loading__brand {
+  color: #303a34;
+  font-size: 21px;
+  font-weight: 650;
+  letter-spacing: .045em;
+}
+.app-loading__brand span { color: #69756d; }
+.app-loading__content p {
+  margin: 10px 0 24px;
+  color: #707b74;
+  font-size: 13px;
+}
+.app-loading__track {
+  width: 100%;
+  max-width: 230px;
+  height: 3px;
+  background: #e8ece9;
+}
+.app-loading__track span {
+  background: #89968e;
+  animation-duration: 1.4s;
+}
+.app-loading__content small {
+  margin-top: 14px;
+  color: #8b948e;
+  font-size: 11px;
+}
+.app-loading__mark, .app-loading__mark::after { display: none !important; }
+#app-loading-retry {
+  background: #59665e;
+  border-radius: 8px;
+}
+html.theme-dark .app-loading {
+  background: #202923;
+  color: #e4ebe6;
+}
+html.theme-dark .app-loading__content {
+  background: #29342e;
+  border-color: #3c4941;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .18);
+}
+html.theme-dark .app-loading__brand { color: #e4ebe6; }
+html.theme-dark .app-loading__brand span { color: #aab7ae; }
+html.theme-dark .app-loading__content p { color: #aab7ae; }
+html.theme-dark .app-loading__content small { color: #94a39a; }
+html.theme-dark .app-loading__track { background: #3c4941; }
+html.theme-dark .app-loading__track span { background: #87968c; }
+html.theme-dark #app-loading-retry { background: #46564c; }
+@media (max-width: 480px) {
+  .app-loading__content { padding: 29px 22px 24px; border-radius: 12px; }
+}
