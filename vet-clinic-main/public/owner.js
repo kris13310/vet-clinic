@@ -127,7 +127,6 @@ function renderOwnerDashboard() {
         <div class="ov-top-t"><span class="ov-crumb">PET OWNER PORTAL / ${esc(ownerPageNames[page].toUpperCase())}</span><h1>${esc(ownerPageNames[page])}</h1></div>
         <div class="ov-top-r">
           <span class="ov-date">${esc(fmtLong(TODAY))}</span>
-          <button class="ov-theme-toggle" type="button" data-theme-toggle="1" aria-label="Switch color theme">☾ Dark mode</button>
           <div class="ov-bellwrap">
             <button class="ov-bell" data-oact="bell" aria-label="Notifications" aria-haspopup="true">🔔<span class="ov-count" id="ov-bellcount" ${ownerData.unread ? '' : 'hidden'}>${ownerData.unread > 9 ? '9+' : ownerData.unread}</span></button>
             <div class="ov-bellpanel" id="ov-bellpanel" hidden></div>
@@ -586,6 +585,9 @@ function ovPageSettings() {
         <div class="ov-settings-identity"><span class="ov-eyebrow">SIGNED IN AS</span><h3>${esc(name)}</h3><p>${esc(email)}</p><small>@${esc(username)} · Pet Owner</small></div>
         <button class="ov-btn ghost sm" data-go="owner-profile">Edit profile</button>
       </section>
+      <div class="ov-settings-section"><span class="ov-eyebrow">APPEARANCE</span><h3>Display preferences</h3>
+        <div class="ov-settings-row ov-settings-mode"><span class="ov-settings-icon">🎨</span><span class="ov-settings-copy"><b>Color mode</b><small>Choose light or dark appearance for this device</small></span><button class="ov-theme-toggle" type="button" data-theme-toggle="1">☾ Dark mode</button></div>
+      </div>
       <div class="ov-settings-section"><span class="ov-eyebrow">ACCOUNT PREFERENCES</span><h3>Account and security</h3>
         <button class="ov-settings-row" data-go="owner-profile"><span class="ov-settings-icon">👤</span><span class="ov-settings-copy"><b>Personal information</b><small>Update your name, email, phone number and address</small></span><span class="ov-settings-arrow">›</span></button>
         <button class="ov-settings-row" data-oact="password"><span class="ov-settings-icon">🔐</span><span class="ov-settings-copy"><b>Change password</b><small>Update the password you use to sign in</small></span><span class="ov-settings-arrow">›</span></button>

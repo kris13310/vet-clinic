@@ -335,7 +335,6 @@ function buildShell() {
         <div class="hd-r">
           <div class="qs"><span>🔍</span><input id="qs" placeholder="Quick search..." aria-label="Quick search"></div>
           <button class="bell" data-act="bell" aria-label="Notifications">🔔<i></i></button>
-          <button class="theme-toggle" type="button" data-theme-toggle="1" aria-label="Switch color theme">☾ Dark mode</button>
           <div class="me"><span class="av">${me.avatar ? `<img src="${esc(me.avatar)}" alt="">` : esc(me.ini)}</span><span class="me-t"><b>${esc(me.short)}</b><small>${esc(me.role)}</small></span></div>
         </div>
       </header>
@@ -1026,10 +1025,15 @@ async function pProfile() {
 function pSettings() {
   const s = D.settings;
   $("#content").innerHTML =
-    `<form class="card sform" id="sf"><h3>Clinic Information</h3><p class="mu">These details appear on reports and printed records.</p>
-    <label>Clinic Name<input name="name" value="${esc(s.name)}" required></label><label>Contact Email<input name="email" type="email" value="${esc(s.email)}" required></label>
-    <label>Phone<input name="phone" value="${esc(s.phone)}" required></label><label>Address<input name="address" value="${esc(s.address)}"></label>
-    <div class="acts"><button class="btn">Save Changes</button></div></form>`;
+    `<div class="settings-layout">
+      <form class="card sform" id="sf"><h3>Clinic Information</h3><p class="mu">These details appear on reports and printed records.</p>
+      <label>Clinic Name<input name="name" value="${esc(s.name)}" required></label><label>Contact Email<input name="email" type="email" value="${esc(s.email)}" required></label>
+      <label>Phone<input name="phone" value="${esc(s.phone)}" required></label><label>Address<input name="address" value="${esc(s.address)}"></label>
+      <div class="acts"><button class="btn">Save Changes</button></div></form>
+      <section class="card sform settings-display"><h3>Appearance</h3><p class="mu">Choose how the clinic portal looks on this device.</p>
+        <div class="settings-mode-row"><div><b>Color mode</b><p class="mu">Switch between light and dark appearance.</p></div><button class="theme-toggle" type="button" data-theme-toggle="1">☾ Dark mode</button></div>
+      </section>
+    </div>`;
   $("#sf").onsubmit = async (e) => {
     e.preventDefault();
     const btn = e.submitter || $("#sf .btn");
