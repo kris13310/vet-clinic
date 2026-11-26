@@ -538,10 +538,25 @@ function ovPageProfile() {
 function ovInitProfile() {
   const form = $('#owner-profile-form'); if (!form) return;
   const photo = $('#owner-profile-photo'), preview = $('#owner-avatar-preview'), remove = $('#owner-profile-remove');
-  photo.onchange = () => {
-    const f=photo.files?.[0]; if(!f)return;
-    if(!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size>2*1024*1024){photo.value='';$('#owner-profile-msg').textContent='Choose a JPG, PNG or WebP image up to 2 MB.';return;}
-    const img=new Image(), url=URL.createObjectURL(f); img.onload=()=>{const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');canvas.width=canvas.height=512;const scale=Math.max(512/img.width,512/img.height),w=img.width*scale,h=img.height*scale;ctx.drawImage(img,(512-w)/2,(512-h)/2,w,h);canvas.toBlob(blob=>{if(!blob)return;const cropped=new File([blob],'profile.jpg',{type:'image/jpeg'});const dt=new DataTransfer();dt.items.add(cropped);photo.files=dt.files;preview.innerHTML=`<img class="ov-pimg xl" alt="Profile picture preview" src="${URL.createObjectURL(cropped)}">`;form.elements.remove_photo.value='0';},'image/jpeg',.9);URL.revokeObjectURL(url);};img.src=url;
+  photo.onchange = async () => {
+    const file = photo.files?.[0]; if (!file) return;
+    const msg = $('#owner-profile-msg');
+    msg.textContent = '';
+    if (!['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 2 * 1024 * 1024) {
+      photo.value = ''; msg.textContent = 'Choose a JPG, PNG or WebP image up to 2 MB.'; msg.className = 'ov-msg error'; return;
+    }
+    msg.textContent = 'Opening picture editor…'; msg.className = 'ov-msg';
+    try {
+      const cropped = await cropPetImage(file);
+      if (!cropped) { photo.value = ''; msg.textContent = 'Picture editing cancelled.'; return; }
+      if (typeof DataTransfer === 'undefined') throw new Error('Your browser cannot attach the edited picture. Please update your browser.');
+      const transfer = new DataTransfer(); transfer.items.add(cropped); photo.files = transfer.files;
+      if (!photo.files || !photo.files.length) throw new Error('The edited picture could not be attached. Please choose it again.');
+      preview.innerHTML = `<img class="ov-pimg xl" alt="Profile picture preview" src="${URL.createObjectURL(cropped)}">`;
+      form.elements.remove_photo.value = '0'; msg.textContent = '';
+    } catch (error) {
+      photo.value = ''; msg.textContent = error.message || 'Could not open the picture editor.'; msg.className = 'ov-msg error';
+    }
   };
   remove.onclick=()=>{photo.value='';form.elements.remove_photo.value='1';preview.innerHTML=`<div class="ov-avatar lg">${esc(ovInitials(form.elements.name.value))}</div>`;};
   form.onsubmit = async e => {
@@ -565,7 +580,7 @@ function ovPageSettings() {
     <div class="ov-settings-page">
       <div class="ov-intro"><div><span class="ov-eyebrow">ACCOUNT</span><h2>Settings</h2><p>Manage your personal details and keep your account secure.</p></div></div>
       <section class="ov-settings-account">
-        <div class="ov-settings-avatar">${esc(ovInitials(name))}</div>
+        <div class="ov-settings-avatar">${profile.avatar_path ? `<img src="${esc(profile.avatar_path)}" alt="Profile picture">` : esc(ovInitials(name))}</div>
         <div class="ov-settings-identity"><span class="ov-eyebrow">SIGNED IN AS</span><h3>${esc(name)}</h3><p>${esc(email)}</p><small>@${esc(username)} · Pet Owner</small></div>
         <button class="ov-btn ghost sm" data-go="owner-profile">Edit profile</button>
       </section>
