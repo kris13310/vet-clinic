@@ -1363,5 +1363,19 @@ app.addEventListener("keydown", (e) => {
     go("pets", e.target.value.trim());
 });
 
-// Restore an existing PHP session; the server, not localStorage, is the source of truth.
-authRequest('me').then(async r => { state.user = r.user.username; state.account = r.user; if (state.account.role === 'Pet Owner') await loadOwnerData(); render(); }).catch(() => { state.user = null; login(); });
+// Restore an existing PHP session; hide the startup screen only after the first view is ready.
+(async function startApplication() {
+  try {
+    const r = await authRequest('me');
+    state.user = r.user.username;
+    state.account = r.user;
+    if (state.account.role === 'Pet Owner') await loadOwnerData();
+    render();
+  } catch (error) {
+    state.user = null;
+    login();
+  } finally {
+    if (window.appLoadingFailsafe) clearTimeout(window.appLoadingFailsafe);
+    if (typeof window.finishAppLoading === 'function') window.finishAppLoading();
+  }
+})();
