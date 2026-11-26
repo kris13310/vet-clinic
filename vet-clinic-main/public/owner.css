@@ -917,3 +917,17 @@ body.ov-lock { overflow: hidden; }
   .ov-settings-mode .ov-settings-copy { grid-column: 2; }
   .ov-settings-mode .ov-theme-toggle { grid-column: 2; justify-self: start; margin-top: 4px; }
 }
+
+
+/* Pet photo frame and three-dot actions on My Pets cards. */
+.ov-pet-ph .ov-pimg { border: 5px solid #fff; box-sizing: border-box; }
+.ov-pet-a { justify-content: flex-end; align-items: center; }
+.ov-pet-menu { position: relative; display: inline-block; }
+.ov-pet-menu > summary { list-style: none; display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--ov-line); border-radius: 11px; background: var(--ov-card); color: var(--ov-p); font-size: 27px; line-height: 1; cursor: pointer; }
+.ov-pet-menu > summary::-webkit-details-marker { display: none; }
+.ov-pet-menu[open] > summary, .ov-pet-menu > summary:hover { background: var(--ov-soft); }
+.ov-pet-menu-list { position: absolute; right: 0; bottom: calc(100% + 6px); z-index: 80; display: grid; min-width: 145px; padding: 6px; border: 1px solid var(--ov-line); border-radius: 12px; background: var(--ov-card); box-shadow: 0 12px 28px #0f172a24; }
+.ov-pet-menu-list button { width: 100%; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--ov-ink); text-align: left; font: inherit; font-size: 13px; cursor: pointer; }
+.ov-pet-menu-list button:hover { background: var(--ov-soft); }
+.ov-pet-menu-list button.danger { color: #dc4545; }
+.ov-app.theme-dark .ov-pet-ph .ov-pimg { border-color: #29364a; }
