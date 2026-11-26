@@ -272,6 +272,7 @@ const NAV = [
   ["availability", "🗓️", "Availability"],
   ["vaccinations", "💉", "Vaccinations"],
   ["adoption", "🏠", "Adoption"],
+  ["medical-reports", "🩺", "Medical Reports"],
   ["SYSTEM"],
   ["users", "👥", "Users"],
   ["settings", "⚙️", "Settings"],
@@ -329,6 +330,7 @@ const PAGES = {
   availability: pAvail,
   vaccinations: pVax,
   adoption: pAdopt,
+  "medical-reports": pMedicalReports,
   users: pUsers,
   settings: pSettings,
   profile: pProfile,
@@ -947,6 +949,27 @@ function pUsers() {
     ${rows.length ? table(["Name", "Role", "Username", "Email", "Status", "Actions"], items.map((u) => `<tr>${cell("Name", `<div class="who"><span class="av sm">${ini(u.name)}</span><b>${esc(u.name)}</b></div>`)}${cell("Role", esc(u.role))}${cell("Username", esc(u.username))}${cell("Email", esc(u.email))}${cell("Status", badge(u.status))}${cell("Actions", acts("users", u.i))}</tr>`).join(""), foot) : `<div class="card">${empty("No users found.")}</div>`}`;
 }
 
+/* ===== Medical report history for clinic staff ===== */
+async function pMedicalReports() {
+  const content = $("#content");
+  if (!content) return;
+  if (typeof window.showAppLoading === "function") window.showAppLoading("Loading medical reports…");
+  content.innerHTML = "";
+  try {
+    const result = await apiJson("api/medical_reports.php?action=list");
+    const reports = Array.isArray(result.reports) ? result.reports : [];
+    const cards = reports.map(r => {
+      const fields = [["Diagnosis",r.diagnosis],["Symptoms",r.symptoms],["Observations",r.observations],["Treatment",r.treatment],["Medication",r.medication],["Recommendations",r.recommendations],["Follow-up",r.follow_up_date ? fmtDate(r.follow_up_date) : "Not scheduled"]];
+      return '<article class="card medical-report-card"><div class="medical-report-head"><div><span class="badge g">Report saved</span><h3>' + esc(r.pet_name || "Pet record") + '</h3><p class="mu">' + esc(fmtDate(String(r.appointment_date || "").slice(0,10))) + ' · ' + esc(fmtTime(String(r.appointment_time || "").slice(0,5))) + '</p></div><div class="medical-report-vet"><small>Veterinarian</small><b>' + esc(r.veterinarian_name || "Not recorded") + '</b></div></div><div class="medical-report-fields">' + fields.map(([label,value]) => '<section><b>' + label + '</b><p>' + esc(value || "—") + '</p></section>').join("") + '</div></article>';
+    }).join("");
+    content.innerHTML = '<div class="top"><div><p class="mu">' + plural(reports.length, "medical report") + '</p><h2>Medical Reports</h2><p class="mu">Consultation records submitted by veterinarians.</p></div><button class="btn ghost" data-act="reload-medical-reports">↻ Refresh</button></div>' + (cards ? '<div class="medical-report-grid">' + cards + '</div>' : '<div class="card"><div class="empty">🩺<br>No medical reports yet.</div></div>');
+  } catch (error) {
+    content.innerHTML = '<div class="card"><h3>Unable to load medical reports</h3><p class="err">' + esc(error.message) + '</p><button class="btn" data-act="reload-medical-reports">Try again</button></div>';
+  } finally {
+    if (typeof window.finishAppLoading === "function") window.finishAppLoading();
+  }
+}
+
 /* ===== Signed-in staff profile ===== */
 async function pProfile() {
   if (typeof window.showAppLoading === 'function') window.showAppLoading('Loading your profile…');
@@ -964,9 +987,15 @@ async function pProfile() {
       <label>Address<textarea name="address" maxlength="255" rows="3">${esc(u.address||'')}</textarea></label>
       <input type="hidden" name="remove_photo" value="0"><div class="acts"><span class="mu" id="staff-profile-msg"></span><button class="btn">Save Profile</button></div></form>`;
     const f=$("#staff-profile-form"),photo=$("#staff-profile-photo"),preview=$("#staff-profile-preview");
-    photo.onchange=async()=>{const file=photo.files?.[0];if(!file)return;if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>2*1024*1024){photo.value="";$("#staff-profile-msg").textContent="Choose a JPG, PNG or WebP image up to 2 MB.";return;}const cropped=await cropPetImage(file);if(!cropped){photo.value="";return;}const dt=new DataTransfer();dt.items.add(cropped);photo.files=dt.files;preview.innerHTML=`<img class="av lg" style="object-fit:cover" src="${URL.createObjectURL(cropped)}" alt="Profile preview">`;f.elements.remove_photo.value="0";};
-    $("#staff-profile-remove").onclick=()=>{photo.value="";f.elements.remove_photo.value="1";preview.textContent=(f.elements.full_name.value||"U").split(/\\s+/).map(x=>x[0]).slice(0,2).join("").toUpperCase();};
-    f.onsubmit=async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;$("#staff-profile-msg").textContent="Saving…";try{const saved=await apiJson("api/profile.php?action=save",new FormData(f));state.account={...state.account,name:saved.user.full_name,full_name:saved.user.full_name,email:saved.user.email,avatar_path:saved.user.avatar_path};showSaveSuccess("Profile updated.");buildShell();render();}catch(err){$("#staff-profile-msg").textContent=err.message;b.disabled=false;}};
+    photo.onchange=async()=>{
+      const file=photo.files?.[0];if(!file)return;const msg=$("#staff-profile-msg");
+      if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>2*1024*1024){photo.value="";msg.textContent="Choose a JPG, PNG or WebP image up to 2 MB.";return;}
+      msg.textContent="Opening picture editor…";
+      try{const cropped=await cropPetImage(file);if(!cropped){photo.value="";msg.textContent="Picture editing cancelled.";return;}if(typeof DataTransfer==="undefined")throw new Error("Please update your browser to use the picture editor.");const dt=new DataTransfer();dt.items.add(cropped);photo.files=dt.files;if(!photo.files.length)throw new Error("The edited picture could not be attached.");preview.innerHTML=`<img class="av lg" style="object-fit:cover" src="${URL.createObjectURL(cropped)}" alt="Profile preview">`;f.elements.remove_photo.value="0";msg.textContent="";}
+      catch(error){photo.value="";msg.textContent=error.message||"Could not edit this picture."; }
+    };
+    $("#staff-profile-remove").onclick=()=>{photo.value="";f.elements.remove_photo.value="1";preview.textContent=(f.elements.full_name.value||"U").split(/\s+/).map(x=>x[0]).slice(0,2).join("").toUpperCase();};
+        f.onsubmit=async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;$("#staff-profile-msg").textContent="Saving…";try{const saved=await apiJson("api/profile.php?action=save",new FormData(f));state.account={...state.account,name:saved.user.full_name,full_name:saved.user.full_name,email:saved.user.email,avatar_path:saved.user.avatar_path};showSaveSuccess("Profile updated.");buildShell();render();}catch(err){$("#staff-profile-msg").textContent=err.message;b.disabled=false;}};
   } catch(e) { $("#content").innerHTML=`<div class="card">${esc(e.message)}</div>`; }
   finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
 }
@@ -1307,6 +1336,7 @@ async function adoptionStatus(i, status) {
 
 function act(a, k, i) {
   if (a === 'reload-appointments') { state.apptDbLoaded = false; state.apptLoadError = ''; render(); }
+  else if (a === 'reload-medical-reports') { pMedicalReports(); }
   else if (a === 'approve-appointment') { updateAppointmentStatus(i, 'Confirmed').catch(e => alert(e.message)); }
   else if (a === 'decline-appointment') { if (confirm('Reject this appointment request? The time slot will become available again.')) updateAppointmentStatus(i, 'Cancelled').catch(e => alert(e.message)); }
   else if (a === 'avail-add') { openClosureForm(); }

@@ -107,7 +107,7 @@ try {
         $err = validate_slot($pdo, $date, $time);
         if ($err) appt_reply(422, ['success'=>false,'message'=>$err]);
 
-        $result = with_slot_lock($pdo, function () use ($pdo, $id, $date, $time) {
+        $result = with_slot_lock($pdo, function () use ($pdo, $id, $date, $time, $role, $uid) {
             $cur = $pdo->prepare('SELECT id, veterinarian_id, status FROM appointments WHERE id=?');
             $cur->execute([$id]);
             $row = $cur->fetch();
