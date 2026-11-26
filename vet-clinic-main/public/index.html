@@ -6,8 +6,20 @@
   <title>Veterinary Clinic Management System</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="owner.css">
-  <script>try{if(localStorage.getItem("vetClinicTheme")==="dark")document.documentElement.classList.add("theme-dark");}catch(e){}</script>
+  <link rel="stylesheet" href="owner.css">\n  <link rel="stylesheet" href="theme.css">
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var mode = "system";
+      try {
+        var saved = localStorage.getItem("vetClinicTheme");
+        if (saved === "light" || saved === "dark" || saved === "system") mode = saved;
+      } catch (e) {}
+      root.setAttribute("data-theme", mode);
+      var systemDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      root.classList.toggle("theme-dark", mode === "dark" || (mode === "system" && systemDark));
+    })();
+  </script>
 </head>
 <body>
   <div id="app-loading" class="app-loading" role="status" aria-live="polite" aria-label="Loading Veterinary Clinic Management System">
