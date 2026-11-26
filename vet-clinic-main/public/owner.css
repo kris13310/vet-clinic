@@ -631,3 +631,9 @@ body.ov-lock { overflow: hidden; }
 .ov-record-report{padding:20px 0;border-top:1px solid var(--ov-line,#e8eee9)}
 .ov-record-report:first-of-type{border-top:0}
 @media(max-width:640px){.ov-settings-account{align-items:flex-start;flex-wrap:wrap;padding:18px}.ov-settings-identity{flex-basis:calc(100% - 84px)}.ov-settings-account>.ov-btn{margin-left:82px}.ov-settings-section{padding:18px}.ov-settings-signout{align-items:flex-start;flex-direction:column}.ov-settings-row{gap:10px}}
+
+
+/* Consistent subtle frame for Pet Owner portal images */
+img {
+  border: 2px solid #dce8e2;
+}
