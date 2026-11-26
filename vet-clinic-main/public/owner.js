@@ -429,7 +429,7 @@ function ovPagePets() {
         ${ownerData.doctor ? `<div class="ov-pet-doc">🩺 Veterinarian in charge: <b>${esc(drName(ownerData.doctor.name))}</b></div>` : ''}
         <div class="ov-pet-next">${next ? `📅 Next visit: <b>${esc(ownerDate(next.appointment_date))}, ${esc(ownerTime(next.appointment_time))}</b>` : 'No upcoming visit'}</div>
         ${p.notes ? `<p class="ov-pet-notes">${esc(p.notes)}</p>` : ''}</div>
-      <div class="ov-pet-a"><button class="ov-btn sm" data-oact="pet-view" data-v="${p.id}">👁 View</button><button class="ov-btn ghost sm" data-oact="pet-edit" data-v="${p.id}">✏️ Edit</button><button class="ov-btn danger sm" data-oact="pet-del" data-v="${p.id}" aria-label="Delete ${esc(p.name)}">🗑 Delete</button></div></article>`;
+      <div class="ov-pet-a"><details class="ov-pet-menu"><summary aria-label="More pet actions" title="More actions">⋮</summary><div class="ov-pet-menu-list"><button data-oact="pet-view" data-v="${p.id}">View</button><button data-oact="pet-edit" data-v="${p.id}">Edit</button><button class="danger" data-oact="pet-del" data-v="${p.id}">Delete</button></div></details></div></article>`;
   }).join('');
   return `<div class="ov-intro"><div><span class="ov-eyebrow">YOUR COMPANIONS</span><h2>Pet Profiles</h2><p>Add, update and manage the pets connected to your account. ${esc(plural(pets.length, 'pet'))} registered.</p></div><button class="ov-btn" data-oact="pet-add">＋ Add pet</button></div>
     ${pets.length ? `<div class="ov-petgrid">${cards}</div>` : `<section class="ov-card"><div class="ov-empty"><span>🐾</span><b>No pets yet</b><p>Add your first pet to start booking appointments and keeping their records in one place.</p><button class="ov-btn" data-oact="pet-add">＋ Add your first pet</button></div></section>`}`;
@@ -586,6 +586,7 @@ function ovPageSettings() {
         <div class="ov-settings-identity"><span class="ov-eyebrow">SIGNED IN AS</span><h3>${esc(name)}</h3><p>${esc(email)}</p><small>@${esc(username)} · Pet Owner</small></div>
         <button class="ov-btn ghost sm" data-go="owner-profile">Edit profile</button>
       </section>
+      <div class="ov-settings-section"><span class="ov-eyebrow">APPEARANCE</span><h3>Display theme</h3><p class="ov-settings-description">Choose light or dark mode for your Pet Owner portal. Your preference is saved on this device.</p><button class="ov-theme-toggle" type="button" data-theme-toggle="1" aria-label="Switch color theme">${clinicThemeMode() === "dark" ? "☀ Light mode" : "☾ Dark mode"}</button></div>
       <div class="ov-settings-section"><span class="ov-eyebrow">ACCOUNT PREFERENCES</span><h3>Account and security</h3>
         <button class="ov-settings-row" data-go="owner-profile"><span class="ov-settings-icon">👤</span><span class="ov-settings-copy"><b>Personal information</b><small>Update your name, email, phone number and address</small></span><span class="ov-settings-arrow">›</span></button>
         <button class="ov-settings-row" data-oact="password"><span class="ov-settings-icon">🔐</span><span class="ov-settings-copy"><b>Change password</b><small>Update the password you use to sign in</small></span><span class="ov-settings-arrow">›</span></button>
