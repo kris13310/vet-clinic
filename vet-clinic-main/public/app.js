@@ -588,7 +588,7 @@ function render() {
     if (state.recordsError) { $('#content').innerHTML = `<div class="card"><h3>Unable to load records</h3><p class="err">${esc(state.recordsError)}</p><button class="btn" data-act="reload-records">Try again</button></div>`; if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); return; }
   }
   PAGES[state.page]();
-  if (state.page !== 'availability' && typeof window.finishAppLoading === 'function') window.finishAppLoading();
+  if (!['availability', 'profile'].includes(state.page) && typeof window.finishAppLoading === 'function') window.finishAppLoading();
 }
 function go(p, q = "") {
   if (p !== state.page && typeof window.showAppLoading === 'function') {
@@ -968,6 +968,7 @@ async function pProfile() {
     $("#staff-profile-remove").onclick=()=>{photo.value="";f.elements.remove_photo.value="1";preview.textContent=(f.elements.full_name.value||"U").split(/\\s+/).map(x=>x[0]).slice(0,2).join("").toUpperCase();};
     f.onsubmit=async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;$("#staff-profile-msg").textContent="Saving…";try{const saved=await apiJson("api/profile.php?action=save",new FormData(f));state.account={...state.account,name:saved.user.full_name,full_name:saved.user.full_name,email:saved.user.email,avatar_path:saved.user.avatar_path};showSaveSuccess("Profile updated.");buildShell();render();}catch(err){$("#staff-profile-msg").textContent=err.message;b.disabled=false;}};
   } catch(e) { $("#content").innerHTML=`<div class="card">${esc(e.message)}</div>`; }
+  finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
 }
 
 /* ===== Settings ===== */
