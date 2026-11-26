@@ -335,7 +335,6 @@ function buildShell() {
         <div class="hd-r">
           <div class="qs"><span>🔍</span><input id="qs" placeholder="Quick search..." aria-label="Quick search"></div>
           <button class="bell" data-act="bell" aria-label="Notifications">🔔<i></i></button>
-          <button class="theme-toggle" type="button" data-theme-toggle="1" aria-label="Switch color theme">☾ Dark mode</button>
           <div class="me"><span class="av">${me.avatar ? `<img src="${esc(me.avatar)}" alt="">` : esc(me.ini)}</span><span class="me-t"><b>${esc(me.short)}</b><small>${esc(me.role)}</small></span></div>
         </div>
       </header>
