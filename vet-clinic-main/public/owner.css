@@ -743,3 +743,57 @@ body.ov-lock { overflow: hidden; }
 .ov-pet-menu-list button.danger { color: #dc4545; }
 .ov-settings-description { margin: 0 0 14px; color: var(--ov-muted); font-size: 13px; line-height: 1.5; }
 .ov-app.theme-dark .ov-pet-ph .ov-pimg { border-color: #29364a; }
+
+
+/* Dark-mode contrast and consistent settings presentation. */
+.ov-settings-appearance { display: flex; flex-direction: column; align-items: flex-start; }
+.ov-settings-appearance h3 { margin-bottom: 8px; }
+.ov-settings-appearance .ov-settings-description { max-width: 620px; margin-bottom: 16px; }
+.ov-settings-appearance .ov-theme-toggle { min-height: 42px; padding: 0 16px; font-size: 13px; font-weight: 700; }
+.ov-pet-ph { background: #e2e8f0; }
+.ov-pet-ph .ov-pimg {
+  border: 6px solid #fff;
+  border-radius: 14px;
+  box-sizing: border-box;
+  box-shadow: inset 0 0 0 1px #0f172a12;
+}
+.ov-pet-menu > summary:focus-visible,
+.ov-pet-menu-list button:focus-visible,
+.ov-theme-toggle:focus-visible {
+  outline: 3px solid #10b981;
+  outline-offset: 3px;
+}
+.ov-app.theme-dark .ov-settings-appearance {
+  background: #111c2e;
+  border-color: #29364a;
+}
+.ov-app.theme-dark .ov-pet-ph { background: #172438; }
+.ov-app.theme-dark .ov-pet-ph .ov-pimg {
+  border-color: #35445b;
+  box-shadow: inset 0 0 0 1px #e5edf71a;
+}
+.ov-app.theme-dark .ov-pet .ov-chips span {
+  background: #172438;
+  color: #cbd5e1;
+  border: 1px solid #35445b;
+}
+.ov-app.theme-dark .ov-pet-next {
+  background: #17352f;
+  color: #a7f3d0;
+  border: 1px solid #285b4c;
+}
+.ov-app.theme-dark .ov-pet-menu > summary {
+  background: #172438;
+  color: #a7f3d0;
+  border-color: #35445b;
+}
+.ov-app.theme-dark .ov-pet-menu[open] > summary,
+.ov-app.theme-dark .ov-pet-menu > summary:hover,
+.ov-app.theme-dark .ov-pet-menu-list button:hover { background: #1b3a34; }
+.ov-app.theme-dark .ov-pet-menu-list {
+  background: #111c2e;
+  border-color: #35445b;
+  box-shadow: 0 14px 32px #00000066;
+}
+.ov-app.theme-dark .ov-pet-menu-list button { color: #e5edf7; }
+.ov-app.theme-dark .ov-pet-menu-list button.danger { color: #fca5a5; }
