@@ -2592,3 +2592,132 @@ td.cc,
 .app.theme-dark img {
   border-color: #365448;
 }
+
+
+/* Calm, cohesive visual refinement for Admin and Staff portals */
+.app .nav.on,
+.app .nav.on:hover {
+  background: #18745f;
+  color: #fff;
+  box-shadow: 0 2px 7px rgba(24,116,95,.16);
+}
+.app .nav:not(.on):hover { background: #edf5f1; color: #285d4d; }
+.theme-toggle {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid #dce6e0;
+  border-radius: 9px;
+  background: #f7faf8;
+  color: #426456;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: none;
+}
+.theme-toggle:hover { background: #edf5f1; border-color: #c8d9cf; }
+.app.theme-dark {
+  --bg: #202923;
+  --bd: #3c4941;
+  --mu: #aab7ae;
+  --tx: #e4ebe6;
+  background: #202923;
+  color: #e4ebe6;
+  color-scheme: dark;
+}
+.app.theme-dark .mn,
+.app.theme-dark .ct { background: #202923; color: #e4ebe6; }
+.app.theme-dark .hd {
+  background: #29342e;
+  border-bottom: 1px solid #3c4941;
+  color: #e4ebe6;
+  box-shadow: none;
+}
+.app.theme-dark .hd small,
+.app.theme-dark .mu,
+.app.theme-dark small { color: #aab7ae; }
+.app.theme-dark .card,
+.app.theme-dark .tb,
+.app.theme-dark .sc,
+.app.theme-dark .stat,
+.app.theme-dark .panel,
+.app.theme-dark .box,
+.app.theme-dark .medical-report-card {
+  background: #29342e;
+  border-color: #3c4941;
+  color: #e0e8e2;
+  box-shadow: 0 2px 8px rgba(0,0,0,.10);
+}
+.app.theme-dark .card h1,
+.app.theme-dark .card h2,
+.app.theme-dark .card h3,
+.app.theme-dark .card b,
+.app.theme-dark .ct h1,
+.app.theme-dark .ct h2,
+.app.theme-dark .ct h3,
+.app.theme-dark .medical-report-card b { color: #e8eee9; }
+.app.theme-dark .medical-report-head { border-color: #3c4941; }
+.app.theme-dark .medical-report-fields section b,
+.app.theme-dark .medical-report-vet small { color: #aab7ae; }
+.app.theme-dark table { color: #d9e2dc; }
+.app.theme-dark th {
+  background: #303c35;
+  color: #bac7be;
+  border-color: #3c4941;
+}
+.app.theme-dark td,
+.app.theme-dark tr { border-color: #3c4941; }
+.app.theme-dark tbody tr:hover { background: #34483e; }
+.app.theme-dark input,
+.app.theme-dark select,
+.app.theme-dark textarea {
+  background: #242f28;
+  color: #e4ebe6;
+  border-color: #4a5a50;
+  color-scheme: dark;
+}
+.app.theme-dark input::placeholder,
+.app.theme-dark textarea::placeholder { color: #9aa99f; }
+.app.theme-dark .btn.out,
+.app.theme-dark .btn.ghost,
+.app.theme-dark .chip,
+.app.theme-dark .pager button,
+.app.theme-dark .nv button {
+  background: #303c35;
+  color: #d4e1d8;
+  border-color: #4a5a50;
+  box-shadow: none;
+}
+.app.theme-dark .btn.out:hover,
+.app.theme-dark .btn.ghost:hover,
+.app.theme-dark .nv button:hover { background: #394b41; }
+.app.theme-dark .chip.on,
+.app.theme-dark .pager button.on {
+  background: #18745f;
+  color: #fff;
+  border-color: #18745f;
+}
+.app.theme-dark .modal,
+.app.theme-dark .mbox,
+.app.theme-dark .dialog {
+  background: #29342e;
+  color: #e4ebe6;
+  border-color: #3c4941;
+}
+.app.theme-dark .theme-toggle {
+  background: #303c35;
+  color: #d4e5da;
+  border-color: #4a5a50;
+}
+.app.theme-dark .theme-toggle:hover { background: #394b41; }
+.app.theme-dark .nav.on,
+.app.theme-dark .nav.on:hover {
+  background: #18745f;
+  color: #fff;
+  box-shadow: 0 2px 7px rgba(0,0,0,.12);
+}
+.app.theme-dark .nav:not(.on):hover { background: #303c35; color: #dce9e0; }
+.app.theme-dark a { color: #8fcbb2; }
+.app.theme-dark .badge,
+.app.theme-dark .pill { border-color: #4a5a50; }
+.app.theme-dark .bell,
+.app.theme-dark .qs { background: #303c35; color: #dce6df; border-color: #4a5a50; }
+.app.theme-dark img { border-color: #46574c; }
