@@ -116,7 +116,6 @@ function renderOwnerDashboard() {
       <div class="ov-side-label">MY SPACE</div>
       <nav>${navHtml}</nav>
       <div class="ov-side-bottom">
-        <div class="ov-help"><b>Need help?</b><p>Contact the veterinary office for help with your pet records.</p></div>
         <button class="ov-user" data-go="owner-profile"><span class="ov-avatar">${esc(ovInitials(displayName))}</span><span class="ov-user-t"><b>${esc(displayName)}</b><small>Pet Owner</small></span><span class="ov-chev">›</span></button>
       </div>
     </aside>
@@ -594,6 +593,7 @@ function ovPageSettings() {
       <div class="ov-settings-section"><span class="ov-eyebrow">UPDATES</span><h3>Notifications</h3>
         <button class="ov-settings-row" data-go="owner-notifications"><span class="ov-settings-icon">🔔</span><span class="ov-settings-copy"><b>Appointment notifications</b><small>View approval, rescheduling and appointment updates</small></span><span class="ov-settings-arrow">›</span></button>
       </div>
+      <div class="ov-settings-section"><span class="ov-eyebrow">SUPPORT</span><h3>Need help?</h3><p class="ov-settings-description">Contact the veterinary office for help with your pet records.</p></div>
       <div class="ov-settings-signout"><div><b>Sign out</b><small>End your current session on this device.</small></div><button class="ov-btn danger sm" data-act="logout">Log out</button></div>
     </div>`;
 }
