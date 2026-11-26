@@ -2306,3 +2306,31 @@ td.cc,
 @media (max-width: 480px) {
   .app-loading__content { padding: 25px 20px 22px; border-radius: 16px; }
 }
+
+
+/* Loading screen uses the Pet Owner portal palette exactly. */
+.app-loading {
+  background: rgba(248, 250, 252, .97);
+  color: #0f172a;
+}
+.app-loading__content {
+  border-color: #e2e8f0;
+  background: #fff;
+  box-shadow: 0 18px 55px rgba(15, 23, 42, .10);
+}
+.app-loading__mark {
+  background: linear-gradient(135deg, #0f9d78, #16b886);
+  box-shadow: 0 12px 28px rgba(16, 185, 129, .22);
+}
+.app-loading__brand { color: #0f172a; }
+.app-loading__brand span { color: #0f766e; }
+.app-loading__content p { color: #64748b; }
+.app-loading__track { background: #e2e8f0; }
+.app-loading__track span { background: linear-gradient(90deg, #0f9d78, #16b886); }
+.app-loading__mark::after {
+  border-color: #d1fae5;
+  border-top-color: #0f766e;
+}
+#app-loading-retry {
+  background: linear-gradient(90deg, #0f9d78, #16b886);
+}
