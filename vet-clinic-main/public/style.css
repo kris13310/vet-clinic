@@ -2144,3 +2144,94 @@ td.cc,
 .profile-photo-row>div:last-child{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .profile-photo-row small{width:100%;color:var(--mu)}
 #staff-profile-preview .av{display:grid;place-items:center;overflow:hidden}
+
+
+/* ===== Initial application loading screen ===== */
+.app-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #f8fafc;
+  color: #0f172a;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity .35s ease, visibility .35s ease;
+}
+.app-loading.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.app-loading__content {
+  width: min(100%, 340px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.app-loading__mark {
+  width: 66px;
+  height: 66px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 18px;
+  border-radius: 21px;
+  background: #0f766e;
+  color: white;
+  box-shadow: 0 12px 28px rgba(15, 118, 110, .2);
+  font-size: 34px;
+  font-weight: 700;
+}
+.app-loading__brand {
+  font: 700 23px/1.2 Poppins, Inter, sans-serif;
+  letter-spacing: .08em;
+}
+.app-loading__brand span { color: #0f766e; }
+.app-loading__content p {
+  margin: 12px 0 22px;
+  color: #64748b;
+  font-size: 14px;
+}
+.app-loading__track {
+  width: min(100%, 220px);
+  height: 4px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #dbe5e9;
+}
+.app-loading__track span {
+  display: block;
+  width: 38%;
+  height: 100%;
+  border-radius: inherit;
+  background: #10b981;
+  animation: app-loading-progress 1.15s ease-in-out infinite;
+}
+.app-loading__content small {
+  margin-top: 13px;
+  color: #94a3b8;
+  font-size: 11px;
+}
+#app-loading-retry {
+  margin-top: 20px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 9px;
+  background: #0f766e;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+#app-loading-retry[hidden] { display: none; }
+@keyframes app-loading-progress {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(390%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-loading, .app-loading__track span { transition: none; animation: none; }
+  .app-loading__track span { width: 65%; }
+}
