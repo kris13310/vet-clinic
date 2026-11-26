@@ -9,6 +9,7 @@ function clinicThemeMode() {
 }
 function applyClinicTheme() {
   const dark = clinicThemeMode() === "dark";
+  document.documentElement.classList.toggle("theme-dark", dark);
   $(".app")?.classList.toggle("theme-dark", dark);
   $(".ov-app")?.classList.toggle("theme-dark", dark);
   document.querySelectorAll("[data-theme-toggle]").forEach(button => {

@@ -873,3 +873,24 @@ body.ov-lock { overflow: hidden; }
   border-color: #3c4941;
 }
 .ov-app.theme-dark img { border-color: #46574c; }
+
+
+/* Align the appearance preference row consistently across viewport sizes. */
+.ov-settings-mode {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px 18px;
+}
+.ov-settings-mode .ov-settings-copy { flex: 1 1 220px; }
+.ov-settings-mode .ov-theme-toggle { flex: 0 0 auto; margin-left: auto; }
+.ov-app.theme-dark .ov-settings-mode .ov-theme-toggle {
+  background: #303c35;
+  color: #d4e5da;
+  border-color: #4a5a50;
+}
+.ov-app.theme-dark .ov-settings-mode .ov-theme-toggle:hover { background: #394b41; }
+@media (max-width: 520px) {
+  .ov-settings-mode { align-items: flex-start; }
+  .ov-settings-mode .ov-theme-toggle { margin-left: 58px; }
+}
