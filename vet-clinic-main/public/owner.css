@@ -797,3 +797,27 @@ body.ov-lock { overflow: hidden; }
 }
 .ov-app.theme-dark .ov-pet-menu-list button { color: #e5edf7; }
 .ov-app.theme-dark .ov-pet-menu-list button.danger { color: #fca5a5; }
+
+
+/* Keep the Pet Owner top navigation light when the page uses dark mode. */
+.ov-app.theme-dark .ov-top {
+  background: #ffffffeb;
+  border-bottom-color: #e2e8f0;
+  color: #0f172a;
+}
+.ov-app.theme-dark .ov-top h1 { color: #0f172a; }
+.ov-app.theme-dark .ov-top .ov-crumb,
+.ov-app.theme-dark .ov-top .ov-eyebrow { color: #0f766e; }
+.ov-app.theme-dark .ov-top .ov-date {
+  background: #f1f5f9;
+  color: #64748b;
+  border-color: #e2e8f0;
+}
+.ov-app.theme-dark .ov-top .ov-burger,
+.ov-app.theme-dark .ov-top .ov-bell,
+.ov-app.theme-dark .ov-top .ov-top-avatar {
+  background: #fff;
+  color: #0f172a;
+  border-color: #e2e8f0;
+}
+.ov-app.theme-dark .ov-top .ov-count { border-color: #fff; }
