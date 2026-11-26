@@ -4,23 +4,42 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const app = $("#app");
 const CLINIC_THEME_KEY = "vetClinicTheme";
 function clinicThemeMode() {
-  try { return localStorage.getItem(CLINIC_THEME_KEY) === "dark" ? "dark" : "light"; }
-  catch (e) { return "light"; }
+  try {
+    const saved = localStorage.getItem(CLINIC_THEME_KEY);
+    return ["system", "light", "dark"].includes(saved) ? saved : "system";
+  } catch (e) { return "system"; }
+}
+function clinicThemeIsDark(mode = clinicThemeMode()) {
+  if (mode === "dark") return true;
+  if (mode === "light") return false;
+  return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
 }
 function applyClinicTheme() {
-  const dark = clinicThemeMode() === "dark";
-  document.documentElement.classList.toggle("theme-dark", dark);
+  const mode = clinicThemeMode();
+  const dark = clinicThemeIsDark(mode);
+  const root = document.documentElement;
+  root.setAttribute("data-theme", mode);
+  root.classList.toggle("theme-dark", dark);
   $(".app")?.classList.toggle("theme-dark", dark);
   $(".ov-app")?.classList.toggle("theme-dark", dark);
-  document.querySelectorAll("[data-theme-toggle]").forEach(button => {
-    button.textContent = dark ? "☀ Light mode" : "☾ Dark mode";
-    button.setAttribute("aria-label", dark ? "Switch to light mode" : "Switch to dark mode");
-    button.setAttribute("aria-pressed", dark ? "true" : "false");
+  document.querySelectorAll("[data-theme-mode]").forEach(button => {
+    const active = button.dataset.themeMode === mode;
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
   });
 }
-function toggleClinicTheme() {
-  try { localStorage.setItem(CLINIC_THEME_KEY, clinicThemeMode() === "dark" ? "light" : "dark"); } catch (e) {}
+function setClinicTheme(mode) {
+  if (!["system", "light", "dark"].includes(mode)) return;
+  try { localStorage.setItem(CLINIC_THEME_KEY, mode); } catch (e) {}
   applyClinicTheme();
+}
+if (window.matchMedia) {
+  const clinicColorScheme = window.matchMedia("(prefers-color-scheme: dark)");
+  const handleSystemThemeChange = () => {
+    if (clinicThemeMode() === "system") applyClinicTheme();
+  };
+  if (clinicColorScheme.addEventListener) clinicColorScheme.addEventListener("change", handleSystemThemeChange);
+  else if (clinicColorScheme.addListener) clinicColorScheme.addListener(handleSystemThemeChange);
 }
 const esc = (s) =>
   String(s ?? "").replace(
@@ -1032,7 +1051,11 @@ function pSettings() {
       <label>Phone<input name="phone" value="${esc(s.phone)}" required></label><label>Address<input name="address" value="${esc(s.address)}"></label>
       <div class="acts"><button class="btn">Save Changes</button></div></form>
       <section class="card sform settings-display"><h3>Appearance</h3><p class="mu">Choose how the clinic portal looks on this device.</p>
-        <div class="settings-mode-row"><div><b>Color mode</b><p class="mu">Switch between light and dark appearance.</p></div><button class="theme-toggle" type="button" data-theme-toggle="1">☾ Dark mode</button></div>
+        <div class="settings-mode-row"><div class="settings-mode-copy"><b>Color mode</b><p class="mu">Follow your device setting or choose an appearance.</p></div><div class="theme-mode-options" role="group" aria-label="Color mode">
+          <button type="button" class="theme-mode-button" data-theme-mode="system" aria-pressed="false">System</button>
+          <button type="button" class="theme-mode-button" data-theme-mode="light" aria-pressed="false">Light</button>
+          <button type="button" class="theme-mode-button" data-theme-mode="dark" aria-pressed="false">Dark</button>
+        </div></div>
       </section>
     </div>`;
   $("#sf").onsubmit = async (e) => {
@@ -1419,11 +1442,11 @@ async function loadUsersFromDatabase() {
 /* ===== Event delegation (one set of listeners for the whole app) ===== */
 app.addEventListener("click", (e) => {
   const t = e.target.closest(
-    "[data-go],[data-act],[data-set],[data-pg],[data-day],[data-cal],[data-menu],[data-theme-toggle]",
+    "[data-go],[data-act],[data-set],[data-pg],[data-day],[data-cal],[data-menu],[data-theme-mode]",
   );
   if (!t) return;
   const d = t.dataset;
-  if (d.themeToggle) toggleClinicTheme();
+  if (d.themeMode) setClinicTheme(d.themeMode);
   else if (d.menu) $(".app").classList.toggle("open");
   else if (d.go) go(d.go);
   else if (d.set) {
