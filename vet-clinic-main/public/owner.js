@@ -586,7 +586,15 @@ function ovPageSettings() {
         <button class="ov-btn ghost sm" data-go="owner-profile">Edit profile</button>
       </section>
       <div class="ov-settings-section"><span class="ov-eyebrow">APPEARANCE</span><h3>Display preferences</h3>
-        <div class="ov-settings-row ov-settings-mode"><span class="ov-settings-icon">🎨</span><span class="ov-settings-copy"><b>Color mode</b><small>Choose light or dark appearance for this device</small></span><button class="ov-theme-toggle" type="button" data-theme-toggle="1">☾ Dark mode</button></div>
+        <div class="ov-settings-row ov-settings-mode">
+          <span class="ov-settings-icon" aria-hidden="true">◐</span>
+          <span class="ov-settings-copy"><b>Color mode</b><small>Follow your device setting or choose an appearance</small></span>
+          <span class="ov-theme-mode-options" role="group" aria-label="Color mode">
+            <button type="button" class="ov-theme-mode-button" data-theme-mode="system" aria-pressed="false">System</button>
+            <button type="button" class="ov-theme-mode-button" data-theme-mode="light" aria-pressed="false">Light</button>
+            <button type="button" class="ov-theme-mode-button" data-theme-mode="dark" aria-pressed="false">Dark</button>
+          </span>
+        </div>
       </div>
       <div class="ov-settings-section"><span class="ov-eyebrow">ACCOUNT PREFERENCES</span><h3>Account and security</h3>
         <button class="ov-settings-row" data-go="owner-profile"><span class="ov-settings-icon">👤</span><span class="ov-settings-copy"><b>Personal information</b><small>Update your name, email, phone number and address</small></span><span class="ov-settings-arrow">›</span></button>
