@@ -2602,3 +2602,22 @@ td.cc,
 .app.theme-dark .row-action-menu-list button { color: #e5edf7; }
 .app.theme-dark .row-action-menu-list button:hover { background: #1b3a34; }
 .app.theme-dark .row-action-menu-list button.danger { color: #fca5a5; }
+
+
+/* Keep the Admin/Staff appearance control and action dropdowns legible in dark mode. */
+.app.theme-dark .settings-appearance {
+  background: #111c2e;
+  border-color: #29364a;
+}
+.app.theme-dark .settings-appearance h3 { color: #e5edf7; }
+.app.theme-dark .settings-appearance p { color: #9aa9bc; }
+.app.theme-dark .row-action-menu > summary:focus-visible,
+.app.theme-dark .row-action-menu-list button:focus-visible {
+  outline: 3px solid #10b981;
+  outline-offset: 2px;
+}
+.app.theme-dark .row-action-menu-list {
+  background: #111c2e;
+  border-color: #35445b;
+  box-shadow: 0 14px 32px #00000066;
+}
