@@ -631,6 +631,7 @@ function render() {
     if (state.recordsError) { $('#content').innerHTML = `<div class="card"><h3>Unable to load records</h3><p class="err">${esc(state.recordsError)}</p><button class="btn" data-act="reload-records">Try again</button></div>`; if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); return; }
   }
   PAGES[state.page]();
+  applyClinicTheme();
   if (!['availability', 'profile'].includes(state.page) && typeof window.finishAppLoading === 'function') window.finishAppLoading();
 }
 function go(p, q = "") {
