@@ -649,11 +649,17 @@ body.ov-lock { overflow: hidden; }
 .ov-app.theme-dark .ov-main,
 .ov-app.theme-dark .ov-content,
 .ov-app.theme-dark .ov-footer { background: #0b1220; color: #cbd5e1; }
+/* Keep the Pet Owner top bar light in both themes. Theme switching lives in Settings. */
 .ov-app.theme-dark .ov-top {
-  background: #111c2e;
-  border-color: #29364a;
-  color: #e5edf7;
+  background: #ffffff;
+  border-color: var(--ov-line, #e5eee8);
+  color: #244b39;
 }
+.ov-app.theme-dark .ov-top h1 { color: #244b39; }
+.ov-app.theme-dark .ov-top .ov-crumb { color: #718078; }
+.ov-app.theme-dark .ov-top .ov-date { background: #f2f7f4; color: #526d61; border-color: #e5eee8; }
+.ov-app.theme-dark .ov-top .ov-burger,
+.ov-app.theme-dark .ov-top .ov-top-avatar { background: #d9eee5; color: #28765e; border-color: #e5eee8; }
 .ov-app.theme-dark .ov-top h1,
 .ov-app.theme-dark .ov-content h1,
 .ov-app.theme-dark .ov-content h2,
