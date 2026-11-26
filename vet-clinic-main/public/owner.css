@@ -737,3 +737,139 @@ body.ov-lock { overflow: hidden; }
 .ov-app.theme-dark img {
   border-color: #365448;
 }
+
+
+/* Calm, cohesive visual refinement for the Pet Owner portal */
+.ov-nav.active {
+  background: #18745f;
+  color: #fff;
+  box-shadow: 0 2px 7px rgba(24,116,95,.16);
+}
+.ov-nav:not(.active):hover { background: #ffffff14; color: #fff; }
+.ov-theme-toggle {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid #dce6e0;
+  border-radius: 9px;
+  background: #f7faf8;
+  color: #426456;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: none;
+}
+.ov-theme-toggle:hover { background: #edf5f1; border-color: #c8d9cf; }
+.ov-app.theme-dark {
+  --ov-bg: #202923;
+  --ov-card: #29342e;
+  --ov-line: #3c4941;
+  --ov-ink: #e8eee9;
+  --ov-text: #dce5df;
+  --ov-muted: #aab7ae;
+  --ov-soft: #34483e;
+  background: #202923;
+  color: #dce5df;
+  color-scheme: dark;
+}
+.ov-app.theme-dark .ov-main,
+.ov-app.theme-dark .ov-content,
+.ov-app.theme-dark .ov-footer { background: #202923; color: #dce5df; }
+.ov-app.theme-dark .ov-side { background: #1b241f; border-right: 1px solid #354139; }
+.ov-app.theme-dark .ov-brand { border-color: #354139; }
+.ov-app.theme-dark .ov-nav.active { background: #18745f; color: #fff; box-shadow: 0 2px 7px rgba(0,0,0,.12); }
+.ov-app.theme-dark .ov-nav:not(.active):hover { background: #303c35; color: #edf3ef; }
+.ov-app.theme-dark .ov-top {
+  background: rgba(41,52,46,.96);
+  border-color: #3c4941;
+  color: #e8eee9;
+  box-shadow: none;
+}
+.ov-app.theme-dark .ov-top h1,
+.ov-app.theme-dark .ov-content h1,
+.ov-app.theme-dark .ov-content h2,
+.ov-app.theme-dark .ov-content h3,
+.ov-app.theme-dark .ov-content h4,
+.ov-app.theme-dark .ov-content b { color: #e8eee9; }
+.ov-app.theme-dark .ov-content p,
+.ov-app.theme-dark .ov-content label,
+.ov-app.theme-dark .ov-footer { color: #c0ccc4; }
+.ov-app.theme-dark .ov-card,
+.ov-app.theme-dark .ov-stat,
+.ov-app.theme-dark .ov-pet,
+.ov-app.theme-dark .ov-appt,
+.ov-app.theme-dark .ov-notif,
+.ov-app.theme-dark .ov-home-panel,
+.ov-app.theme-dark .ov-settings-account,
+.ov-app.theme-dark .ov-settings-section,
+.ov-app.theme-dark .ov-record-card,
+.ov-app.theme-dark .ov-panel {
+  background: #29342e;
+  border-color: #3c4941;
+  color: #dce5df;
+  box-shadow: 0 2px 8px rgba(0,0,0,.10);
+}
+.ov-app.theme-dark .ov-date,
+.ov-app.theme-dark .ov-burger,
+.ov-app.theme-dark .ov-top-avatar,
+.ov-app.theme-dark .ov-icon,
+.ov-app.theme-dark .ov-tab,
+.ov-app.theme-dark .ov-filter,
+.ov-app.theme-dark .ov-home-visit,
+.ov-app.theme-dark .ov-home-pet,
+.ov-app.theme-dark .ov-settings-row,
+.ov-app.theme-dark .ov-settings-icon,
+.ov-app.theme-dark .ov-settings-avatar {
+  background: #303c35;
+  color: #dce6df;
+  border-color: #46564c;
+}
+.ov-app.theme-dark .ov-settings-row:hover,
+.ov-app.theme-dark .ov-home-pet:hover { background: #34483e; }
+.ov-app.theme-dark .ov-settings-signout { background: #342a2b; border-color: #594344; }
+.ov-app.theme-dark .ov-settings-signout b,
+.ov-app.theme-dark .ov-settings-signout strong { color: #e5b9b5; }
+.ov-app.theme-dark input:not([type=radio]):not([type=file]),
+.ov-app.theme-dark select,
+.ov-app.theme-dark textarea,
+.ov-app.theme-dark .ov-modal input,
+.ov-app.theme-dark .ov-modal select,
+.ov-app.theme-dark .ov-modal textarea {
+  background: #242f28;
+  color: #e4ebe6;
+  border-color: #4a5a50;
+  color-scheme: dark;
+}
+.ov-app.theme-dark input::placeholder,
+.ov-app.theme-dark textarea::placeholder { color: #9aa99f; }
+.ov-app.theme-dark table,
+.ov-app.theme-dark th,
+.ov-app.theme-dark td { border-color: #3c4941; color: #dce5df; }
+.ov-app.theme-dark th { background: #303c35; color: #bac7be; }
+.ov-app.theme-dark .ov-empty,
+.ov-app.theme-dark .ov-empty-state,
+.ov-app.theme-dark .ov-home-empty { color: #aab7ae; }
+.ov-app.theme-dark .ov-home-visit,
+.ov-app.theme-dark .ov-home-notif { border-color: #3c4941; }
+.ov-app.theme-dark .ov-theme-toggle {
+  background: #303c35;
+  color: #d4e5da;
+  border-color: #4a5a50;
+}
+.ov-app.theme-dark .ov-theme-toggle:hover { background: #394b41; }
+.ov-app.theme-dark .ov-btn:not(.ghost):not(.danger) {
+  background: #18745f;
+  border-color: #18745f;
+  box-shadow: none;
+}
+.ov-app.theme-dark .ov-btn.ghost {
+  background: #303c35;
+  color: #d4e5da;
+  border-color: #46564c;
+}
+.ov-app.theme-dark .ov-modal,
+.ov-app.theme-dark .ov-mbox,
+.ov-app.theme-dark .ov-bellpanel {
+  background: #29342e;
+  color: #dce5df;
+  border-color: #3c4941;
+}
+.ov-app.theme-dark img { border-color: #46574c; }
