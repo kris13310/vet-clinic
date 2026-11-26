@@ -24,6 +24,7 @@
     window.showAppLoading = function (message) {
       var screen = document.getElementById('app-loading');
       if (!screen) return;
+      if (window.__appLoadingHideTimer) { clearTimeout(window.__appLoadingHideTimer); window.__appLoadingHideTimer = null; }
       var label = document.getElementById('app-loading-message');
       var retry = document.getElementById('app-loading-retry');
       if (label) label.textContent = message || 'Please wait while we prepare this page';
@@ -34,8 +35,12 @@
     window.finishAppLoading = function () {
       var screen = document.getElementById('app-loading');
       if (!screen) return;
-      screen.classList.add('is-hidden');
-      screen.setAttribute('aria-hidden', 'true');
+      if (window.__appLoadingHideTimer) clearTimeout(window.__appLoadingHideTimer);
+      window.__appLoadingHideTimer = window.setTimeout(function () {
+        screen.classList.add('is-hidden');
+        screen.setAttribute('aria-hidden', 'true');
+        window.__appLoadingHideTimer = null;
+      }, 180);
     };
     window.appLoadingFailsafe = window.setTimeout(function () {
       var message = document.getElementById('app-loading-message');
