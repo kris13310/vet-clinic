@@ -1207,6 +1207,7 @@ function form(k, i) {
     if (k === "vaccinations" && v.next < v.given) return fail("Next due date must be after the date given.");
     if (k === "users" && v.password && v.password.length < 8) return fail("Password must be at least 8 characters.");
     btn.disabled = true;
+    if (typeof window.showAppLoading === 'function') window.showAppLoading(edit ? 'Saving your changes…' : 'Creating your record…');
     try {
       const res = await saveRecord(k, v, edit ? D[k][i] : null, submittedFormData);
       m.remove();
@@ -1214,6 +1215,7 @@ function form(k, i) {
       showSaveSuccess(res.message || (edit ? "Changes saved." : "Record added."));
       refresh();
     } catch (er) { fail(er.message); btn.disabled = false; }
+    finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
   };
   $("input,select", m)?.focus();
 }
@@ -1270,12 +1272,14 @@ async function remove(k, i) {
       ? " Their appointments and vaccination records will also be removed."
       : "";
   if (!confirm(`Delete "${label}"?${extra}`)) return;
+  if (typeof window.showAppLoading === 'function') window.showAppLoading('Deleting record…');
   try {
     const res = k === "users" ? await apiJson("api/users.php?action=delete", { id: r.id }) : await recordRequest(k, "delete", { id: r.id });
     await reloadAfter(k);
     toast(res.message || "Record deleted.");
     refresh();
   } catch (e) { alert(e.message); }
+  finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
 }
 async function adoptionStatus(i, status) {
   const r = D.adoption[i];
@@ -1284,6 +1288,7 @@ async function adoptionStatus(i, status) {
     adopter = prompt(`Who adopted ${r.name}? (optional)`);
     if (adopter === null) return;
   }
+  if (typeof window.showAppLoading === 'function') window.showAppLoading('Updating adoption status…');
   try {
     await recordRequest("adoption", "status", { id: r.id, status, adopter_name: adopter.trim() });
     await loadRecordsFromDatabase();
@@ -1291,6 +1296,7 @@ async function adoptionStatus(i, status) {
     toast(status === "Adopted" ? `${r.name} has been adopted! 🎉` : `${r.name} is now pending adoption.`);
     refresh();
   } catch (e) { alert(e.message); }
+  finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
 }
 
 function act(a, k, i) {
