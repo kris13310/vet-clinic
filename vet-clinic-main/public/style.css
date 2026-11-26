@@ -2150,7 +2150,8 @@ td.cc,
 .app-loading {
   position: fixed;
   inset: 0;
-  z-index: 100000;
+  /* Keep the app navigation visible while the page content is loading. */
+  z-index: 19;
   display: grid;
   place-items: center;
   padding: 24px;
