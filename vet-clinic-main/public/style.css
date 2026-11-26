@@ -2383,3 +2383,65 @@ td.cc,
   border-color: #10b981;
 }
 .app .sc.on { box-shadow: 0 0 0 2px rgba(15, 157, 120, .28); }
+
+/* ===== Consistent hover feedback across Admin, Staff, and Pet Owner portals ===== */
+.app .nav:not(.on):hover,
+.owner-nav:not(.active):hover {
+  background: rgba(22, 184, 134, .18);
+  color: #fff;
+}
+.app .nav.on:hover {
+  background: linear-gradient(90deg, #0f9d78, #16b886);
+  color: #fff;
+}
+.app .btn:not(:disabled):hover,
+.app .signin:hover,
+.owner-primary:not(:disabled):hover {
+  filter: brightness(1.07);
+}
+.app .btn.ghost:not(:disabled):hover,
+.app .btn.out:not(:disabled):hover {
+  background: #ecfdf5;
+  border-color: #0f9d78;
+  color: #0f766e;
+  filter: none;
+}
+.app .btn.red:not(:disabled):hover,
+.app .ac .dl:hover {
+  background: #fecaca;
+  color: #991b1b;
+  filter: none;
+}
+.app .ac button:not(.dl):hover,
+.app .nv button:hover {
+  background: #d1fae5;
+  color: #0f766e;
+}
+.app tbody tr:hover,
+.owner-table tbody tr:hover {
+  background: #f0fdf4;
+}
+.app .chip:not(.on):hover {
+  border-color: #6ee7b7;
+  background: #f0fdf4;
+  color: #0f766e;
+}
+.app .day:not(.sel):hover {
+  outline: 2px solid rgba(15, 157, 120, .45);
+  background: #ecfdf5;
+}
+.owner-nav.active:hover {
+  background: linear-gradient(90deg, #0f9d78, #16b886);
+  color: #fff;
+}
+.owner-primary:not(:disabled):hover {
+  background: linear-gradient(90deg, #0f766e, #0f9d78);
+}
+@media (hover: none) {
+  .app .nav:hover,
+  .owner-nav:hover,
+  .app .btn:hover,
+  .owner-primary:hover {
+    filter: none;
+  }
+}
