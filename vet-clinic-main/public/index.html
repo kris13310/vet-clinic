@@ -9,7 +9,31 @@
   <link rel="stylesheet" href="owner.css">
 </head>
 <body>
+  <div id="app-loading" class="app-loading" role="status" aria-live="polite" aria-label="Loading Veterinary Clinic Management System">
+    <div class="app-loading__content">
+      <div class="app-loading__mark" aria-hidden="true"><span>✚</span></div>
+      <div class="app-loading__brand">VET<span>CARE</span></div>
+      <p id="app-loading-message">Preparing your clinic workspace</p>
+      <div class="app-loading__track" aria-hidden="true"><span></span></div>
+      <small>Please wait a moment</small>
+      <button id="app-loading-retry" type="button" hidden onclick="window.location.reload()">Reload app</button>
+    </div>
+  </div>
   <div id="app"></div>
+  <script>
+    window.finishAppLoading = function () {
+      var screen = document.getElementById('app-loading');
+      if (!screen || screen.classList.contains('is-hidden')) return;
+      screen.classList.add('is-hidden');
+      window.setTimeout(function () { screen.remove(); }, 450);
+    };
+    window.appLoadingFailsafe = window.setTimeout(function () {
+      var message = document.getElementById('app-loading-message');
+      var retry = document.getElementById('app-loading-retry');
+      if (message) message.textContent = 'The app is taking longer than expected.';
+      if (retry) retry.hidden = false;
+    }, 20000);
+  </script>
   <!-- owner.js must load BEFORE app.js -->
   <script src="owner.js"></script>
   <script src="app.js"></script>
