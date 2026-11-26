@@ -2583,3 +2583,22 @@ td.cc,
 @media (max-width: 760px) {
   .theme-toggle, .ov-theme-toggle { min-height: 34px; padding: 0 9px; font-size: 11px; }
 }
+
+
+/* Settings appearance control and compact three-dot record actions. */
+.settings-appearance { margin-bottom: 16px; }
+.settings-appearance h3 { margin: 0 0 6px; }
+.settings-appearance p { margin: 0 0 14px; }
+.row-action-menu { position: relative; display: inline-block; }
+.row-action-menu > summary { list-style: none; display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid #dce6e0; border-radius: 10px; background: #fff; color: #315b4c; font-size: 24px; line-height: 1; cursor: pointer; }
+.row-action-menu > summary::-webkit-details-marker { display: none; }
+.row-action-menu[open] > summary, .row-action-menu > summary:hover { background: #ecfdf5; border-color: #a7d8c0; }
+.row-action-menu-list { position: absolute; top: calc(100% + 6px); right: 0; z-index: 80; display: grid; min-width: 132px; padding: 6px; border: 1px solid #dce6e0; border-radius: 11px; background: #fff; box-shadow: 0 12px 28px #0f172a24; }
+.row-action-menu-list button { width: 100%; padding: 9px 11px; border: 0; border-radius: 7px; background: transparent; color: #263c33; text-align: left; font: inherit; font-size: 13px; cursor: pointer; }
+.row-action-menu-list button:hover { background: #ecfdf5; }
+.row-action-menu-list button.danger { color: #c2413b; }
+.app.theme-dark .row-action-menu > summary { background: #172438; color: #a7f3d0; border-color: #365448; }
+.app.theme-dark .row-action-menu-list { background: #111c2e; border-color: #35445b; }
+.app.theme-dark .row-action-menu-list button { color: #e5edf7; }
+.app.theme-dark .row-action-menu-list button:hover { background: #1b3a34; }
+.app.theme-dark .row-action-menu-list button.danger { color: #fca5a5; }
