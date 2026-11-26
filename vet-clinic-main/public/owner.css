@@ -649,17 +649,17 @@ body.ov-lock { overflow: hidden; }
 .ov-app.theme-dark .ov-main,
 .ov-app.theme-dark .ov-content,
 .ov-app.theme-dark .ov-footer { background: #0b1220; color: #cbd5e1; }
-/* Keep the Pet Owner top bar light in both themes. Theme switching lives in Settings. */
+/* Pet Owner top bar follows the active dark theme. Theme switching lives in Settings. */
 .ov-app.theme-dark .ov-top {
-  background: #ffffff;
-  border-color: var(--ov-line, #e5eee8);
-  color: #244b39;
+  background: #111c2e;
+  border-color: #29364a;
+  color: #e5edf7;
 }
-.ov-app.theme-dark .ov-top h1 { color: #244b39; }
-.ov-app.theme-dark .ov-top .ov-crumb { color: #718078; }
-.ov-app.theme-dark .ov-top .ov-date { background: #f2f7f4; color: #526d61; border-color: #e5eee8; }
+.ov-app.theme-dark .ov-top h1 { color: #e5edf7; }
+.ov-app.theme-dark .ov-top .ov-crumb { color: #9aa9bc; }
+.ov-app.theme-dark .ov-top .ov-date { background: #172438; color: #cbd5e1; border-color: #35445b; }
 .ov-app.theme-dark .ov-top .ov-burger,
-.ov-app.theme-dark .ov-top .ov-top-avatar { background: #d9eee5; color: #28765e; border-color: #e5eee8; }
+.ov-app.theme-dark .ov-top .ov-top-avatar { background: #172438; color: #a7f3d0; border-color: #35445b; }
 .ov-app.theme-dark .ov-top h1,
 .ov-app.theme-dark .ov-content h1,
 .ov-app.theme-dark .ov-content h2,
@@ -805,28 +805,28 @@ body.ov-lock { overflow: hidden; }
 .ov-app.theme-dark .ov-pet-menu-list button.danger { color: #fca5a5; }
 
 
-/* Keep the Pet Owner top navigation light when the page uses dark mode. */
+/* Ensure every Pet Owner top-bar element follows the dark theme. */
 .ov-app.theme-dark .ov-top {
-  background: #ffffffeb;
-  border-bottom-color: #e2e8f0;
-  color: #0f172a;
+  background: #111c2e;
+  border-bottom-color: #29364a;
+  color: #e5edf7;
 }
-.ov-app.theme-dark .ov-top h1 { color: #0f172a; }
+.ov-app.theme-dark .ov-top h1 { color: #e5edf7; }
 .ov-app.theme-dark .ov-top .ov-crumb,
-.ov-app.theme-dark .ov-top .ov-eyebrow { color: #0f766e; }
+.ov-app.theme-dark .ov-top .ov-eyebrow { color: #9aa9bc; }
 .ov-app.theme-dark .ov-top .ov-date {
-  background: #f1f5f9;
-  color: #64748b;
-  border-color: #e2e8f0;
+  background: #172438;
+  color: #cbd5e1;
+  border-color: #35445b;
 }
 .ov-app.theme-dark .ov-top .ov-burger,
 .ov-app.theme-dark .ov-top .ov-bell,
 .ov-app.theme-dark .ov-top .ov-top-avatar {
-  background: #fff;
-  color: #0f172a;
-  border-color: #e2e8f0;
+  background: #172438;
+  color: #a7f3d0;
+  border-color: #35445b;
 }
-.ov-app.theme-dark .ov-top .ov-count { border-color: #fff; }
+.ov-app.theme-dark .ov-top .ov-count { border-color: #111c2e; }
 
 
 /* Accessibility contrast fix: primary actions retain emerald styling with readable white text. */
