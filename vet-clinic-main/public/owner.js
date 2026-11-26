@@ -401,6 +401,7 @@ function ovInitAppointments() {
     const payload = { pet_id: f.get('pet_id'), purpose: String(f.get('purpose') || '').trim(), notes: String(f.get('notes') || '').trim(), appointment_date: ov.date, appointment_time: ov.time,
       new_pet_name: f.get('new_pet_name') || '', new_pet_species: String(f.get('new_pet_species') || '').trim(), new_pet_breed: f.get('new_pet_breed') || '', new_pet_age: f.get('new_pet_age') || '' };
     btn.disabled = true; msg.textContent = 'Sending request…';
+    if (typeof window.showAppLoading === 'function') window.showAppLoading('Sending your appointment request…');
     try {
       const r = await ownerRequest('request_appointment', payload);
       ov.date = ''; ov.time = ''; ov.slots = []; ov.petChoice = '';
@@ -408,7 +409,7 @@ function ovInitAppointments() {
     } catch (err) {
       msg.className = 'ov-msg error'; msg.textContent = err.message; btn.disabled = false;
       if (/reserved|already|passed|too soon|closed|valid|past/i.test(err.message)) { const d = ov.date; ov.time = ''; await ovLoadMonth(true); if (ov.cal.days[d]?.state === 'available') await ovPickDate(d); else { ov.date = ''; ov.slots = []; ovRenderSlots(); ovRenderCal(); } ovRenderSummary(); }
-    }
+    } finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
   };
 }
 
@@ -485,8 +486,10 @@ function ovPetForm(pet) {
     if (err.textContent) { perr.textContent = 'Please fix the picture first.'; return; }
     const fd = new FormData(form); if (edit) fd.append('id', p.id);
     btn.disabled = true; btn.textContent = 'Saving…';
+    if (typeof window.showAppLoading === 'function') window.showAppLoading(edit ? 'Updating your pet…' : 'Adding your pet…');
     try { const r = await ownerRequest('pet_save', fd); m.close(); await loadOwnerData(); showSaveSuccess(r.message || 'Pet saved.'); renderOwnerDashboard(); }
     catch (er) { perr.textContent = er.message; btn.disabled = false; btn.textContent = edit ? 'Save changes' : 'Add pet'; }
+    finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
   };
   form.elements.namedItem('name').focus();
 }
@@ -507,8 +510,10 @@ function ovPetDelete(p) {
     <div class="ov-actions"><button class="ov-btn ghost" data-close>Keep pet</button><button class="ov-btn danger solid" id="ov-del-go">Yes, delete</button></div>`);
   $('#ov-del-go', m).onclick = async e => {
     const b = e.currentTarget; b.disabled = true; b.textContent = 'Deleting…';
+    if (typeof window.showAppLoading === 'function') window.showAppLoading('Deleting your pet…');
     try { const r = await ownerRequest('pet_delete', { id: p.id }); m.close(); await loadOwnerData(); toast(r.message || 'Pet deleted.'); renderOwnerDashboard(); }
     catch (er) { $('#ov-del-err', m).textContent = er.message; b.disabled = false; b.textContent = 'Yes, delete'; }
+    finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
   };
 }
 
@@ -541,11 +546,13 @@ function ovInitProfile() {
   remove.onclick=()=>{photo.value='';form.elements.remove_photo.value='1';preview.innerHTML=`<div class="ov-avatar lg">${esc(ovInitials(form.elements.name.value))}</div>`;};
   form.onsubmit = async e => {
     e.preventDefault(); const msg = $('#owner-profile-msg'); msg.textContent = 'Saving…'; msg.className = 'ov-msg';
+    if (typeof window.showAppLoading === 'function') window.showAppLoading('Saving your profile…');
     try {
       const r = await ownerRequest('profile', new FormData(form));
       state.account = { ...state.account, name: r.user.name, full_name: r.user.name, email: r.user.email, avatar_path: r.user.avatar_path || null };
       await loadOwnerData(); showSaveSuccess('Personal information saved.'); renderOwnerDashboard();
     } catch (err) { msg.textContent = err.message; msg.className = 'ov-msg error'; }
+    finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
   };
 }
 function ovPageSettings() {
