@@ -2623,21 +2623,21 @@ td.cc,
 }
 
 
-/* Keep the Admin / Staff top navigation light when the page uses dark mode. */
+/* Admin / Staff top navigation follows the dark theme. Theme switching lives in Settings. */
 .app.theme-dark .hd {
-  background: #fff;
-  border-bottom-color: #e2e8f0;
-  color: #0f172a;
+  background: #111c2e;
+  border-bottom-color: #29364a;
+  color: #e5edf7;
 }
 .app.theme-dark .hd-t h1,
 .app.theme-dark .hd-t b,
-.app.theme-dark .hd .me-t b { color: #0f172a; }
+.app.theme-dark .hd .me-t b { color: #e5edf7; }
 .app.theme-dark .hd small,
-.app.theme-dark .hd .me-t small { color: #64748b; }
-.app.theme-dark .hd .qs { background: #f8fafc; border-color: #e2e8f0; }
-.app.theme-dark .hd .qs input { color: #0f172a; }
+.app.theme-dark .hd .me-t small { color: #9aa9bc; }
+.app.theme-dark .hd .qs { background: #172438; border-color: #35445b; }
+.app.theme-dark .hd .qs input { color: #e5edf7; background: transparent; }
 .app.theme-dark .hd .bell,
-.app.theme-dark .hd .burger { background: #fff; color: #0f172a; border-color: #e2e8f0; }
+.app.theme-dark .hd .burger { background: #172438; color: #a7f3d0; border-color: #35445b; }
 
 
 /* Accessibility contrast fixes: dark dashboard list rows and primary actions. */
