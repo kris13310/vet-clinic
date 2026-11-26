@@ -667,7 +667,7 @@ function toast(m) {
 
 /* ===== Small UI helpers ===== */
 const acts = (k, i) =>
-  `<div class="ac"><button data-act="view" data-k="${k}" data-i="${i}" title="View">👁️</button><button data-act="edit" data-k="${k}" data-i="${i}" title="Edit">✏️</button><button class="dl" data-act="del" data-k="${k}" data-i="${i}" title="Delete">🗑️</button></div>`;
+  `<details class="row-action-menu"><summary aria-label="More actions" title="More actions">⋮</summary><div class="row-action-menu-list"><button data-act="view" data-k="${k}" data-i="${i}">View</button><button data-act="edit" data-k="${k}" data-i="${i}">Edit</button><button class="danger" data-act="del" data-k="${k}" data-i="${i}">Delete</button></div></details>`;
 const search = (ph) =>
   `<div class="sr"><span>🔍</span><input id="q" data-s="q" placeholder="${ph}" value="${esc(state.q)}" autocomplete="off"></div>`;
 const chip = (key, val, label) =>
@@ -1026,7 +1026,8 @@ async function pProfile() {
 function pSettings() {
   const s = D.settings;
   $("#content").innerHTML =
-    `<form class="card sform" id="sf"><h3>Clinic Information</h3><p class="mu">These details appear on reports and printed records.</p>
+    `<section class="card settings-appearance"><h3>Appearance</h3><p class="mu">Choose the display theme for the Admin and Staff portal. Your choice is saved on this device.</p><button class="theme-toggle" type="button" data-theme-toggle="1" aria-label="Switch color theme">${clinicThemeMode() === "dark" ? "☀ Light mode" : "☾ Dark mode"}</button></section>
+    <form class="card sform" id="sf"><h3>Clinic Information</h3><p class="mu">These details appear on reports and printed records.</p>
     <label>Clinic Name<input name="name" value="${esc(s.name)}" required></label><label>Contact Email<input name="email" type="email" value="${esc(s.email)}" required></label>
     <label>Phone<input name="phone" value="${esc(s.phone)}" required></label><label>Address<input name="address" value="${esc(s.address)}"></label>
     <div class="acts"><button class="btn">Save Changes</button></div></form>`;
