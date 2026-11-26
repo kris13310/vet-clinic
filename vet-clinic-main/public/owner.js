@@ -126,7 +126,6 @@ function renderOwnerDashboard() {
         <div class="ov-top-t"><span class="ov-crumb">PET OWNER PORTAL / ${esc(ownerPageNames[page].toUpperCase())}</span><h1>${esc(ownerPageNames[page])}</h1></div>
         <div class="ov-top-r">
           <span class="ov-date">${esc(fmtLong(TODAY))}</span>
-          <button class="ov-theme-toggle" type="button" data-theme-toggle="1" aria-label="Switch color theme">☾ Dark mode</button>
           <div class="ov-bellwrap">
             <button class="ov-bell" data-oact="bell" aria-label="Notifications" aria-haspopup="true">🔔<span class="ov-count" id="ov-bellcount" ${ownerData.unread ? '' : 'hidden'}>${ownerData.unread > 9 ? '9+' : ownerData.unread}</span></button>
             <div class="ov-bellpanel" id="ov-bellpanel" hidden></div>
