@@ -2638,3 +2638,33 @@ td.cc,
 .app.theme-dark .hd .qs input { color: #0f172a; }
 .app.theme-dark .hd .bell,
 .app.theme-dark .hd .burger { background: #fff; color: #0f172a; border-color: #e2e8f0; }
+
+
+/* Accessibility contrast fixes: dark dashboard list rows and primary actions. */
+.app.theme-dark .li {
+  background: #172c28;
+  border-color: #365149;
+  color: #f1f5f9;
+}
+.app.theme-dark .li-m b,
+.app.theme-dark .li-r {
+  color: #f1f5f9;
+}
+.app.theme-dark .li-m em,
+.app.theme-dark .li-m small,
+.app.theme-dark .li-r small {
+  color: #cbd5e1;
+}
+.app .nav.on {
+  background: #087f63;
+  color: #ffffff;
+  box-shadow: 0 0.4em 1em #087f6333;
+}
+.app .btn:not(.ghost):not(.red):not(.out) {
+  background: #087f63;
+  color: #ffffff;
+}
+.app .btn:not(.ghost):not(.red):not(.out):hover {
+  background: #06664f;
+  filter: none;
+}
