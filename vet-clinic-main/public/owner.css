@@ -894,3 +894,26 @@ body.ov-lock { overflow: hidden; }
   .ov-settings-mode { align-items: flex-start; }
   .ov-settings-mode .ov-theme-toggle { margin-left: 58px; }
 }
+
+
+/* Keep the Pet Owner appearance setting balanced on desktop and mobile. */
+.ov-settings-mode {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+}
+.ov-settings-mode .ov-settings-icon { grid-column: 1; }
+.ov-settings-mode .ov-settings-copy { grid-column: 2; min-width: 0; }
+.ov-settings-mode .ov-theme-toggle { grid-column: 3; margin: 0; justify-self: end; }
+.ov-app.theme-dark .ov-settings-mode .ov-theme-toggle {
+  background: #303c35;
+  color: #d4e5da;
+  border-color: #4a5a50;
+}
+@media (max-width: 520px) {
+  .ov-settings-mode { grid-template-columns: 40px minmax(0, 1fr); gap: 12px; }
+  .ov-settings-mode .ov-settings-icon { grid-column: 1; }
+  .ov-settings-mode .ov-settings-copy { grid-column: 2; }
+  .ov-settings-mode .ov-theme-toggle { grid-column: 2; justify-self: start; margin-top: 4px; }
+}
