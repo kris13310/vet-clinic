@@ -404,7 +404,8 @@ function loadHolidays(mk) {
 function pAvail() {
   if (!state.avail && !state.availError && !state.availLoading) {
     state.availLoading = true;
-    $("#content").innerHTML = '<div class="card">Loading availability…</div>';
+    if (typeof window.showAppLoading === 'function') window.showAppLoading('Loading availability…');
+    $("#content").innerHTML = '';
     availRequest('list').then((r) => { state.avail = r; }).catch((e) => { state.availError = e.message; })
       .finally(() => {
         state.availLoading = false;
@@ -541,7 +542,8 @@ function render() {
   );
   if (state.page === 'users' && state.account?.role === 'Administrator' && !state.usersLoading) {
     state.usersLoading = true;
-    $('#content').innerHTML = '<div class="card">Loading registered users…</div>';
+    if (typeof window.showAppLoading === 'function') window.showAppLoading('Loading registered users…');
+    $('#content').innerHTML = '';
     loadUsersFromDatabase().finally(() => {
       state.usersLoading = false;
       if (state.page === 'users') {
@@ -558,7 +560,8 @@ function render() {
   }
   if (state.page === 'appointments' && !state.apptDbLoaded && !state.apptLoading) {
     state.apptLoading = true;
-    $('#content').innerHTML = '<div class="card">Loading appointments from the database…</div>';
+    if (typeof window.showAppLoading === 'function') window.showAppLoading('Loading appointments…');
+    $('#content').innerHTML = '';
     loadAppointmentsFromDatabase().catch(err => { state.apptLoadError = err.message; }).finally(() => {
       state.apptLoading = false;
       if (state.page === 'appointments') {
@@ -572,7 +575,8 @@ function render() {
   if (RECORD_PAGES.includes(state.page)) {
     if ((!state.recordsLoaded || state.recordsStale) && !state.recordsLoading) {
       state.recordsLoading = true;
-      $('#content').innerHTML = '<div class="card">Loading records from the database…</div>';
+      if (typeof window.showAppLoading === 'function') window.showAppLoading('Loading records…');
+      $('#content').innerHTML = '';
       loadRecordsFromDatabase().finally(() => {
         state.recordsLoading = false; state.recordsStale = false;
         if (RECORD_PAGES.includes(state.page)) render();
@@ -581,7 +585,7 @@ function render() {
       return;
     }
     if (state.recordsLoading) return;
-    if (state.recordsError) { $('#content').innerHTML = `<div class="card"><h3>Unable to load records</h3><p class="err">${esc(state.recordsError)}</p><button class="btn" data-act="reload-records">Try again</button></div>`; return; }
+    if (state.recordsError) { $('#content').innerHTML = `<div class="card"><h3>Unable to load records</h3><p class="err">${esc(state.recordsError)}</p><button class="btn" data-act="reload-records">Try again</button></div>`; if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); return; }
   }
   PAGES[state.page]();
   if (state.page !== 'availability' && typeof window.finishAppLoading === 'function') window.finishAppLoading();
@@ -945,7 +949,8 @@ function pUsers() {
 
 /* ===== Signed-in staff profile ===== */
 async function pProfile() {
-  $("#content").innerHTML = `<div class="card"><p class="mu">Loading your profile…</p></div>`;
+  if (typeof window.showAppLoading === 'function') window.showAppLoading('Loading your profile…');
+  $("#content").innerHTML = '';
   try {
     const r = await apiJson("api/profile.php");
     const u = r.user;
