@@ -2638,3 +2638,64 @@ td.cc,
 .app.theme-dark .hd .qs input { color: #0f172a; }
 .app.theme-dark .hd .bell,
 .app.theme-dark .hd .burger { background: #fff; color: #0f172a; border-color: #e2e8f0; }
+
+
+/* Loading screen refinement: keep the clinic identity navy-first and use teal only as an accent.
+   This final rule intentionally overrides the older all-green loader palette above. */
+.app-loading {
+  background: rgba(241, 245, 249, .94);
+  color: #0f172a;
+  backdrop-filter: blur(3px);
+}
+.app-loading__content {
+  width: min(100%, 360px);
+  padding: 32px 28px 26px;
+  border: 1px solid #dbe3ec;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 22px 65px rgba(10, 22, 40, .14);
+}
+.app-loading__mark {
+  width: 68px;
+  height: 68px;
+  margin-bottom: 19px;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #0a1628, #1e344f);
+  color: #fff;
+  box-shadow: 0 12px 26px rgba(10, 22, 40, .18);
+}
+.app-loading__mark::after {
+  inset: -6px;
+  border: 2px solid #dce5ee;
+  border-top-color: #0f9d78;
+  border-right-color: #0f9d78;
+  border-radius: 24px;
+}
+.app-loading__brand {
+  color: #0a1628;
+  letter-spacing: .055em;
+}
+.app-loading__brand span { color: #0f9d78; }
+.app-loading__content p { color: #64748b; }
+.app-loading__track {
+  height: 5px;
+  background: #e7edf2;
+}
+.app-loading__track span {
+  background: linear-gradient(90deg, #0f766e, #38a58b);
+}
+.app-loading__content small { color: #8794a5; }
+#app-loading-retry {
+  border-radius: 10px;
+  background: #0a1628;
+  box-shadow: 0 5px 14px rgba(10, 22, 40, .14);
+}
+#app-loading-retry:hover { background: #1e344f; }
+@media (max-width: 480px) {
+  .app-loading { padding: 18px; }
+  .app-loading__content {
+    width: min(100%, 340px);
+    padding: 27px 22px 23px;
+    border-radius: 19px;
+  }
+}
