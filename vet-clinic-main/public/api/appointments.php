@@ -9,13 +9,24 @@ function appt_reply(int $code, array $body): never { http_response_code($code); 
 $account = $_SESSION['account'] ?? null;
 if (!is_array($account) || empty($account['id'])) appt_reply(401, ['success'=>false,'message'=>'Please sign in again.']);
 if (!in_array(($account['role'] ?? ''), ['Administrator','Veterinarian','Veterinary Staff'], true)) appt_reply(403, ['success'=>false,'message'=>'Clinic staff access only.']);
+$role = (string)($account['role'] ?? '');
+$uid = (int)$account['id'];
 
 try {
     $action = (string)($_GET['action'] ?? 'list');
 
     /* ---------- List every appointment (unchanged behaviour) ---------- */
     if ($action === 'list') {
-        $q = $pdo->query("SELECT a.id,a.pet_id,a.appointment_date,a.appointment_time,a.purpose,a.status,a.cancelled_by,a.notes,p.name pet_name,p.owner_name,p.owner_email,p.owner_phone,p.address,u.full_name AS stored_vet FROM appointments a JOIN pets p ON p.id=a.pet_id LEFT JOIN users u ON u.id=a.veterinarian_id ORDER BY a.appointment_date DESC,a.appointment_time DESC");
+        $sql = "SELECT a.id,a.pet_id,a.veterinarian_id,a.appointment_date,a.appointment_time,a.purpose,a.status,a.cancelled_by,a.notes,p.name pet_name,p.owner_name,p.owner_email,p.owner_phone,p.address,u.full_name AS stored_vet
+                FROM appointments a
+                JOIN pets p ON p.id=a.pet_id
+                LEFT JOIN users u ON u.id=a.veterinarian_id";
+        if (($account['role'] ?? '') === 'Veterinarian') {
+            $q = $pdo->prepare($sql . " WHERE a.veterinarian_id=? ORDER BY a.appointment_date DESC,a.appointment_time DESC");
+            $q->execute([(int)$account['id']]);
+        } else {
+            $q = $pdo->query($sql . " ORDER BY a.appointment_date DESC,a.appointment_time DESC");
+        }
         $doctor = current_doctor($pdo);
         $rows = array_map(static function ($r) use ($doctor) {
             $r['veterinarian'] = doctor_display($doctor, $r['status'] === 'Completed', $r['stored_vet']);
@@ -37,7 +48,7 @@ try {
         $purpose = trim((string)($input['purpose'] ?? '')); $status = (string)($input['status'] ?? 'Pending');
         if (!$petId || $purpose === '') appt_reply(422, ['success'=>false,'message'=>'Choose a pet and enter the purpose of the visit.']);
         if (mb_strlen($purpose) > 255) appt_reply(422, ['success'=>false,'message'=>'The purpose is too long (max 255 characters).']);
-        if (!in_array($status, ['Pending','Confirmed','In Progress','Completed'], true)) appt_reply(422, ['success'=>false,'message'=>'Choose a valid status.']);
+        if (!in_array($status, ['Pending','Confirmed','In Progress'], true)) appt_reply(422, ['success'=>false,'message'=>'Choose a valid status.']);
         $err = validate_slot($pdo, $date, $time, true);
         if ($err) appt_reply(422, ['success'=>false,'message'=>$err]);
 
@@ -57,11 +68,20 @@ try {
         $status = (string)($input['status'] ?? '');
         if (!$id || !in_array($status, ['Confirmed','Cancelled','In Progress','Completed'], true)) appt_reply(422, ['success'=>false,'message'=>'Invalid appointment or status.']);
 
-        $result = with_slot_lock($pdo, function () use ($pdo, $id, $status) {
-            $cur = $pdo->prepare('SELECT id, status, appointment_date, appointment_time FROM appointments WHERE id=?');
+        $result = with_slot_lock($pdo, function () use ($pdo, $id, $status, $role, $uid) {
+            $cur = $pdo->prepare('SELECT id, veterinarian_id, status, appointment_date, appointment_time FROM appointments WHERE id=?');
             $cur->execute([$id]);
             $row = $cur->fetch();
             if (!$row) return [404, 'Appointment not found.'];
+            if ($role === 'Veterinarian' && (int)$row['veterinarian_id'] !== $uid) return [403, 'This appointment is not assigned to your veterinarian account.'];
+            if ($status === 'Completed') {
+                if ($role !== 'Veterinarian' || (int)$row['veterinarian_id'] !== $uid) {
+                    return [403, 'Only the veterinarian assigned to this appointment can complete it.'];
+                }
+                $report = $pdo->prepare('SELECT 1 FROM medical_reports WHERE appointment_id=? AND veterinarian_id=?');
+                $report->execute([$id, $uid]);
+                if (!$report->fetchColumn()) return [409, 'Submit the assigned veterinarian medical report before completing this appointment.'];
+            }
             if ($row['status'] === $status) return [200, 'Appointment status updated.']; // nothing changed -> no duplicate notification
 
             // Re-opening a rejected request must not collide with someone who took the slot meanwhile.
@@ -88,10 +108,11 @@ try {
         if ($err) appt_reply(422, ['success'=>false,'message'=>$err]);
 
         $result = with_slot_lock($pdo, function () use ($pdo, $id, $date, $time) {
-            $cur = $pdo->prepare('SELECT id, status FROM appointments WHERE id=?');
+            $cur = $pdo->prepare('SELECT id, veterinarian_id, status FROM appointments WHERE id=?');
             $cur->execute([$id]);
             $row = $cur->fetch();
             if (!$row) return [404, 'Appointment not found.'];
+            if ($role === 'Veterinarian' && (int)$row['veterinarian_id'] !== $uid) return [403, 'This appointment is not assigned to your veterinarian account.'];
             if (in_array($row['status'], ['Completed','Cancelled'], true)) return [409, 'Completed or rejected appointments cannot be rescheduled.'];
             if (slot_is_taken($pdo, $date, $time, $id)) return [409, 'That date and time is already reserved. Choose another slot.'];
             $pdo->prepare('UPDATE appointments SET appointment_date=?, appointment_time=? WHERE id=?')->execute([$date, $time . ':00', $id]);

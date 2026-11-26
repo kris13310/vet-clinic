@@ -232,11 +232,17 @@ function slot_closure(array $partial, string $time): ?array {
 
 /* ===== Pet pictures live in Supabase Storage (Vercel containers have no permanent disk) ===== */
 function storage_bucket(): string { return (string)(getenv('SUPABASE_BUCKET') ?: 'pet-photos'); }
-function storage_public_prefix(): string { return rtrim((string)getenv('SUPABASE_URL'), '/') . '/storage/v1/object/public/' . storage_bucket() . '/'; }
+/** Normalize SUPABASE_URL to the project root; /rest/v1 is not part of the Storage API base URL. */
+function supabase_project_url(): string {
+    $url = rtrim(trim((string)getenv('SUPABASE_URL')), '/');
+    $url = preg_replace('#/(?:rest/v1|storage/v1)$#i', '', $url) ?? $url;
+    return rtrim($url, '/');
+}
+function storage_public_prefix(): string { return supabase_project_url() . '/storage/v1/object/public/' . rawurlencode(storage_bucket()) . '/'; }
 /** Calls the Supabase Storage REST API with the server-side service key. Returns [httpCode, body, curlError]. */
 function storage_call(string $method, string $path, ?string $body = null, ?string $mime = null): array {
     $key = (string)getenv('SUPABASE_SERVICE_KEY');
-    $ch = curl_init(rtrim((string)getenv('SUPABASE_URL'), '/') . '/storage/v1/' . ltrim($path, '/'));
+    $ch = curl_init(supabase_project_url() . '/storage/v1/' . ltrim($path, '/'));
     // legacy service_role keys are JWTs (start with "eyJ") and are also sent as a Bearer token; the newer sb_secret_... keys go in apikey only
     $headers = ['apikey: ' . $key];
     if (str_starts_with($key, 'eyJ')) $headers[] = 'Authorization: Bearer ' . $key;
@@ -255,13 +261,13 @@ function storage_upload(string $tmpFile, string $name, string $mime): string {
     if ($data === false) throw new RuntimeException('The picture could not be read. Please try again.');
     [$code, $resp, $err] = storage_call('POST', 'object/' . rawurlencode(storage_bucket()) . '/' . rawurlencode($name), $data, $mime);
     if ($code < 200 || $code >= 300) { error_log("Storage upload failed ($code): $err $resp"); throw new RuntimeException('The picture could not be saved. Please try again later.'); }
-    return storage_public_prefix() . $name;
+    return storage_public_prefix() . rawurlencode($name);
 }
 /** Deletes an uploaded pet picture. Only ever touches files inside our own bucket. */
 function delete_pet_photo(?string $path): void {
     $prefix = storage_public_prefix();
     if (!$path || strncmp($path, $prefix, strlen($prefix)) !== 0) return;
-    $name = substr($path, strlen($prefix));
+    $name = rawurldecode(substr($path, strlen($prefix)));
     if (!preg_match('/^[A-Za-z0-9_.-]+$/', $name)) return;
     storage_call('DELETE', 'object/' . rawurlencode(storage_bucket()) . '/' . rawurlencode($name));
 }
@@ -303,7 +309,7 @@ function owner_can_cancel(string $status, string $date, string $time): bool {
 const PHOTO_MAX_BYTES = 2 * 1024 * 1024;                       // 2 MB
 const PHOTO_TYPES = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
 /** Validates an uploaded image, stores it in Supabase Storage and returns its public URL. Throws RuntimeException with a user-friendly message. */
-function save_pet_photo(array $file): string {
+function save_pet_photo(array $file, string $prefix = 'pet_'): string {
     $err = (int)($file['error'] ?? UPLOAD_ERR_NO_FILE);
     if ($err === UPLOAD_ERR_INI_SIZE || $err === UPLOAD_ERR_FORM_SIZE) throw new RuntimeException('The picture is too large. Maximum size is 2 MB.');
     if ($err !== UPLOAD_ERR_OK) throw new RuntimeException('The picture could not be uploaded. Please try again.');
@@ -323,6 +329,7 @@ function save_pet_photo(array $file): string {
     if (!isset(PHOTO_TYPES[$mime])) throw new RuntimeException('Only JPG, PNG or WebP pictures are allowed.');
     if (($info[0] ?? 0) < 50 || ($info[1] ?? 0) < 50 || ($info[0] ?? 0) > 8000 || ($info[1] ?? 0) > 8000) throw new RuntimeException('The picture dimensions are not supported (min 50px, max 8000px).');
 
-    $name = 'pet_' . bin2hex(random_bytes(12)) . '.' . PHOTO_TYPES[$mime];
+    if (!preg_match('/^[a-z][a-z0-9_-]{0,15}_$/', $prefix)) throw new RuntimeException('Invalid image type.');
+    $name = $prefix . bin2hex(random_bytes(12)) . '.' . PHOTO_TYPES[$mime];
     return storage_upload($tmp, $name, $mime); // Supabase Storage: returns the picture's public URL
 }

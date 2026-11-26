@@ -1,0 +1,2 @@
+-- Add profile photo storage path for user accounts.
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS avatar_path TEXT;

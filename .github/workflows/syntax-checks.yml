@@ -1,0 +1,25 @@
+name: PHP and JavaScript syntax checks
+on:
+  push:
+    branches: [main, fix/pet-photo-uploads]
+  pull_request:
+    branches: [main]
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Check PHP syntax
+        working-directory: vet-clinic-main
+        run: find . -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Check JavaScript syntax
+        working-directory: vet-clinic-main
+        run: |
+          node --check public/app.js
+          node --check public/owner.js

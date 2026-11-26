@@ -275,6 +275,7 @@ const NAV = [
   ["SYSTEM"],
   ["users", "👥", "Users"],
   ["settings", "⚙️", "Settings"],
+  ["profile", "👤", "My Profile"],
 ];
 const NAV_LABEL = Object.fromEntries(
   NAV.filter((n) => n[1]).map((n) => [n[0], n[2]]),
@@ -289,6 +290,7 @@ function who() {
   return {
     name,
     role,
+    avatar: (state.account && state.account.avatar_path) || '',
     short: parts[0] === "Dr." ? "Dr. " + parts[parts.length - 1] : parts[0],
     ini: (parts.length > 1
       ? parts[0][0] + parts[parts.length - 1][0]
@@ -303,7 +305,7 @@ function buildShell() {
     <aside class="sb">
       <div class="sb-brand"><span class="sb-logo">${PAW("#fff")}</span><span><b>Olongapo City</b><small>Veterinary Office</small></span></div>
       <nav>${NAV.map((n) => (n[1] ? `<button class="nav" data-go="${n[0]}"><i>${n[1]}</i>${n[2]}</button>` : `<div class="sb-label">${n[0]}</div>`)).join("")}</nav>
-      <div class="sb-user"><span class="av">${esc(me.ini)}</span><span class="sb-ut"><b>${esc(me.short)}</b><small>${esc(me.role)}</small></span><button data-act="logout" title="Log out" aria-label="Log out">🚪</button></div>
+      <div class="sb-user"><span class="av">${me.avatar ? `<img src="${esc(me.avatar)}" alt="">` : esc(me.ini)}</span><span class="sb-ut"><b>${esc(me.short)}</b><small>${esc(me.role)}</small></span><button data-act="logout" title="Log out" aria-label="Log out">🚪</button></div>
     </aside>
     <div class="ov" data-menu="1"></div>
     <div class="mn">
@@ -313,7 +315,7 @@ function buildShell() {
         <div class="hd-r">
           <div class="qs"><span>🔍</span><input id="qs" placeholder="Quick search..." aria-label="Quick search"></div>
           <button class="bell" data-act="bell" aria-label="Notifications">🔔<i></i></button>
-          <div class="me"><span class="av">${esc(me.ini)}</span><span class="me-t"><b>${esc(me.short)}</b><small>${esc(me.role)}</small></span></div>
+          <div class="me"><span class="av">${me.avatar ? `<img src="${esc(me.avatar)}" alt="">` : esc(me.ini)}</span><span class="me-t"><b>${esc(me.short)}</b><small>${esc(me.role)}</small></span></div>
         </div>
       </header>
       <main class="ct" id="content"></main>
@@ -329,6 +331,7 @@ const PAGES = {
   adoption: pAdopt,
   users: pUsers,
   settings: pSettings,
+  profile: pProfile,
 };
 
 async function loadAppointmentsFromDatabase() {
@@ -336,7 +339,7 @@ async function loadAppointmentsFromDatabase() {
   const result = await response.json().catch(() => ({success:false,message:'Invalid server response.'}));
   if (!response.ok || !result.success) throw new Error(result.message || 'Unable to load appointments.');
   D.appointments = (result.appointments || []).map(a => ({
-    dbId: Number(a.id), petId: Number(a.pet_id), pet: a.pet_name || 'Unknown pet',
+    dbId: Number(a.id), petId: Number(a.pet_id), veterinarianId: Number(a.veterinarian_id || 0), pet: a.pet_name || 'Unknown pet',
     date: String(a.appointment_date || '').slice(0,10), time: String(a.appointment_time || '').slice(0,5),
     purpose: a.purpose || '', status: a.status || 'Pending', vet: a.veterinarian || 'Not assigned',
     owner: a.owner_name || '—', ownerEmail: a.owner_email || '', address: a.address || '—', phone: a.owner_phone || '',
@@ -401,9 +404,14 @@ function loadHolidays(mk) {
 function pAvail() {
   if (!state.avail && !state.availError && !state.availLoading) {
     state.availLoading = true;
-    $("#content").innerHTML = '<div class="card">Loading availability…</div>';
+    if (typeof window.showAppLoading === 'function') window.showAppLoading('Loading availability…');
+    $("#content").innerHTML = '';
     availRequest('list').then((r) => { state.avail = r; }).catch((e) => { state.availError = e.message; })
-      .finally(() => { state.availLoading = false; if (state.page === 'availability') pAvail(); });
+      .finally(() => {
+        state.availLoading = false;
+        if (state.page === 'availability') pAvail();
+        if (typeof window.finishAppLoading === 'function') window.finishAppLoading();
+      });
     return;
   }
   if (state.availLoading) return;
@@ -447,10 +455,37 @@ function openClosureForm() {
 function apptActions(a) {
   if (!a.dbId) return `<small>Clinic action: ${esc(a.status)}</small>`;
   const b = (act, label, cls = "", title = "") => `<button class="btn ${cls}" data-act="${act}" data-i="${a.dbId}" title="${title || label}">${label}</button>`;
-  if (a.status === "Pending") return b("approve-appointment", "✓ Approve", "", "Approve appointment") + b("decline-appointment", "Reject", "red", "Reject appointment") + b("reschedule-appointment", "🔄 Reschedule", "ghost");
-  if (a.status === "Confirmed") return b("start-appointment", "▶ Start", "ghost") + b("complete-appointment", "✔ Complete", "") + b("reschedule-appointment", "🔄 Reschedule", "ghost");
-  if (a.status === "In Progress") return b("complete-appointment", "✔ Complete", "") + b("reschedule-appointment", "🔄 Reschedule", "ghost");
-  return `<small>Clinic action: ${esc(a.status)}</small>`;
+  const isVet = state.account?.role === 'Veterinarian' && Number(a.veterinarianId) === Number(state.account.id);
+  const report = isVet && a.status !== 'Cancelled' ? b('medical-report', '🩺 Medical Report', 'ghost') : '';
+  if (a.status === "Pending") return b("approve-appointment", "✓ Approve", "", "Approve appointment") + b("decline-appointment", "Reject", "red", "Reject appointment") + b("reschedule-appointment", "🔄 Reschedule", "ghost") + report;
+  if (a.status === "Confirmed") return b("start-appointment", "▶ Start", "ghost") + report + b("reschedule-appointment", "🔄 Reschedule", "ghost");
+  if (a.status === "In Progress") return report + b("reschedule-appointment", "🔄 Reschedule", "ghost");
+  return report || `<small>Clinic action: ${esc(a.status)}</small>`;
+}
+function openMedicalReport(dbId) {
+  const a = D.appointments.find(x => x.dbId === dbId);
+  if (!a) return;
+  if (state.account?.role !== 'Veterinarian' || Number(a.veterinarianId) !== Number(state.account.id)) return alert('Only the assigned veterinarian can submit this report.');
+  const m = modal(`<form><h2>Veterinarian Medical Report</h2><p class="mu"><b>${esc(a.pet)}</b> · ${esc(fmtDate(a.date))} at ${esc(fmtTime(a.time))}</p>
+    <div class="fg">
+      <label>Diagnosis<textarea name="diagnosis" required maxlength="5000" rows="3"></textarea></label>
+      <label>Symptoms<textarea name="symptoms" required maxlength="5000" rows="3"></textarea></label>
+      <label>Observations<textarea name="observations" maxlength="5000" rows="3"></textarea></label>
+      <label>Treatment<textarea name="treatment" required maxlength="5000" rows="3"></textarea></label>
+      <label>Medication<textarea name="medication" maxlength="5000" rows="3"></textarea></label>
+      <label>Recommendations<textarea name="recommendations" maxlength="5000" rows="3"></textarea></label>
+      <label>Follow-up date<input type="date" name="follow_up_date" min="${TODAY_ISO}"></label>
+    </div><div class="err" id="report-error"></div><div class="acts"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn" id="report-save">Save Report &amp; Complete Appointment</button></div></form>`);
+  const f=$('form',m), err=$('#report-error',m), btn=$('#report-save',m);
+  f.onsubmit=async e=>{
+    e.preventDefault(); btn.disabled=true; err.textContent='Saving…';
+    try {
+      const response=await fetch('api/medical_reports.php?action=save',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({appointment_id:dbId,...Object.fromEntries(new FormData(f))})});
+      const result=await response.json().catch(()=>({success:false,message:'Invalid server response.'}));
+      if(!response.ok||!result.success) throw new Error(result.message||'Unable to save report.');
+      m.remove(); await loadAppointmentsFromDatabase(); render(); toast(result.message);
+    } catch(ex) { err.textContent=ex.message; btn.disabled=false; }
+  };
 }
 async function apptSlotRequest(date, excludeId) {
   const response = await fetch('api/appointments.php?action=slots', {method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({date, exclude_id: excludeId})});
@@ -490,7 +525,12 @@ function openReschedule(dbId) {
 
 function render() {
   if (!state.user) return login();
-  if (state.account?.role === "Pet Owner") { if (!ownerPageNames[state.page]) state.page = 'owner-appointments'; return renderOwnerDashboard(); }
+  if (state.account?.role === "Pet Owner") {
+    if (!ownerPageNames[state.page]) state.page = 'owner-home';
+    renderOwnerDashboard();
+    if (typeof window.finishAppLoading === 'function') window.finishAppLoading();
+    return;
+  }
   if (!$(".app")) buildShell();
   const isAdmin = state.account?.role === 'Administrator';
   const usersNav = $('.nav[data-go="users"]');
@@ -502,12 +542,14 @@ function render() {
   );
   if (state.page === 'users' && state.account?.role === 'Administrator' && !state.usersLoading) {
     state.usersLoading = true;
-    $('#content').innerHTML = '<div class="card">Loading registered users…</div>';
+    if (typeof window.showAppLoading === 'function') window.showAppLoading('Loading registered users…');
+    $('#content').innerHTML = '';
     loadUsersFromDatabase().finally(() => {
       state.usersLoading = false;
       if (state.page === 'users') {
         if (state.usersLoadError) $('#content').innerHTML = `<div class="card"><h3>Unable to load users</h3><p class="err">${esc(state.usersLoadError)}</p><button class="btn" data-act="reload-users">Try again</button></div>`;
         else PAGES.users();
+        if (typeof window.finishAppLoading === 'function') window.finishAppLoading();
       }
     });
     return;
@@ -518,12 +560,14 @@ function render() {
   }
   if (state.page === 'appointments' && !state.apptDbLoaded && !state.apptLoading) {
     state.apptLoading = true;
-    $('#content').innerHTML = '<div class="card">Loading appointments from the database…</div>';
+    if (typeof window.showAppLoading === 'function') window.showAppLoading('Loading appointments…');
+    $('#content').innerHTML = '';
     loadAppointmentsFromDatabase().catch(err => { state.apptLoadError = err.message; }).finally(() => {
       state.apptLoading = false;
       if (state.page === 'appointments') {
         if (state.apptLoadError) $('#content').innerHTML = `<div class="card"><h3>Unable to load appointments</h3><p class="err">${esc(state.apptLoadError)}</p><button class="btn" data-act="reload-appointments">Try again</button></div>`;
         else PAGES.appointments();
+        if (typeof window.finishAppLoading === 'function') window.finishAppLoading();
       }
     });
     return;
@@ -531,16 +575,26 @@ function render() {
   if (RECORD_PAGES.includes(state.page)) {
     if ((!state.recordsLoaded || state.recordsStale) && !state.recordsLoading) {
       state.recordsLoading = true;
-      $('#content').innerHTML = '<div class="card">Loading records from the database…</div>';
-      loadRecordsFromDatabase().finally(() => { state.recordsLoading = false; state.recordsStale = false; if (RECORD_PAGES.includes(state.page)) render(); });
+      if (typeof window.showAppLoading === 'function') window.showAppLoading('Loading records…');
+      $('#content').innerHTML = '';
+      loadRecordsFromDatabase().finally(() => {
+        state.recordsLoading = false; state.recordsStale = false;
+        if (RECORD_PAGES.includes(state.page)) render();
+        else if (typeof window.finishAppLoading === 'function') window.finishAppLoading();
+      });
       return;
     }
     if (state.recordsLoading) return;
-    if (state.recordsError) { $('#content').innerHTML = `<div class="card"><h3>Unable to load records</h3><p class="err">${esc(state.recordsError)}</p><button class="btn" data-act="reload-records">Try again</button></div>`; return; }
+    if (state.recordsError) { $('#content').innerHTML = `<div class="card"><h3>Unable to load records</h3><p class="err">${esc(state.recordsError)}</p><button class="btn" data-act="reload-records">Try again</button></div>`; if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); return; }
   }
   PAGES[state.page]();
+  if (!['availability', 'profile'].includes(state.page) && typeof window.finishAppLoading === 'function') window.finishAppLoading();
 }
 function go(p, q = "") {
+  if (p !== state.page && typeof window.showAppLoading === 'function') {
+    const role = state.account?.role === 'Pet Owner' ? 'pet owner' : state.account?.role === 'Administrator' ? 'administrator' : 'clinic';
+    window.showAppLoading(`Opening ${ownerPageNames[p] || NAV_LABEL[p] || 'page'} for your ${role} workspace`);
+  }
   if (p === "appointments") state.apptDbLoaded = false;
   if (RECORD_PAGES.includes(p)) state.recordsStale = true;
   if (p === "availability") { state.avail = null; state.availError = ""; }
@@ -893,6 +947,30 @@ function pUsers() {
     ${rows.length ? table(["Name", "Role", "Username", "Email", "Status", "Actions"], items.map((u) => `<tr>${cell("Name", `<div class="who"><span class="av sm">${ini(u.name)}</span><b>${esc(u.name)}</b></div>`)}${cell("Role", esc(u.role))}${cell("Username", esc(u.username))}${cell("Email", esc(u.email))}${cell("Status", badge(u.status))}${cell("Actions", acts("users", u.i))}</tr>`).join(""), foot) : `<div class="card">${empty("No users found.")}</div>`}`;
 }
 
+/* ===== Signed-in staff profile ===== */
+async function pProfile() {
+  if (typeof window.showAppLoading === 'function') window.showAppLoading('Loading your profile…');
+  $("#content").innerHTML = '';
+  try {
+    const r = await apiJson("api/profile.php");
+    const u = r.user;
+    $("#content").innerHTML = `<form class="card sform" id="staff-profile-form" enctype="multipart/form-data">
+      <h3>My Profile</h3><p class="mu">Update your own account details and profile picture.</p>
+      <div class="profile-photo-row"><div id="staff-profile-preview">${u.avatar_path ? `<img class="av lg" style="object-fit:cover" src="${esc(u.avatar_path)}" alt="Profile picture">` : `<span class="av lg">${esc((u.full_name||'U').split(/\\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase())}</span>`}</div>
+      <div><label class="btn ghost">Change picture<input type="file" name="photo" id="staff-profile-photo" accept="image/jpeg,image/png,image/webp" hidden></label><button class="btn ghost" type="button" id="staff-profile-remove">Remove picture</button><small>JPG, PNG or WebP. Maximum 2 MB.</small></div></div>
+      <label>Full Name<input name="full_name" required maxlength="120" value="${esc(u.full_name)}"></label>
+      <label>Email<input name="email" type="email" required maxlength="190" value="${esc(u.email)}"></label>
+      <label>Phone<input name="phone" maxlength="40" value="${esc(u.phone||'')}"></label>
+      <label>Address<textarea name="address" maxlength="255" rows="3">${esc(u.address||'')}</textarea></label>
+      <input type="hidden" name="remove_photo" value="0"><div class="acts"><span class="mu" id="staff-profile-msg"></span><button class="btn">Save Profile</button></div></form>`;
+    const f=$("#staff-profile-form"),photo=$("#staff-profile-photo"),preview=$("#staff-profile-preview");
+    photo.onchange=async()=>{const file=photo.files?.[0];if(!file)return;if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>2*1024*1024){photo.value="";$("#staff-profile-msg").textContent="Choose a JPG, PNG or WebP image up to 2 MB.";return;}const cropped=await cropPetImage(file);if(!cropped){photo.value="";return;}const dt=new DataTransfer();dt.items.add(cropped);photo.files=dt.files;preview.innerHTML=`<img class="av lg" style="object-fit:cover" src="${URL.createObjectURL(cropped)}" alt="Profile preview">`;f.elements.remove_photo.value="0";};
+    $("#staff-profile-remove").onclick=()=>{photo.value="";f.elements.remove_photo.value="1";preview.textContent=(f.elements.full_name.value||"U").split(/\\s+/).map(x=>x[0]).slice(0,2).join("").toUpperCase();};
+    f.onsubmit=async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;$("#staff-profile-msg").textContent="Saving…";try{const saved=await apiJson("api/profile.php?action=save",new FormData(f));state.account={...state.account,name:saved.user.full_name,full_name:saved.user.full_name,email:saved.user.email,avatar_path:saved.user.avatar_path};showSaveSuccess("Profile updated.");buildShell();render();}catch(err){$("#staff-profile-msg").textContent=err.message;b.disabled=false;}};
+  } catch(e) { $("#content").innerHTML=`<div class="card">${esc(e.message)}</div>`; }
+  finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
+}
+
 /* ===== Settings ===== */
 function pSettings() {
   const s = D.settings;
@@ -908,7 +986,7 @@ function pSettings() {
     try {
       const res = await recordRequest("settings", "save", Object.fromEntries(new FormData(e.target)));
       Object.assign(D.settings, Object.fromEntries(new FormData(e.target)));
-      toast(res.message || "Settings saved.");
+      showSaveSuccess(res.message || "Settings saved.");
     } catch (er) { alert(er.message); }
     btn.disabled = false;
   };
@@ -936,7 +1014,7 @@ const FORM = {
     F("date", "Date", { type: "date" }),
     F("time", "Time", { sel: D.slots.map((t) => [t, fmtTime(t)]) }),
     F("purpose", "Purpose", { full: 1 }),
-    F("status", "Status", { sel: ["Pending", "Confirmed", "In Progress", "Completed"] }),
+    F("status", "Status", { sel: ["Pending", "Confirmed", "In Progress"] }),
   ],
   vaccinations: () => [
     F("petId", "Pet", { sel: petOpts() }),
@@ -992,6 +1070,16 @@ const DEF = {
   users: () => ({ status: "Active", role: "Veterinarian" }),
 };
 
+
+function showSaveSuccess(message = 'Your changes have been saved.') {
+  const overlay = document.createElement('div');
+  overlay.className = 'save-success-overlay';
+  overlay.setAttribute('role','status');
+  overlay.setAttribute('aria-live','polite');
+  overlay.innerHTML = `<div class="save-success-card"><span class="save-success-icon">✓</span><h3>Saved Successfully</h3><p>${esc(message)}</p></div>`;
+  document.body.append(overlay);
+  setTimeout(() => overlay.remove(), 2000);
+}
 function modal(html) {
   const m = document.createElement("div");
   m.className = "modal";
@@ -1002,6 +1090,71 @@ function modal(html) {
   };
   return m;
 }
+async function cropPetImage(file) {
+  return new Promise((resolve, reject) => {
+    let objectUrl = '';
+    let settled = false;
+    const m = modal(`<div class="photo-cropper"><h2>Adjust Pet Picture</h2><p class="mu">Drag the picture to reposition it. Use the slider to zoom in or out.</p><canvas id="pet-crop-canvas" width="420" height="420" style="display:block;width:min(100%,420px);aspect-ratio:1;margin:12px auto;border-radius:14px;background:#eef2ef;touch-action:none;cursor:grab"></canvas><label>Zoom <input id="pet-crop-zoom" type="range" min="1" max="3" step="0.01" value="1"></label><div class="acts"><button type="button" class="btn ghost" id="pet-crop-cancel">Cancel</button><button type="button" class="btn" id="pet-crop-apply">Use Cropped Picture</button></div></div>`);
+    // The cropper is opened from inside the Pet Owner Add/Edit Pet dialog.
+    // Force it above that dialog so it cannot be hidden behind the form.
+    m.style.setProperty('z-index', '20000', 'important');
+    const canvas = $('#pet-crop-canvas',m), ctx = canvas && canvas.getContext('2d'), zoom = $('#pet-crop-zoom',m), apply = $('#pet-crop-apply',m);
+    const img = new Image();
+    let base=1, scale=1, x=0, y=0, dragging=false, lastX=0, lastY=0;
+    const finish = value => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(loadTimeout);
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      m.remove();
+      resolve(value);
+    };
+    const fail = error => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(loadTimeout);
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      m.remove();
+      reject(error instanceof Error ? error : new Error('The picture could not be opened.'));
+    };
+    const loadTimeout = setTimeout(() => fail(new Error('The picture took too long to open. Please try another JPG, PNG or WebP image.')), 15000);
+    $('#pet-crop-cancel',m).onclick = () => finish(null);
+    m.addEventListener('click', e => { if (e.target === m) finish(null); }, true);
+    if (!canvas || !ctx || !zoom || !apply) { fail(new Error('The picture editor could not be initialized. Please refresh and try again.')); return; }
+    img.onload = () => {
+      try {
+        if (!img.naturalWidth || !img.naturalHeight) throw new Error('The selected picture is invalid or cannot be decoded.');
+        base = Math.max(canvas.width/img.naturalWidth, canvas.height/img.naturalHeight);
+        scale = base;
+        const draw = () => {
+          const w=img.naturalWidth*scale, h=img.naturalHeight*scale;
+          const limX=Math.max(0,(w-canvas.width)/2), limY=Math.max(0,(h-canvas.height)/2);
+          x=Math.max(-limX,Math.min(limX,x)); y=Math.max(-limY,Math.min(limY,y));
+          ctx.clearRect(0,0,canvas.width,canvas.height);
+          ctx.drawImage(img,(canvas.width-w)/2+x,(canvas.height-h)/2+y,w,h);
+        };
+        zoom.oninput = () => { const previous=scale; scale=base*Number(zoom.value); const ratio=scale/previous; x*=ratio; y*=ratio; draw(); };
+        canvas.onpointerdown = e => { dragging=true; lastX=e.clientX; lastY=e.clientY; canvas.setPointerCapture(e.pointerId); canvas.style.cursor='grabbing'; };
+        canvas.onpointermove = e => { if(!dragging)return; const r=canvas.getBoundingClientRect(); if(!r.width||!r.height)return; x+=(e.clientX-lastX)*canvas.width/r.width; y+=(e.clientY-lastY)*canvas.height/r.height; lastX=e.clientX; lastY=e.clientY; draw(); };
+        canvas.onpointerup = canvas.onpointercancel = () => { dragging=false; canvas.style.cursor='grab'; };
+        draw();
+        apply.onclick = () => {
+          apply.disabled = true;
+          try {
+            canvas.toBlob(blob => {
+              if (!blob) { fail(new Error('The edited picture could not be created. Please try another image.')); return; }
+              finish(new File([blob], 'pet-photo.jpg', {type:'image/jpeg',lastModified:Date.now()}));
+            }, 'image/jpeg', 0.92);
+          } catch (error) { fail(error); }
+        };
+      } catch (error) { fail(error); }
+    };
+    img.onerror = () => fail(new Error('This image format could not be opened. Please choose a JPG, PNG or WebP picture.'));
+    try { objectUrl = URL.createObjectURL(file); img.src = objectUrl; }
+    catch (error) { fail(error); }
+  });
+}
+
 const optPair = (o) => (Array.isArray(o) ? o : [o, o]);
 const fieldHtml = (f, v) =>
   `<label class="${f.full ? "full" : ""}">${f.l}${
@@ -1010,12 +1163,14 @@ const fieldHtml = (f, v) =>
       : `<input name="${f.k}" type="${f.type || "text"}" value="${f.type === "password" ? "" : esc(v)}" placeholder="${esc(f.ph || "")}" ${f.type === "password" ? 'autocomplete="new-password"' : ""} ${f.opt ? "" : "required"}>`
   }</label>`;
 
-async function saveRecord(k, v, old) {
+async function saveRecord(k, v, old, submittedFormData = null) {
   if (k === "users") return apiJson("api/users.php?action=save", { ...v, id: old ? old.id : 0 });
   if (k === "appointments") return apiJson("api/appointments.php?action=create", { pet_id: Number(v.petId), date: v.date, time: v.time, purpose: v.purpose, status: v.status });
   if (k === "pets") {
-    const fd = new FormData();
-    Object.entries({ ...v, id: old ? old.id : 0 }).forEach(([key, val]) => fd.append(key, val));
+    // Preserve the actual File object in the original multipart form data.
+    const fd = submittedFormData || new FormData();
+    if (!submittedFormData) Object.entries(v).forEach(([key, val]) => fd.append(key, val));
+    fd.set("id", String(old ? old.id : 0));
     return recordRequest(k, "save", fd);
   }
   return recordRequest(k, "save", { ...v, id: old ? old.id : 0 });
@@ -1035,17 +1190,22 @@ function form(k, i) {
     $("#pp-choose", m).onclick = () => file.click();
     const rmv = $("#pp-remove", m);
     if (rmv) rmv.onclick = () => { file.value = ""; frm.elements.remove_photo.value = "1"; prev.innerHTML = tile(r.species, 0); rmv.remove(); };
-    file.onchange = () => {
+    file.onchange = async () => {
       const f = file.files[0]; if (!f) return;
       if (!["image/jpeg", "image/png", "image/webp"].includes(f.type)) { file.value = ""; return ($("#ferr", m).textContent = "Only JPG, PNG or WebP pictures are allowed."); }
       if (f.size > 2 * 1024 * 1024) { file.value = ""; return ($("#ferr", m).textContent = "That picture is larger than 2 MB."); }
+      $("#ferr", m).textContent = "Opening picture editor…";
+      const cropped = await cropPetImage(f);
+      if (!cropped) { file.value = ""; $("#ferr", m).textContent = "Picture editing cancelled."; return; }
+      const transfer = new DataTransfer(); transfer.items.add(cropped); file.files = transfer.files;
       $("#ferr", m).textContent = ""; frm.elements.remove_photo.value = "0";
-      prev.innerHTML = `<span class="tile has-img"><img src="${URL.createObjectURL(f)}" alt=""></span>`;
+      prev.innerHTML = `<span class="tile has-img"><img src="${URL.createObjectURL(cropped)}" alt=""></span>`;
     };
   }
   $("form", m).onsubmit = async (e) => {
     e.preventDefault();
-    const v = Object.fromEntries(new FormData(e.target)),
+    const submittedFormData = new FormData(e.target),
+      v = Object.fromEntries(submittedFormData),
       fail = (t) => ($("#ferr", m).textContent = t),
       btn = e.submitter || $(".acts .btn:not(.ghost)", m);
     for (const f of fs) v[f.k] = f.type === "password" ? String(v[f.k] ?? "") : String(v[f.k] ?? "").trim();
@@ -1053,13 +1213,15 @@ function form(k, i) {
     if (k === "vaccinations" && v.next < v.given) return fail("Next due date must be after the date given.");
     if (k === "users" && v.password && v.password.length < 8) return fail("Password must be at least 8 characters.");
     btn.disabled = true;
+    if (typeof window.showAppLoading === 'function') window.showAppLoading(edit ? 'Saving your changes…' : 'Creating your record…');
     try {
-      const res = await saveRecord(k, v, edit ? D[k][i] : null);
+      const res = await saveRecord(k, v, edit ? D[k][i] : null, submittedFormData);
       m.remove();
       await reloadAfter(k);
-      toast(res.message || (edit ? "Changes saved." : "Record added."));
+      showSaveSuccess(res.message || (edit ? "Changes saved." : "Record added."));
       refresh();
     } catch (er) { fail(er.message); btn.disabled = false; }
+    finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
   };
   $("input,select", m)?.focus();
 }
@@ -1116,12 +1278,14 @@ async function remove(k, i) {
       ? " Their appointments and vaccination records will also be removed."
       : "";
   if (!confirm(`Delete "${label}"?${extra}`)) return;
+  if (typeof window.showAppLoading === 'function') window.showAppLoading('Deleting record…');
   try {
     const res = k === "users" ? await apiJson("api/users.php?action=delete", { id: r.id }) : await recordRequest(k, "delete", { id: r.id });
     await reloadAfter(k);
     toast(res.message || "Record deleted.");
     refresh();
   } catch (e) { alert(e.message); }
+  finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
 }
 async function adoptionStatus(i, status) {
   const r = D.adoption[i];
@@ -1130,6 +1294,7 @@ async function adoptionStatus(i, status) {
     adopter = prompt(`Who adopted ${r.name}? (optional)`);
     if (adopter === null) return;
   }
+  if (typeof window.showAppLoading === 'function') window.showAppLoading('Updating adoption status…');
   try {
     await recordRequest("adoption", "status", { id: r.id, status, adopter_name: adopter.trim() });
     await loadRecordsFromDatabase();
@@ -1137,6 +1302,7 @@ async function adoptionStatus(i, status) {
     toast(status === "Adopted" ? `${r.name} has been adopted! 🎉` : `${r.name} is now pending adoption.`);
     refresh();
   } catch (e) { alert(e.message); }
+  finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
 }
 
 function act(a, k, i) {
@@ -1147,6 +1313,7 @@ function act(a, k, i) {
   else if (a === 'avail-reload') { state.avail = null; state.availError = ''; pAvail(); }
   else if (a === 'avail-del') { if (confirm('Remove this closure? Owners will be able to book that time again.')) availRequest('delete', { id: i }).then((r) => { state.avail = null; state.availError = ''; state.holi = null; pAvail(); toast(r.message); }).catch((e) => alert(e.message)); }
   else if (a === 'start-appointment') { updateAppointmentStatus(i, 'In Progress').catch(e => alert(e.message)); }
+  else if (a === 'medical-report') { openMedicalReport(i); }
   else if (a === 'complete-appointment') { if (confirm('Mark this appointment as completed?')) updateAppointmentStatus(i, 'Completed').catch(e => alert(e.message)); }
   else if (a === 'reschedule-appointment') { openReschedule(i); }
   else if (a === 'owner-retry') { loadOwnerData().then(renderOwnerDashboard); }
@@ -1228,5 +1395,24 @@ app.addEventListener("keydown", (e) => {
     go("pets", e.target.value.trim());
 });
 
-// Restore an existing PHP session; the server, not localStorage, is the source of truth.
-authRequest('me').then(async r => { state.user = r.user.username; state.account = r.user; if (state.account.role === 'Pet Owner') await loadOwnerData(); render(); }).catch(() => { state.user = null; login(); });
+// Restore an existing PHP session; hide the startup screen only after the first view is ready.
+(async function startApplication() {
+  try {
+    const r = await authRequest('me');
+    state.user = r.user.username;
+    state.account = r.user;
+    const loadingMessage = document.getElementById('app-loading-message');
+    if (loadingMessage) {
+      const workspace = state.account.role === 'Administrator' ? 'administrator' : state.account.role === 'Veterinarian' ? 'veterinarian' : state.account.role === 'Pet Owner' ? 'pet owner' : 'clinic';
+      loadingMessage.textContent = `Preparing your ${workspace} workspace`;
+    }
+    if (state.account.role === 'Pet Owner') await loadOwnerData();
+    render();
+  } catch (error) {
+    state.user = null;
+    login();
+  } finally {
+    if (window.appLoadingFailsafe) clearTimeout(window.appLoadingFailsafe);
+    if (typeof window.finishAppLoading === 'function') window.finishAppLoading();
+  }
+})();

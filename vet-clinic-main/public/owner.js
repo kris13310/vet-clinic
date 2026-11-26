@@ -6,7 +6,7 @@
    TODAY, TODAY_ISO, MONTHS, WEEKDAYS, fmtLong.
    ===================================================================== */
 
-let ownerData = { doctor: null, profile: {}, pets: [], appointments: [], vaccinations: [], notifications: [], unread: 0, today: '', schedule: {} };
+let ownerData = { doctor: null, profile: {}, pets: [], appointments: [], vaccinations: [], medical_reports: [], notifications: [], unread: 0, today: '', schedule: {} };
 let ownerLoadError = '';
 let ovPoll = null;
 const ov = { uid: null, filter: 'all', nfilter: 'all', month: '', cal: { days: {}, loading: false, error: '' }, date: '', time: '', slots: [], slotsLoading: false, slotsOpen: true, dayState: 'open', dayLabel: '', petChoice: '', bellOpen: false, menuOpen: false };
@@ -26,18 +26,18 @@ async function ownerRequest(action = 'data', data = null, query = '') {
   if (!response.ok || !result.success) throw new Error(result.message || 'Request failed.');
   return result;
 }
-const emptyOwnerData = () => ({ doctor: null, profile: {}, pets: [], appointments: [], vaccinations: [], notifications: [], unread: 0, today: '', schedule: {} });
+const emptyOwnerData = () => ({ doctor: null, profile: {}, pets: [], appointments: [], vaccinations: [], medical_reports: [], notifications: [], unread: 0, today: '', schedule: {} });
 async function loadOwnerData() {
   try {
     const r = await ownerRequest('data');
-    ownerData = { doctor: r.doctor || null, profile: r.profile || {}, pets: r.pets || [], appointments: r.appointments || [], vaccinations: r.vaccinations || [], notifications: ownerData.notifications || [], unread: r.unread || 0, today: r.today || '', schedule: r.schedule || {} };
+    ownerData = { doctor: r.doctor || null, profile: r.profile || {}, pets: r.pets || [], appointments: r.appointments || [], vaccinations: r.vaccinations || [], medical_reports: r.medical_reports || [], notifications: [], unread: r.unread || 0, today: r.today || '', schedule: r.schedule || {} };
     ownerLoadError = '';
     try { const n = await ownerRequest('notifications'); ownerData.notifications = n.notifications || []; ownerData.unread = n.unread || 0; } catch (e) { /* bell still works from the count */ }
   } catch (e) { ownerLoadError = e.message; ownerData = emptyOwnerData(); }
 }
 
 /* ---------- Formatting helpers ---------- */
-const ownerPageNames = { 'owner-appointments': 'Appointments', 'owner-pets': 'My Pets', 'owner-notifications': 'Notifications', 'owner-records': 'Medical Records', 'owner-profile': 'Personal Information', 'owner-settings': 'Settings' };
+const ownerPageNames = { 'owner-home': 'Overview', 'owner-appointments': 'Book Appointment', 'owner-pets': 'My Pets', 'owner-notifications': 'Notifications', 'owner-records': 'Medical Records', 'owner-profile': 'Personal Information', 'owner-settings': 'Settings' };
 const OV_LABEL = { Pending: 'Pending', Confirmed: 'Approved', 'In Progress': 'In Progress', Completed: 'Completed', Cancelled: 'Rejected', Overdue: 'Overdue', Recorded: 'Recorded' };
 const OV_HINT = { Pending: 'Waiting for clinic approval', Confirmed: 'Approved — see you then!', 'In Progress': 'Visit in progress', Completed: 'Visit completed', Cancelled: 'Rejected — please book another time' };
 /* The clinic has one doctor: the account whose role is Veterinarian. Show the name as "Dr. Name". */
@@ -100,15 +100,15 @@ function ovModal(html, wide = false) {
    Shell
    ===================================================================== */
 function renderOwnerDashboard() {
-  const page = ownerPageNames[state.page] ? state.page : 'owner-appointments'; state.page = page;
+  const page = ownerPageNames[state.page] ? state.page : 'owner-home'; state.page = page;
   const me = state.account || {};
   if (ov.uid !== me.id) { Object.assign(ov, { uid: me.id, filter: 'all', nfilter: 'all', month: '', date: '', time: '', slots: [], petChoice: '', bellOpen: false }); ov.cal = { days: {}, loading: false, error: '' }; }
   ov.menuOpen = false; ov.bellOpen = false;
   const displayName = me.name || me.full_name || me.username || 'Pet Owner';
   const upcoming = ownerData.appointments.filter(a => ovIsActive(a) && String(a.appointment_date).slice(0, 10) >= ownerToday());
-  const nav = [['owner-appointments', '📅', 'Appointments', upcoming.length], ['owner-pets', '🐾', 'My Pets', 0], ['owner-notifications', '🔔', 'Notifications', ownerData.unread], ['owner-records', '💉', 'Medical Records', 0], ['owner-profile', '👤', 'Personal Information', 0], ['owner-settings', '⚙️', 'Settings', 0]];
+  const nav = [['owner-home', '⌂', 'Overview', 0], ['owner-appointments', '＋', 'Book Appointment', upcoming.length], ['owner-pets', '🐾', 'My Pets', 0], ['owner-notifications', '🔔', 'Notifications', ownerData.unread], ['owner-records', '💉', 'Medical Records', 0], ['owner-profile', '👤', 'Personal Information', 0], ['owner-settings', '⚙️', 'Settings', 0]];
   const navHtml = nav.map(([id, ic, label, n]) => `<button class="ov-nav ${page === id ? 'active' : ''}" data-go="${id}"><span class="ov-nav-ic">${ic}</span><span class="ov-nav-t">${label}</span>${n ? `<em ${id === 'owner-notifications' ? 'id="ov-nav-notif"' : ''}>${n > 99 ? '99+' : n}</em>` : (id === 'owner-notifications' ? '<em id="ov-nav-notif" hidden></em>' : '')}</button>`).join('');
-  const builders = { 'owner-appointments': ovPageAppointments, 'owner-pets': ovPagePets, 'owner-notifications': ovPageNotifications, 'owner-records': ovPageRecords, 'owner-profile': ovPageProfile, 'owner-settings': ovPageSettings };
+  const builders = { 'owner-home': ovPageHome, 'owner-appointments': ovPageAppointments, 'owner-pets': ovPagePets, 'owner-notifications': ovPageNotifications, 'owner-records': ovPageRecords, 'owner-profile': ovPageProfile, 'owner-settings': ovPageSettings };
 
   app.innerHTML = `<div class="ov-app">
     <aside class="ov-side" aria-label="Main navigation">
@@ -208,7 +208,8 @@ function ovStartPolling() {
       if (fresh.length || ownerData.unread > prev) {
         toast('🔔 ' + (fresh[0]?.title || 'You have a new notification'));
         const r = await ownerRequest('data');
-        ownerData.appointments = r.appointments || []; ownerData.vaccinations = r.vaccinations || []; ownerData.pets = r.pets || [];
+        ownerData.appointments = r.appointments || []; ownerData.vaccinations = r.vaccinations || []; ownerData.pets = r.pets || []; ownerData.medical_reports = r.medical_reports || [];
+        if (!document.querySelector('.ov-modal')) renderOwnerDashboard();
         if (state.page === 'owner-appointments') { ovRenderApptList(); ovRenderStats(); ovLoadMonth(true); }
       }
       ovRefreshNotifUi();
@@ -216,6 +217,25 @@ function ovStartPolling() {
   }, 40000);
 }
 
+/* Pet Owner landing page: overview, quick actions and live account summaries. */
+function ovPageHome() {
+  const name = String((state.account || {}).name || (state.account || {}).full_name || 'there').trim().split(/\s+/)[0];
+  const today = ownerToday();
+  const upcoming = ownerData.appointments.filter(a => ovIsActive(a) && String(a.appointment_date).slice(0,10) >= today).sort((a,b) => (String(a.appointment_date)+a.appointment_time).localeCompare(String(b.appointment_date)+b.appointment_time));
+  const next = upcoming[0], pets = ownerData.pets.slice(0,3), recent = ownerData.notifications.slice(0,3);
+  let html = '<section class="ov-home-welcome"><div><span class="ov-eyebrow">YOUR PET CARE SPACE</span><h2>Welcome back, '+esc(name)+'!</h2><p>Everything about your pets and clinic visits, all in one place.</p><div class="ov-home-actions"><button class="ov-btn" data-go="owner-appointments">＋ Book an appointment</button><button class="ov-btn ghost" data-go="owner-pets">Manage my pets</button></div></div><div class="ov-home-art" aria-hidden="true">🐾　🐶　🐱</div></section>';
+  html += '<section class="ov-home-stats"><article><span>🐾</span><div><b>'+ownerData.pets.length+'</b><small>My pets</small></div><button data-go="owner-pets">View →</button></article><article><span>📅</span><div><b>'+upcoming.length+'</b><small>Upcoming visits</small></div><button data-go="owner-appointments">View →</button></article><article><span>🔔</span><div><b>'+(ownerData.unread||0)+'</b><small>Unread updates</small></div><button data-go="owner-notifications">View →</button></article></section>';
+  html += '<div class="ov-home-grid"><section class="ov-home-panel"><div class="ov-home-panel-head"><div><span class="ov-eyebrow">DON’T MISS IT</span><h3>Your next visit</h3></div></div>';
+  if (next) { const pet = ownerData.pets.find(p => String(p.id) === String(next.pet_id)) || {}; html += '<div class="ov-home-visit">'+petImg(pet,'md')+'<div><b>'+esc(pet.name || next.pet_name || 'Your pet')+'</b><span>'+esc(ownerDate(next.appointment_date))+' · '+esc(ownerTime(next.appointment_time))+'</span><small>'+esc(next.purpose || 'Veterinary appointment')+'</small></div>'+ownerBadge(next.status)+'</div><button class="ov-home-link" data-go="owner-appointments">View appointment details →</button>'; }
+  else html += '<div class="ov-home-empty"><span>🗓️</span><b>No upcoming visits</b><p>Your next appointment will appear here after you book a visit.</p><button class="ov-btn" data-go="owner-appointments">Book a visit</button></div>';
+  html += '</section><section class="ov-home-panel"><div class="ov-home-panel-head"><div><span class="ov-eyebrow">YOUR COMPANIONS</span><h3>My pets</h3></div><button class="ov-home-link" data-go="owner-pets">See all →</button></div>';
+  if (pets.length) { html += '<div class="ov-home-petlist">'+pets.map(p => '<button class="ov-home-pet" data-oact="pet-view" data-v="'+p.id+'">'+petImg(p,'sm')+'<span><b>'+esc(p.name)+'</b><small>'+esc([p.species,p.breed].filter(Boolean).join(' · ') || 'Pet profile')+'</small></span><i>›</i></button>').join('')+'</div>'; if(ownerData.pets.length>3) html += '<button class="ov-home-link" data-go="owner-pets">View all '+ownerData.pets.length+' pets →</button>'; }
+  else html += '<div class="ov-home-empty"><span>🐾</span><b>Add your first pet</b><p>Create a profile to keep appointments and health records together.</p><button class="ov-btn" data-oact="pet-add">＋ Add a pet</button></div>';
+  html += '</section><section class="ov-home-panel ov-home-updates"><div class="ov-home-panel-head"><div><span class="ov-eyebrow">LATEST FROM THE CLINIC</span><h3>Recent updates</h3></div><button class="ov-home-link" data-go="owner-notifications">All updates →</button></div>';
+  if(recent.length) html += '<div class="ov-home-notifs">'+recent.map(n => '<div class="ov-home-notif"><span>'+(n.is_read?'○':'●')+'</span><div><b>'+esc(n.title)+'</b><p>'+esc(n.message)+'</p><small>'+esc(ovAgo(n.created_at))+'</small></div></div>').join('')+'</div>';
+  else html += '<div class="ov-home-empty compact"><span>🔔</span><b>You’re all caught up</b><p>Clinic updates will show here.</p></div>';
+  return html + '</section></div>';
+}
 /* =====================================================================
    Appointments page: availability booking + my appointments
    ===================================================================== */
@@ -381,6 +401,7 @@ function ovInitAppointments() {
     const payload = { pet_id: f.get('pet_id'), purpose: String(f.get('purpose') || '').trim(), notes: String(f.get('notes') || '').trim(), appointment_date: ov.date, appointment_time: ov.time,
       new_pet_name: f.get('new_pet_name') || '', new_pet_species: String(f.get('new_pet_species') || '').trim(), new_pet_breed: f.get('new_pet_breed') || '', new_pet_age: f.get('new_pet_age') || '' };
     btn.disabled = true; msg.textContent = 'Sending request…';
+    if (typeof window.showAppLoading === 'function') window.showAppLoading('Sending your appointment request…');
     try {
       const r = await ownerRequest('request_appointment', payload);
       ov.date = ''; ov.time = ''; ov.slots = []; ov.petChoice = '';
@@ -388,7 +409,7 @@ function ovInitAppointments() {
     } catch (err) {
       msg.className = 'ov-msg error'; msg.textContent = err.message; btn.disabled = false;
       if (/reserved|already|passed|too soon|closed|valid|past/i.test(err.message)) { const d = ov.date; ov.time = ''; await ovLoadMonth(true); if (ov.cal.days[d]?.state === 'available') await ovPickDate(d); else { ov.date = ''; ov.slots = []; ovRenderSlots(); ovRenderCal(); } ovRenderSummary(); }
-    }
+    } finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
   };
 }
 
@@ -435,12 +456,27 @@ function ovPetForm(pet) {
   $('#ov-choose', m).onclick = () => file.click();
   const rm = $('#ov-removephoto', m);
   if (rm) rm.onclick = () => { file.value = ''; form.elements.namedItem('remove_photo').value = '1'; prev.innerHTML = petImg({ species: species() }, 'xl'); rm.remove(); err.textContent = ''; };
-  file.onchange = () => {
+  file.onchange = async () => {
     err.textContent = ''; const f = file.files[0]; if (!f) return;
     if (!PHOTO_OK.includes(f.type)) { err.textContent = 'Only JPG, PNG or WebP pictures are allowed.'; file.value = ''; return; }
     if (f.size > PHOTO_MAX) { err.textContent = 'That picture is ' + (f.size / 1048576).toFixed(1) + ' MB. The maximum is 2 MB.'; file.value = ''; return; }
-    form.elements.namedItem('remove_photo').value = '0';
-    prev.innerHTML = `<img class="ov-pimg xl" alt="Selected picture" src="${URL.createObjectURL(f)}">`;
+    err.textContent = 'Opening picture editor…';
+    try {
+      const cropped = await cropPetImage(f);
+      if (!cropped) { file.value = ''; err.textContent = 'Picture editing cancelled.'; return; }
+      if (typeof DataTransfer === 'undefined') throw new Error('Your browser cannot attach the edited picture. Please use an updated version of Chrome, Edge or Firefox.');
+      const transfer = new DataTransfer();
+      transfer.items.add(cropped);
+      file.files = transfer.files;
+      if (!file.files || !file.files.length) throw new Error('The edited picture could not be attached. Please choose it again.');
+      err.textContent = '';
+      form.elements.namedItem('remove_photo').value = '0';
+      prev.innerHTML = `<img class="ov-pimg xl" alt="Selected picture" src="${URL.createObjectURL(cropped)}">`;
+    } catch (error) {
+      console.error('Pet Owner picture editor failed:', error);
+      file.value = '';
+      err.textContent = error && error.message ? error.message : 'Could not open the picture editor. Please try another picture or refresh the page.';
+    }
   };
   form.elements.namedItem('species').oninput = () => { if (!file.files[0] && !(edit && p.photo_path && form.elements.namedItem('remove_photo').value !== '1')) prev.innerHTML = petImg({ species: species() }, 'xl'); };
   form.onsubmit = async e => {
@@ -450,8 +486,10 @@ function ovPetForm(pet) {
     if (err.textContent) { perr.textContent = 'Please fix the picture first.'; return; }
     const fd = new FormData(form); if (edit) fd.append('id', p.id);
     btn.disabled = true; btn.textContent = 'Saving…';
-    try { const r = await ownerRequest('pet_save', fd); m.close(); await loadOwnerData(); toast(r.message || 'Pet saved.'); renderOwnerDashboard(); }
+    if (typeof window.showAppLoading === 'function') window.showAppLoading(edit ? 'Updating your pet…' : 'Adding your pet…');
+    try { const r = await ownerRequest('pet_save', fd); m.close(); await loadOwnerData(); showSaveSuccess(r.message || 'Pet saved.'); renderOwnerDashboard(); }
     catch (er) { perr.textContent = er.message; btn.disabled = false; btn.textContent = edit ? 'Save changes' : 'Add pet'; }
+    finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
   };
   form.elements.namedItem('name').focus();
 }
@@ -472,8 +510,10 @@ function ovPetDelete(p) {
     <div class="ov-actions"><button class="ov-btn ghost" data-close>Keep pet</button><button class="ov-btn danger solid" id="ov-del-go">Yes, delete</button></div>`);
   $('#ov-del-go', m).onclick = async e => {
     const b = e.currentTarget; b.disabled = true; b.textContent = 'Deleting…';
+    if (typeof window.showAppLoading === 'function') window.showAppLoading('Deleting your pet…');
     try { const r = await ownerRequest('pet_delete', { id: p.id }); m.close(); await loadOwnerData(); toast(r.message || 'Pet deleted.'); renderOwnerDashboard(); }
     catch (er) { $('#ov-del-err', m).textContent = er.message; b.disabled = false; b.textContent = 'Yes, delete'; }
+    finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
   };
 }
 
@@ -481,32 +521,91 @@ function ovPetDelete(p) {
    Medical records, personal information, settings
    ===================================================================== */
 function ovPageRecords() {
-  const v = ownerData.vaccinations;
-  return `<div class="ov-intro"><div><span class="ov-eyebrow">HEALTH HISTORY</span><h2>Medical Records</h2><p>Vaccination history and upcoming due dates for your pets.</p></div></div>
-  <section class="ov-card">${v.length ? `<div class="ov-tablewrap"><table class="ov-table"><thead><tr><th>Pet</th><th>Vaccine</th><th>Date given</th><th>Next due</th><th>Veterinarian</th><th>Notes</th></tr></thead><tbody>${v.map(x => `<tr><td><div class="ov-who">${petImg({ photo_path: x.pet_photo, species: x.pet_species, name: x.pet_name }, 'xs')}<b>${esc(x.pet_name)}</b></div></td><td>💉 ${esc(x.vaccine)}</td><td>${esc(ownerDate(x.date_given))}</td><td>${esc(ownerDate(x.next_due))} ${x.next_due && String(x.next_due) < ownerToday() ? ownerBadge('Overdue') : ''}</td><td>${esc(ovVet(x.veterinarian))}</td><td>${esc(x.notes || '—')}</td></tr>`).join('')}</tbody></table></div>` : `<div class="ov-empty"><span>💚</span><b>No medical records yet</b><p>Vaccination and medical history recorded by the clinic will appear here.</p></div>`}</section>`;
+  const v = ownerData.vaccinations, reports = ownerData.medical_reports || [];
+  return `<div class="ov-intro"><div><span class="ov-eyebrow">HEALTH HISTORY</span><h2>Medical Records</h2><p>View veterinarian reports, vaccination history and follow-up instructions for your pets.</p></div></div>
+  <section class="ov-card"><h3>Veterinarian Medical Reports</h3>${reports.length ? reports.map(r => `<article class="ov-record-report"><div class="ov-who">${petImg({photo_path:r.pet_photo,species:r.pet_species,name:r.pet_name},'xs')}<div><b>${esc(r.pet_name)}</b><small>${esc(ownerDate(r.appointment_date))} · ${esc(r.veterinarian || 'Veterinarian')}</small></div></div><div class="ov-grid"><div><b>Diagnosis</b><p>${esc(r.diagnosis)}</p></div><div><b>Symptoms</b><p>${esc(r.symptoms)}</p></div><div><b>Observations</b><p>${esc(r.observations || '—')}</p></div><div><b>Treatment</b><p>${esc(r.treatment)}</p></div><div><b>Medication</b><p>${esc(r.medication || '—')}</p></div><div><b>Recommendations</b><p>${esc(r.recommendations || '—')}</p></div><div><b>Follow-up date</b><p>${esc(r.follow_up_date ? ownerDate(r.follow_up_date) : 'Not scheduled')}</p></div></div></article>`).join('') : `<div class="ov-empty"><span>🩺</span><b>No veterinarian reports yet</b><p>Reports submitted after your pet's consultation will appear here.</p></div>`}</section>
+  <section class="ov-card"><h3>Vaccination History</h3>${v.length ? `<div class="ov-tablewrap"><table class="ov-table"><thead><tr><th>Pet</th><th>Vaccine</th><th>Date given</th><th>Next due</th><th>Veterinarian</th><th>Notes</th></tr></thead><tbody>${v.map(x => `<tr><td><div class="ov-who">${petImg({ photo_path: x.pet_photo, species: x.pet_species, name: x.pet_name }, 'xs')}<b>${esc(x.pet_name)}</b></div></td><td>💉 ${esc(x.vaccine)}</td><td>${esc(ownerDate(x.date_given))}</td><td>${esc(ownerDate(x.next_due))} ${x.next_due && String(x.next_due) < ownerToday() ? ownerBadge('Overdue') : ''}</td><td>${esc(ovVet(x.veterinarian))}</td><td>${esc(x.notes || '—')}</td></tr>`).join('')}</tbody></table></div>` : `<div class="ov-empty"><span>💚</span><b>No vaccination records yet</b><p>Vaccination records recorded by the clinic will appear here.</p></div>`}</section>`;
 }
 function ovPageProfile() {
   const me = state.account || {}, p = ownerData.profile || {}, name = p.name || me.name || '';
+  const avatar = p.avatar_path ? `<img class="ov-pimg xl" src="${esc(p.avatar_path)}" alt="Profile picture">` : `<div class="ov-avatar lg">${esc(ovInitials(name))}</div>`;
   return `<div class="ov-intro"><div><span class="ov-eyebrow">ACCOUNT DETAILS</span><h2>Personal Information</h2><p>Keep your contact information current for clinic updates.</p></div></div>
-  <form class="ov-card ov-narrow" id="owner-profile-form"><div class="ov-profile-head"><div class="ov-avatar lg">${esc(ovInitials(name))}</div><div><h3>${esc(name || 'Pet Owner')}</h3><p>Pet Owner account</p></div></div>
+  <form class="ov-card ov-narrow" id="owner-profile-form" enctype="multipart/form-data"><div class="ov-profile-head"><div id="owner-avatar-preview">${avatar}</div><div><h3>${esc(name || 'Pet Owner')}</h3><p>Pet Owner account</p><label class="ov-btn ghost sm">Change profile picture<input type="file" name="photo" id="owner-profile-photo" accept="image/jpeg,image/png,image/webp" hidden></label><button class="ov-btn ghost sm" type="button" id="owner-profile-remove">Remove picture</button></div></div>
     <div class="ov-grid"><label>Full name<input name="name" required maxlength="120" value="${esc(name)}"></label><label>Email address<input name="email" type="email" required value="${esc(p.email || me.email || '')}"></label>
     <label>Phone number<input name="phone" maxlength="40" value="${esc(p.phone || '')}" placeholder="e.g. 09XX XXX XXXX"></label><label>Home address<textarea name="address" rows="3" maxlength="255" placeholder="Barangay, city">${esc(p.address || '')}</textarea></label></div>
-    <div class="ov-actions"><span id="owner-profile-msg" class="ov-msg" role="status"></span><button class="ov-btn" type="submit">Save personal information</button></div></form>`;
+    <input type="hidden" name="remove_photo" value="0"><div class="ov-actions"><span id="owner-profile-msg" class="ov-msg" role="status"></span><button class="ov-btn" type="submit">Save personal information</button></div></form>`;
 }
 function ovInitProfile() {
   const form = $('#owner-profile-form'); if (!form) return;
+  const photo = $('#owner-profile-photo'), preview = $('#owner-avatar-preview'), remove = $('#owner-profile-remove');
+  photo.onchange = () => {
+    const f=photo.files?.[0]; if(!f)return;
+    if(!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size>2*1024*1024){photo.value='';$('#owner-profile-msg').textContent='Choose a JPG, PNG or WebP image up to 2 MB.';return;}
+    const img=new Image(), url=URL.createObjectURL(f); img.onload=()=>{const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');canvas.width=canvas.height=512;const scale=Math.max(512/img.width,512/img.height),w=img.width*scale,h=img.height*scale;ctx.drawImage(img,(512-w)/2,(512-h)/2,w,h);canvas.toBlob(blob=>{if(!blob)return;const cropped=new File([blob],'profile.jpg',{type:'image/jpeg'});const dt=new DataTransfer();dt.items.add(cropped);photo.files=dt.files;preview.innerHTML=`<img class="ov-pimg xl" alt="Profile picture preview" src="${URL.createObjectURL(cropped)}">`;form.elements.remove_photo.value='0';},'image/jpeg',.9);URL.revokeObjectURL(url);};img.src=url;
+  };
+  remove.onclick=()=>{photo.value='';form.elements.remove_photo.value='1';preview.innerHTML=`<div class="ov-avatar lg">${esc(ovInitials(form.elements.name.value))}</div>`;};
   form.onsubmit = async e => {
     e.preventDefault(); const msg = $('#owner-profile-msg'); msg.textContent = 'Saving…'; msg.className = 'ov-msg';
+    if (typeof window.showAppLoading === 'function') window.showAppLoading('Saving your profile…');
     try {
-      const r = await ownerRequest('profile', Object.fromEntries(new FormData(form)));
-      state.account = { ...state.account, name: r.user.name, full_name: r.user.name, email: r.user.email };
-      await loadOwnerData(); toast('Personal information saved.'); renderOwnerDashboard();
+      const r = await ownerRequest('profile', new FormData(form));
+      state.account = { ...state.account, name: r.user.name, full_name: r.user.name, email: r.user.email, avatar_path: r.user.avatar_path || null };
+      await loadOwnerData(); showSaveSuccess('Personal information saved.'); renderOwnerDashboard();
     } catch (err) { msg.textContent = err.message; msg.className = 'ov-msg error'; }
+    finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
   };
 }
 function ovPageSettings() {
-  const rows = [['🔐', 'Account security', 'Your account is protected by your password. To change it, contact the veterinary office administrator.', ''], ['🔔', 'Notifications', 'You are notified in this portal when an appointment is approved, rejected, rescheduled or completed.', '<button class="ov-btn ghost sm" data-go="owner-notifications">Open →</button>'], ['📨', 'Contact information', 'Clinic communications use the email saved to your account.', '<button class="ov-btn ghost sm" data-go="owner-profile">Edit details →</button>'], ['🚪', 'Sign out', 'Sign out of this device when you finish.', '<button class="ov-btn danger sm" data-act="logout">Log out</button>']];
-  return `<div class="ov-intro"><div><span class="ov-eyebrow">PREFERENCES</span><h2>Settings</h2><p>Manage your account and sign-in preferences.</p></div></div>${rows.map(([ic, t, d, b]) => `<section class="ov-card ov-setting"><span class="ov-setting-ic">${ic}</span><div><h3>${t}</h3><p>${d}</p></div>${b}</section>`).join('')}`;
+  const me = state.account || {};
+  const profile = ownerData.profile || {};
+  const name = profile.name || me.name || me.full_name || 'Pet Owner';
+  const email = profile.email || me.email || 'No email saved';
+  const username = me.username || 'Not available';
+  return `
+    <div class="ov-settings-page">
+      <div class="ov-intro"><div><span class="ov-eyebrow">ACCOUNT</span><h2>Settings</h2><p>Manage your personal details and keep your account secure.</p></div></div>
+      <section class="ov-settings-account">
+        <div class="ov-settings-avatar">${esc(ovInitials(name))}</div>
+        <div class="ov-settings-identity"><span class="ov-eyebrow">SIGNED IN AS</span><h3>${esc(name)}</h3><p>${esc(email)}</p><small>@${esc(username)} · Pet Owner</small></div>
+        <button class="ov-btn ghost sm" data-go="owner-profile">Edit profile</button>
+      </section>
+      <div class="ov-settings-section"><span class="ov-eyebrow">ACCOUNT PREFERENCES</span><h3>Account and security</h3>
+        <button class="ov-settings-row" data-go="owner-profile"><span class="ov-settings-icon">👤</span><span class="ov-settings-copy"><b>Personal information</b><small>Update your name, email, phone number and address</small></span><span class="ov-settings-arrow">›</span></button>
+        <button class="ov-settings-row" data-oact="password"><span class="ov-settings-icon">🔐</span><span class="ov-settings-copy"><b>Change password</b><small>Update the password you use to sign in</small></span><span class="ov-settings-arrow">›</span></button>
+      </div>
+      <div class="ov-settings-section"><span class="ov-eyebrow">UPDATES</span><h3>Notifications</h3>
+        <button class="ov-settings-row" data-go="owner-notifications"><span class="ov-settings-icon">🔔</span><span class="ov-settings-copy"><b>Appointment notifications</b><small>View approval, rescheduling and appointment updates</small></span><span class="ov-settings-arrow">›</span></button>
+      </div>
+      <div class="ov-settings-signout"><div><b>Sign out</b><small>End your current session on this device.</small></div><button class="ov-btn danger sm" data-act="logout">Log out</button></div>
+    </div>`;
+}
+function ovPasswordForm() {
+  const modal = ovModal(`
+    <div class="ov-mhead"><div><span class="ov-eyebrow">ACCOUNT SECURITY</span><h2>Change password</h2><p>Choose a new password for your account.</p></div><button class="ov-x" data-close aria-label="Close">×</button></div>
+    <form id="ov-password-form" class="ov-password-form">
+      <label>Current password<input type="password" name="current_password" autocomplete="current-password" required></label>
+      <label>New password<input type="password" name="new_password" autocomplete="new-password" minlength="8" required><small>Use at least 8 characters.</small></label>
+      <label>Confirm new password<input type="password" name="confirm_password" autocomplete="new-password" minlength="8" required></label>
+      <p class="ov-msg" id="ov-password-msg" aria-live="polite"></p>
+      <div class="ov-actions"><button type="button" class="ov-btn ghost" data-close>Cancel</button><button type="submit" class="ov-btn">Update password</button></div>
+    </form>`, true);
+  const form = modal.querySelector('#ov-password-form');
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const msg = form.querySelector('#ov-password-msg');
+    const submit = form.querySelector('[type="submit"]');
+    const data = Object.fromEntries(new FormData(form).entries());
+    if (data.new_password !== data.confirm_password) { msg.textContent = 'The new passwords do not match.'; msg.className = 'ov-msg error'; return; }
+    submit.disabled = true; submit.textContent = 'Updating…'; msg.textContent = '';
+    try {
+      const result = await ownerRequest('password', data);
+      msg.textContent = result.message || 'Password updated successfully.';
+      msg.className = 'ov-msg success';
+      form.reset();
+      setTimeout(() => modal.close(), 1000);
+    } catch (err) { msg.textContent = err.message; msg.className = 'ov-msg error'; }
+    finally { submit.disabled = false; submit.textContent = 'Update password'; }
+  });
 }
 
 /* =====================================================================
@@ -527,6 +626,7 @@ document.addEventListener('click', e => {
   else if (a === 'cal-prev' || a === 'cal-next') { const [y, m] = ov.month.split('-').map(Number), d = new Date(y, m - 1 + (a === 'cal-next' ? 1 : -1), 1); ov.month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; ovLoadMonth(); }
   else if (a === 'cal-day') ovPickDate(v);
   else if (a === 'slot') { ov.time = v; ovRenderSlots(); ovRenderSummary(); }
+  else if (a === 'password') ovPasswordForm();
   else if (a === 'pet-add') ovPetForm();
   else if (a === 'pet-view') { const p = pet(); if (p) ovPetView(p); }
   else if (a === 'pet-edit') { const p = pet(); if (p) ovPetForm(p); }

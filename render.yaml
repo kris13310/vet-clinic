@@ -1,0 +1,32 @@
+# Render Blueprint for the existing FrankenPHP application.
+# Secrets are entered in Render during service creation; none are stored here.
+services:
+  - type: web
+    name: vet-clinic
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: fix/pet-photo-uploads
+    autoDeployTrigger: commit
+    dockerfilePath: ./vet-clinic-main/Dockerfile
+    dockerContext: ./vet-clinic-main
+    healthCheckPath: /api/health.php
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "6543"
+      - key: DB_NAME
+        value: postgres
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: pet-photos

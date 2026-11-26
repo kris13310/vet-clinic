@@ -1748,7 +1748,7 @@ td.cc,
   display: grid;
   place-items: center;
   padding: 1em;
-  z-index: 90;
+  z-index: 300;
 }
 .mbox {
   background: #fff;
@@ -2136,3 +2136,312 @@ td.cc,
 .photo-pick { display: flex; align-items: center; gap: 1em; margin: 0 0 1em; }
 .photo-prev .tile { width: 4.6em; height: 4.6em; font-size: 1.8em; }
 .photo-btns { display: flex; gap: 0.5em; margin-top: 0.5em; flex-wrap: wrap; }
+
+
+/* User profile photo */
+.av img{width:100%;height:100%;display:block;object-fit:cover;border-radius:inherit}
+.profile-photo-row{display:flex;align-items:center;gap:18px;margin:14px 0 22px}
+.profile-photo-row>div:last-child{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.profile-photo-row small{width:100%;color:var(--mu)}
+#staff-profile-preview .av{display:grid;place-items:center;overflow:hidden}
+
+
+/* ===== Initial application loading screen ===== */
+.app-loading {
+  position: fixed;
+  inset: 0;
+  /* Keep the app navigation visible while the page content is loading. */
+  z-index: 19;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #f8fafc;
+  color: #0f172a;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity .35s ease, visibility .35s ease;
+}
+.app-loading.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.app-loading__content {
+  width: min(100%, 340px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.app-loading__mark {
+  width: 66px;
+  height: 66px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 18px;
+  border-radius: 21px;
+  background: #0f766e;
+  color: white;
+  box-shadow: 0 12px 28px rgba(15, 118, 110, .2);
+  font-size: 34px;
+  font-weight: 700;
+}
+.app-loading__brand {
+  font: 700 23px/1.2 Poppins, Inter, sans-serif;
+  letter-spacing: .08em;
+}
+.app-loading__brand span { color: #0f766e; }
+.app-loading__content p {
+  margin: 12px 0 22px;
+  color: #64748b;
+  font-size: 14px;
+}
+.app-loading__track {
+  width: min(100%, 220px);
+  height: 4px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #dbe5e9;
+}
+.app-loading__track span {
+  display: block;
+  width: 38%;
+  height: 100%;
+  border-radius: inherit;
+  background: #10b981;
+  animation: app-loading-progress 1.15s ease-in-out infinite;
+}
+.app-loading__content small {
+  margin-top: 13px;
+  color: #94a3b8;
+  font-size: 11px;
+}
+#app-loading-retry {
+  margin-top: 20px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 9px;
+  background: #0f766e;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+#app-loading-retry[hidden] { display: none; }
+@keyframes app-loading-progress {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(390%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-loading, .app-loading__track span { transition: none; animation: none; }
+  .app-loading__track span { width: 65%; }
+}
+
+
+/* ---------- In-app page transition loading overlay ---------- */
+.app-loading__mark { position: relative; }
+.app-loading__mark::after {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border: 3px solid #d1fae5;
+  border-top-color: #0f766e;
+  border-radius: 25px;
+  animation: app-loading-spin .85s linear infinite;
+}
+.app-loading__mark span { animation: app-loading-pulse 1.1s ease-in-out infinite; }
+@keyframes app-loading-spin { to { transform: rotate(360deg); } }
+@keyframes app-loading-pulse { 50% { transform: scale(.82); opacity: .65; } }
+@media (prefers-reduced-motion: reduce) {
+  .app-loading__mark::after, .app-loading__mark span { animation: none; }
+}
+
+
+/* Keep Pet Owner navigation visible above the page-loading overlay. */
+.owner-sidebar { z-index: 30; }
+.owner-topbar { position: sticky; top: 0; z-index: 30; }
+
+
+/* Navigation must remain visible above the loading screen on every role and viewport. */
+.app > .sb { z-index: 40; }
+.app .mn > .hd { position: sticky; top: 0; z-index: 30; }
+.owner-sidebar { position: sticky; top: 0; z-index: 40; }
+.owner-main > .owner-topbar { position: sticky; top: 0; z-index: 30; }
+
+/* Keep the Pet Owner menu pinned and visible on narrow screens too. */
+@media (max-width: 760px) {
+  .owner-sidebar { position: sticky; top: 0; z-index: 40; }
+  .owner-main > .owner-topbar { position: sticky; top: 0; z-index: 30; }
+}
+
+
+/* Shared clinic loading theme: navy shell, teal-green brand accents, and soft neutral canvas. */
+.app-loading {
+  background: rgba(248, 250, 252, .97);
+  color: #0f172a;
+}
+.app-loading__content {
+  padding: 30px 26px 25px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 18px 55px rgba(10, 22, 40, .12);
+}
+.app-loading__mark {
+  background: linear-gradient(135deg, #0a1628 8%, #0f766e 100%);
+  box-shadow: 0 12px 28px rgba(15, 118, 110, .22);
+}
+.app-loading__brand { color: #0a1628; }
+.app-loading__brand span { color: #0f9d78; }
+.app-loading__content p { color: #64748b; }
+.app-loading__track { background: #e2e8f0; }
+.app-loading__track span { background: linear-gradient(90deg, #0f9d78, #16b886); }
+.app-loading__mark::after {
+  border-color: #d1fae5;
+  border-top-color: #0f9d78;
+}
+#app-loading-retry {
+  background: linear-gradient(90deg, #0f9d78, #16b886);
+}
+@media (max-width: 480px) {
+  .app-loading__content { padding: 25px 20px 22px; border-radius: 16px; }
+}
+
+
+/* Loading screen uses the Pet Owner portal palette exactly. */
+.app-loading {
+  background: rgba(248, 250, 252, .97);
+  color: #0f172a;
+}
+.app-loading__content {
+  border-color: #e2e8f0;
+  background: #fff;
+  box-shadow: 0 18px 55px rgba(15, 23, 42, .10);
+}
+.app-loading__mark {
+  background: linear-gradient(135deg, #0f9d78, #16b886);
+  box-shadow: 0 12px 28px rgba(16, 185, 129, .22);
+}
+.app-loading__brand { color: #0f172a; }
+.app-loading__brand span { color: #0f766e; }
+.app-loading__content p { color: #64748b; }
+.app-loading__track { background: #e2e8f0; }
+.app-loading__track span { background: linear-gradient(90deg, #0f9d78, #16b886); }
+.app-loading__mark::after {
+  border-color: #d1fae5;
+  border-top-color: #0f766e;
+}
+#app-loading-retry {
+  background: linear-gradient(90deg, #0f9d78, #16b886);
+}
+
+
+/* Admin portal: use the same emerald/teal palette as the Pet Owner portal. */
+.app {
+  --p: #0f766e;
+  --p2: #16b886;
+  --ok: #16b886;
+  background: #f8fafc;
+}
+.app .sb-logo,
+.app .av {
+  background: linear-gradient(135deg, #0f9d78, #16b886);
+}
+.app .nav.on {
+  background: linear-gradient(90deg, #0f9d78, #16b886);
+  box-shadow: 0 0.4em 1em rgba(16, 185, 129, .20);
+}
+.app .btn,
+.app .signin {
+  background: linear-gradient(90deg, #0f9d78, #16b886);
+}
+.app .btn.out {
+  color: #0f766e;
+  border-color: #0f766e;
+  background: #fff;
+}
+.app .hero {
+  background: linear-gradient(110deg, #0b5f58, #0f766e 58%, #13a574);
+}
+.app .ic-g { background: linear-gradient(135deg, #0f9d78, #16b886); }
+.app .bar-g { background: #0f9d78; }
+.app .chip.on,
+.app .sum {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #0f766e;
+}
+.app .sum b { color: #0f766e; }
+.app .pager button.on {
+  background: #0f9d78;
+  border-color: #0f9d78;
+}
+.app input:focus,
+.app select:focus,
+.app .sr:focus-within {
+  outline-color: rgba(16, 185, 129, .28);
+  border-color: #10b981;
+}
+.app .sc.on { box-shadow: 0 0 0 2px rgba(15, 157, 120, .28); }
+
+/* ===== Consistent hover feedback across Admin, Staff, and Pet Owner portals ===== */
+.app .nav:not(.on):hover,
+.owner-nav:not(.active):hover {
+  background: rgba(22, 184, 134, .18);
+  color: #fff;
+}
+.app .nav.on:hover {
+  background: linear-gradient(90deg, #0f9d78, #16b886);
+  color: #fff;
+}
+.app .btn:not(:disabled):hover,
+.app .signin:hover,
+.owner-primary:not(:disabled):hover {
+  filter: brightness(1.07);
+}
+.app .btn.ghost:not(:disabled):hover,
+.app .btn.out:not(:disabled):hover {
+  background: #ecfdf5;
+  border-color: #0f9d78;
+  color: #0f766e;
+  filter: none;
+}
+.app .btn.red:not(:disabled):hover,
+.app .ac .dl:hover {
+  background: #fecaca;
+  color: #991b1b;
+  filter: none;
+}
+.app .ac button:not(.dl):hover,
+.app .nv button:hover {
+  background: #d1fae5;
+  color: #0f766e;
+}
+.app tbody tr:hover,
+.owner-table tbody tr:hover {
+  background: #f0fdf4;
+}
+.app .chip:not(.on):hover {
+  border-color: #6ee7b7;
+  background: #f0fdf4;
+  color: #0f766e;
+}
+.app .day:not(.sel):hover {
+  outline: 2px solid rgba(15, 157, 120, .45);
+  background: #ecfdf5;
+}
+.owner-nav.active:hover {
+  background: linear-gradient(90deg, #0f9d78, #16b886);
+  color: #fff;
+}
+.owner-primary:not(:disabled):hover {
+  background: linear-gradient(90deg, #0f766e, #0f9d78);
+}
+@media (hover: none) {
+  .app .nav:hover,
+  .owner-nav:hover,
+  .app .btn:hover,
+  .owner-primary:hover {
+    filter: none;
+  }
+}
