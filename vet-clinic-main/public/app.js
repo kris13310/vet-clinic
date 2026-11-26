@@ -1369,6 +1369,11 @@ app.addEventListener("keydown", (e) => {
     const r = await authRequest('me');
     state.user = r.user.username;
     state.account = r.user;
+    const loadingMessage = document.getElementById('app-loading-message');
+    if (loadingMessage) {
+      const workspace = state.account.role === 'Administrator' ? 'administrator' : state.account.role === 'Veterinarian' ? 'veterinarian' : state.account.role === 'Pet Owner' ? 'pet owner' : 'clinic';
+      loadingMessage.textContent = `Preparing your ${workspace} workspace`;
+    }
     if (state.account.role === 'Pet Owner') await loadOwnerData();
     render();
   } catch (error) {
