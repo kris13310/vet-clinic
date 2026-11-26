@@ -406,7 +406,11 @@ function pAvail() {
     state.availLoading = true;
     $("#content").innerHTML = '<div class="card">Loading availability…</div>';
     availRequest('list').then((r) => { state.avail = r; }).catch((e) => { state.availError = e.message; })
-      .finally(() => { state.availLoading = false; if (state.page === 'availability') pAvail(); });
+      .finally(() => {
+        state.availLoading = false;
+        if (state.page === 'availability') pAvail();
+        if (typeof window.finishAppLoading === 'function') window.finishAppLoading();
+      });
     return;
   }
   if (state.availLoading) return;
@@ -520,7 +524,12 @@ function openReschedule(dbId) {
 
 function render() {
   if (!state.user) return login();
-  if (state.account?.role === "Pet Owner") { if (!ownerPageNames[state.page]) state.page = 'owner-home'; return renderOwnerDashboard(); }
+  if (state.account?.role === "Pet Owner") {
+    if (!ownerPageNames[state.page]) state.page = 'owner-home';
+    renderOwnerDashboard();
+    if (typeof window.finishAppLoading === 'function') window.finishAppLoading();
+    return;
+  }
   if (!$(".app")) buildShell();
   const isAdmin = state.account?.role === 'Administrator';
   const usersNav = $('.nav[data-go="users"]');
@@ -538,6 +547,7 @@ function render() {
       if (state.page === 'users') {
         if (state.usersLoadError) $('#content').innerHTML = `<div class="card"><h3>Unable to load users</h3><p class="err">${esc(state.usersLoadError)}</p><button class="btn" data-act="reload-users">Try again</button></div>`;
         else PAGES.users();
+        if (typeof window.finishAppLoading === 'function') window.finishAppLoading();
       }
     });
     return;
@@ -554,6 +564,7 @@ function render() {
       if (state.page === 'appointments') {
         if (state.apptLoadError) $('#content').innerHTML = `<div class="card"><h3>Unable to load appointments</h3><p class="err">${esc(state.apptLoadError)}</p><button class="btn" data-act="reload-appointments">Try again</button></div>`;
         else PAGES.appointments();
+        if (typeof window.finishAppLoading === 'function') window.finishAppLoading();
       }
     });
     return;
@@ -562,13 +573,18 @@ function render() {
     if ((!state.recordsLoaded || state.recordsStale) && !state.recordsLoading) {
       state.recordsLoading = true;
       $('#content').innerHTML = '<div class="card">Loading records from the database…</div>';
-      loadRecordsFromDatabase().finally(() => { state.recordsLoading = false; state.recordsStale = false; if (RECORD_PAGES.includes(state.page)) render(); });
+      loadRecordsFromDatabase().finally(() => {
+        state.recordsLoading = false; state.recordsStale = false;
+        if (RECORD_PAGES.includes(state.page)) render();
+        else if (typeof window.finishAppLoading === 'function') window.finishAppLoading();
+      });
       return;
     }
     if (state.recordsLoading) return;
     if (state.recordsError) { $('#content').innerHTML = `<div class="card"><h3>Unable to load records</h3><p class="err">${esc(state.recordsError)}</p><button class="btn" data-act="reload-records">Try again</button></div>`; return; }
   }
   PAGES[state.page]();
+  if (state.page !== 'availability' && typeof window.finishAppLoading === 'function') window.finishAppLoading();
 }
 function go(p, q = "") {
   if (p !== state.page && typeof window.showAppLoading === 'function') {
@@ -592,8 +608,6 @@ function go(p, q = "") {
   $(".app")?.classList.remove("open");
   render();
   window.scrollTo(0, 0);
-  // Keep the transition visible long enough to be noticed, then reveal the page.
-  window.setTimeout(() => { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }, 320);
 }
 function refresh() {
   const a = document.activeElement,
