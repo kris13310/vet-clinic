@@ -571,6 +571,10 @@ function render() {
   PAGES[state.page]();
 }
 function go(p, q = "") {
+  if (p !== state.page && typeof window.showAppLoading === 'function') {
+    const role = state.account?.role === 'Pet Owner' ? 'pet owner' : state.account?.role === 'Administrator' ? 'administrator' : 'clinic';
+    window.showAppLoading(`Opening ${ownerPageNames[p] || NAV_LABEL[p] || 'page'} for your ${role} workspace`);
+  }
   if (p === "appointments") state.apptDbLoaded = false;
   if (RECORD_PAGES.includes(p)) state.recordsStale = true;
   if (p === "availability") { state.avail = null; state.availError = ""; }
@@ -588,6 +592,8 @@ function go(p, q = "") {
   $(".app")?.classList.remove("open");
   render();
   window.scrollTo(0, 0);
+  // Keep the transition visible long enough to be noticed, then reveal the page.
+  window.setTimeout(() => { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }, 320);
 }
 function refresh() {
   const a = document.activeElement,
