@@ -2583,3 +2583,12 @@ td.cc,
 @media (max-width: 760px) {
   .theme-toggle, .ov-theme-toggle { min-height: 34px; padding: 0 9px; font-size: 11px; }
 }
+
+
+/* Consistent subtle border around images in Admin and Staff portals. */
+.app img {
+  border: 2px solid #dce8e2;
+}
+.app.theme-dark img {
+  border-color: #365448;
+}
