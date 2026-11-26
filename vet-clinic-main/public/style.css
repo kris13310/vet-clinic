@@ -2621,3 +2621,20 @@ td.cc,
   border-color: #35445b;
   box-shadow: 0 14px 32px #00000066;
 }
+
+
+/* Keep the Admin / Staff top navigation light when the page uses dark mode. */
+.app.theme-dark .hd {
+  background: #fff;
+  border-bottom-color: #e2e8f0;
+  color: #0f172a;
+}
+.app.theme-dark .hd-t h1,
+.app.theme-dark .hd-t b,
+.app.theme-dark .hd .me-t b { color: #0f172a; }
+.app.theme-dark .hd small,
+.app.theme-dark .hd .me-t small { color: #64748b; }
+.app.theme-dark .hd .qs { background: #f8fafc; border-color: #e2e8f0; }
+.app.theme-dark .hd .qs input { color: #0f172a; }
+.app.theme-dark .hd .bell,
+.app.theme-dark .hd .burger { background: #fff; color: #0f172a; border-color: #e2e8f0; }
