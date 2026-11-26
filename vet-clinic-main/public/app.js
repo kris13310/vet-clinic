@@ -667,7 +667,7 @@ function toast(m) {
 
 /* ===== Small UI helpers ===== */
 const acts = (k, i) =>
-  `<div class="ac"><button data-act="view" data-k="${k}" data-i="${i}" title="View">👁️</button><button data-act="edit" data-k="${k}" data-i="${i}" title="Edit">✏️</button><button class="dl" data-act="del" data-k="${k}" data-i="${i}" title="Delete">🗑️</button></div>`;
+  `<details class="row-action-menu"><summary aria-label="More actions" title="More actions">⋮</summary><div class="row-action-menu-list"><button data-act="view" data-k="${k}" data-i="${i}">View</button><button data-act="edit" data-k="${k}" data-i="${i}">Edit</button><button class="danger" data-act="del" data-k="${k}" data-i="${i}">Delete</button></div></details>`;
 const search = (ph) =>
   `<div class="sr"><span>🔍</span><input id="q" data-s="q" placeholder="${ph}" value="${esc(state.q)}" autocomplete="off"></div>`;
 const chip = (key, val, label) =>
