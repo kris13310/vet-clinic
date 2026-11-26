@@ -2255,3 +2255,8 @@ td.cc,
 @media (prefers-reduced-motion: reduce) {
   .app-loading__mark::after, .app-loading__mark span { animation: none; }
 }
+
+
+/* Keep Pet Owner navigation visible above the page-loading overlay. */
+.owner-sidebar { z-index: 30; }
+.owner-topbar { position: sticky; top: 0; z-index: 30; }
