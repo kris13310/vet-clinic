@@ -821,3 +821,13 @@ body.ov-lock { overflow: hidden; }
   border-color: #e2e8f0;
 }
 .ov-app.theme-dark .ov-top .ov-count { border-color: #fff; }
+
+
+/* Accessibility contrast fix: primary actions retain emerald styling with readable white text. */
+.owner-primary {
+  background: #087f63;
+  color: #ffffff;
+}
+.owner-primary:hover {
+  background: #06664f;
+}
