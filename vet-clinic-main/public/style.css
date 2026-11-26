@@ -2260,3 +2260,16 @@ td.cc,
 /* Keep Pet Owner navigation visible above the page-loading overlay. */
 .owner-sidebar { z-index: 30; }
 .owner-topbar { position: sticky; top: 0; z-index: 30; }
+
+
+/* Navigation must remain visible above the loading screen on every role and viewport. */
+.app > .sb { z-index: 40; }
+.app .mn > .hd { position: sticky; top: 0; z-index: 30; }
+.owner-sidebar { position: sticky; top: 0; z-index: 40; }
+.owner-main > .owner-topbar { position: sticky; top: 0; z-index: 30; }
+
+/* Keep the Pet Owner menu pinned and visible on narrow screens too. */
+@media (max-width: 760px) {
+  .owner-sidebar { position: sticky; top: 0; z-index: 40; }
+  .owner-main > .owner-topbar { position: sticky; top: 0; z-index: 30; }
+}
