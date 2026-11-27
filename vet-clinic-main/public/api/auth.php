@@ -14,6 +14,35 @@ function auth_input(): array {
     $data = json_decode($raw ?: '{}', true);
     return is_array($data) ? $data : [];
 }
+function auth_client_ip(): string {
+    $candidate = trim(explode(',', (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown'))[0]);
+    return filter_var($candidate, FILTER_VALIDATE_IP) ? $candidate : 'unknown';
+}
+function auth_rate_limit(PDO $pdo, string $key, int $max, int $windowSeconds): bool {
+    $sql = "INSERT INTO auth_rate_limits (bucket_key, window_started_at, attempts) VALUES (:bucket, now(), 1)
+      ON CONFLICT (bucket_key) DO UPDATE SET
+      attempts = CASE WHEN auth_rate_limits.window_started_at <= now() - (CAST(:window AS INTEGER) * INTERVAL '1 second') THEN 1 ELSE auth_rate_limits.attempts + 1 END,
+      window_started_at = CASE WHEN auth_rate_limits.window_started_at <= now() - (CAST(:window AS INTEGER) * INTERVAL '1 second') THEN now() ELSE auth_rate_limits.window_started_at END
+      RETURNING attempts";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute(['bucket'=>$key, 'window'=>$windowSeconds]);
+    return (int)$stmt->fetchColumn() <= $max;
+}
+function auth_send_reset_email(string $to, string $token): bool {
+    $apiKey = (string)getenv('RESEND_API_KEY');
+    $from = (string)getenv('MAIL_FROM');
+    if ($apiKey === '' || $from === '') return false;
+    $appUrl = rtrim((string)(getenv('APP_URL') ?: 'https://vet-clinic-one-pied.vercel.app'), '/');
+    $link = $appUrl . '/#reset-token=' . rawurlencode($token);
+    $payload = json_encode(['from'=>$from,'to'=>[$to],'subject'=>'Reset your Veterinary Clinic password',
+      'text'=>"A password reset was requested for your clinic account.\n\nOpen this link to choose a new password:\n{$link}\n\nThis link expires in 60 minutes. If you did not request this, ignore this email."], JSON_UNESCAPED_SLASHES);
+    if ($payload === false) return false;
+    $context = stream_context_create(['http'=>['method'=>'POST','header'=>"Authorization: Bearer {$apiKey}\r\nContent-Type: application/json\r\n",'content'=>$payload,'timeout'=>10,'ignore_errors'=>true]]);
+    $response = @file_get_contents('https://api.resend.com/emails', false, $context);
+    $statusLine = $http_response_header[0] ?? '';
+    return $response !== false && preg_match('/\s2\d\d\s/', $statusLine) === 1;
+}
+
 function public_user(array $row): array {
     return [
         'id' => (int)($row['id'] ?? 0),
@@ -43,13 +72,62 @@ if ($action === 'logout') {
     session_destroy();
     auth_reply(200, ['success'=>true, 'message'=>'Signed out.']);
 }
-if (!in_array($action, ['register','login'], true)) {
+if (!in_array($action, ['register','login','forgot','reset'], true)) {
     auth_reply(400, ['success'=>false, 'message'=>'Unknown authentication action.']);
 }
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     auth_reply(405, ['success'=>false, 'message'=>'Use POST for this action.']);
 }
 $data = auth_input();
+if ($action === 'forgot') {
+    $email = trim((string)($data['email'] ?? ''));
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) auth_reply(422, ['success'=>false, 'message'=>'Enter a valid email address.']);
+    try {
+        $ip = auth_client_ip();
+        if (!auth_rate_limit($pdo, 'forgot-ip:'.hash('sha256',$ip), 10, 3600) ||
+            !auth_rate_limit($pdo, 'forgot-email:'.hash('sha256',strtolower($email)), 3, 3600)) {
+            auth_reply(429, ['success'=>false, 'message'=>'Too many password reset requests. Please try again later.']);
+        }
+        if ((string)getenv('RESEND_API_KEY') === '' || (string)getenv('MAIL_FROM') === '') {
+            auth_reply(503, ['success'=>false, 'message'=>'Password recovery email is not configured yet. Please contact the clinic administrator.']);
+        }
+        $stmt = $pdo->prepare('SELECT id, email FROM users WHERE LOWER(email) = LOWER(:email) LIMIT 1');
+        $stmt->execute(['email'=>$email]);
+        $user = $stmt->fetch();
+        if ($user) {
+            $token = bin2hex(random_bytes(32));
+            $pdo->prepare("UPDATE users SET password_reset_token_hash = :hash, password_reset_expires = now() + interval '60 minutes' WHERE id = :id")
+                ->execute(['hash'=>hash('sha256',$token), 'id'=>$user['id']]);
+            if (!auth_send_reset_email((string)$user['email'], $token)) {
+                $pdo->prepare('UPDATE users SET password_reset_token_hash = NULL, password_reset_expires = NULL WHERE id = :id')->execute(['id'=>$user['id']]);
+                error_log('Password reset email delivery failed.');
+                auth_reply(502, ['success'=>false, 'message'=>'Unable to send the reset email right now. Please try again later.']);
+            }
+        }
+        auth_reply(200, ['success'=>true, 'message'=>'If an account exists for that email, a reset link has been sent.']);
+    } catch (Throwable $e) {
+        error_log('Password recovery error: '.$e->getMessage());
+        auth_reply(500, ['success'=>false, 'message'=>'Unable to process the password reset request.']);
+    }
+}
+if ($action === 'reset') {
+    $token = trim((string)($data['token'] ?? ''));
+    $newPassword = (string)($data['password'] ?? '');
+    if (!preg_match('/^[a-f0-9]{64}$/i', $token) || strlen($newPassword) < 8) auth_reply(422, ['success'=>false, 'message'=>'Enter a valid reset token and a password of at least 8 characters.']);
+    try {
+        if (!auth_rate_limit($pdo, 'reset-ip:'.hash('sha256',auth_client_ip()), 10, 900)) auth_reply(429, ['success'=>false, 'message'=>'Too many reset attempts. Please try again later.']);
+        $stmt = $pdo->prepare('SELECT id FROM users WHERE password_reset_token_hash = :hash AND password_reset_expires > now() LIMIT 1');
+        $stmt->execute(['hash'=>hash('sha256',$token)]);
+        $userId = $stmt->fetchColumn();
+        if (!$userId) auth_reply(400, ['success'=>false, 'message'=>'This reset link is invalid or has expired. Request a new one.']);
+        $stmt = $pdo->prepare('UPDATE users SET password_hash = :password, password_reset_token_hash = NULL, password_reset_expires = NULL WHERE id = :id');
+        $stmt->execute(['password'=>password_hash($newPassword, PASSWORD_DEFAULT), 'id'=>$userId]);
+        auth_reply(200, ['success'=>true, 'message'=>'Your password has been updated. You can sign in now.']);
+    } catch (Throwable $e) {
+        error_log('Password reset error: '.$e->getMessage());
+        auth_reply(500, ['success'=>false, 'message'=>'Unable to reset the password.']);
+    }
+}
 $username = trim((string)($data['username'] ?? ''));
 $password = (string)($data['password'] ?? '');
 if ($username === '' || $password === '') {
@@ -57,6 +135,15 @@ if ($username === '' || $password === '') {
 }
 
 try {
+    $ip = auth_client_ip();
+    $userKey = hash('sha256', strtolower($username));
+    if ($action === 'login' && (!auth_rate_limit($pdo, 'login-ip:'.hash('sha256',$ip), 30, 900) ||
+        !auth_rate_limit($pdo, 'login-user:'.hash('sha256',$ip.':'.$userKey), 5, 900))) {
+        auth_reply(429, ['success'=>false, 'message'=>'Too many sign-in attempts. Please try again in 15 minutes.']);
+    }
+    if ($action === 'register' && !auth_rate_limit($pdo, 'register-ip:'.hash('sha256',$ip), 5, 3600)) {
+        auth_reply(429, ['success'=>false, 'message'=>'Too many registration attempts. Please try again later.']);
+    }
 
     if ($action === 'register') {
         $name = trim((string)($data['name'] ?? ''));
@@ -92,6 +179,10 @@ try {
     if (($row['status'] ?? 'Active') !== 'Active') {
         auth_reply(403, ['success'=>false, 'message'=>'This account is inactive. Please contact the administrator.']);
     }
+    $pdo->prepare('DELETE FROM auth_rate_limits WHERE bucket_key IN (:ip_key, :user_key)')->execute([
+        'ip_key'=>'login-ip:'.hash('sha256',$ip),
+        'user_key'=>'login-user:'.hash('sha256',$ip.':'.$userKey),
+    ]);
     session_regenerate_id(true);
     $_SESSION['account'] = public_user($row);
     auth_reply(200, ['success'=>true, 'user'=>$_SESSION['account']]);
