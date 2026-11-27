@@ -159,10 +159,12 @@ const petVax = (p) => {
 };
 const tile = (species, i = 0) =>
   `<span class="tile t${i % 5}">${E[species] || "🐾"}</span>`;
-const petTile = (p, i = 0) =>
-  p && p.photo
-    ? `<span class="tile t${i % 5} has-img"><img src="${esc(p.photo)}" alt="" loading="lazy" onerror="this.parentNode.classList.remove('has-img');this.replaceWith(document.createTextNode('${E[p.species] || "🐾"}'))"></span>`
-    : tile(p && p.species, i);
+const petTile = (p, i = 0) => {
+  const photo = String(p && p.photo || "").trim();
+  if (!photo) return tile(p && p.species, i);
+  const fallback = E[p.species] || "🐾";
+  return `<span class="tile t${i % 5} has-img"><img src="${esc(photo)}" alt="${esc((p.name || "Pet") + " photo")}" loading="eager" decoding="async" onerror="this.closest('.tile')?.classList.remove('has-img');this.replaceWith(document.createTextNode('${fallback}'))"></span>`;
+};
 const byTime = (a, b) => (a.date + a.time).localeCompare(b.date + b.time);
 
 let state = {
