@@ -3630,3 +3630,99 @@ html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-cont
     justify-content: flex-start;
   }
 }
+
+
+/* Vaccinations page: use pet photos and keep every status surface readable in dark mode. */
+.app .vx .who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.app .vx .who > span:last-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.app .vx .who > span:last-child small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.app .vx .tile.has-img {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 10px;
+}
+.app.theme-dark .sc {
+  background: #29342e;
+  border-color: #4a5a50;
+  color: #e4ebe6;
+}
+.app.theme-dark .sc strong {
+  color: #e8eee9;
+}
+.app.theme-dark .sc small {
+  color: #aab7ae;
+}
+.app.theme-dark .sc.g {
+  border-left-color: #34d399;
+}
+.app.theme-dark .sc.g i {
+  background: #1f382d;
+  color: #86efac;
+}
+.app.theme-dark .sc.y {
+  border-left-color: #fbbf24;
+}
+.app.theme-dark .sc.y i {
+  background: #3a321f;
+  color: #fcd34d;
+}
+.app.theme-dark .sc.r {
+  border-left-color: #fb7185;
+}
+.app.theme-dark .sc.r i {
+  background: #3a2527;
+  color: #fda4af;
+}
+.app.theme-dark .sc.on {
+  outline: 2px solid #34d399;
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, .14);
+}
+.app.theme-dark .vx td,
+.app.theme-dark .vx td .who,
+.app.theme-dark .vx td .who b {
+  color: #e4ebe6;
+}
+.app.theme-dark .vx .vc {
+  background: #263b32;
+  border: 1px solid #3c6250;
+  color: #a7f3d0;
+}
+.app.theme-dark .vx .nd {
+  color: #e4ebe6;
+}
+.app.theme-dark .vx .nd-y {
+  color: #fcd34d;
+}
+.app.theme-dark .vx .nd-o {
+  color: #fda4af;
+}
+.app.theme-dark .vx .tile:not(.has-img) {
+  color: #d4e5da;
+  border-color: #4a5a50;
+}
+.app.theme-dark .vx .tile.has-img img {
+  border-color: #536b5d;
+}
+@media (max-width: 600px) {
+  .app .vx .who {
+    gap: 8px;
+  }
+  .app .vx .tile.has-img {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+}
