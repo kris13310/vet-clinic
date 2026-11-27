@@ -3357,3 +3357,64 @@ html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-cont
     font-size: 7px;
   }
 }
+
+/* Appointments calendar dark mode: preserve the same separated layout and readable contrast */
+.app.theme-dark .cal > .wd > span {
+  color: #b8c9bf;
+}
+.app.theme-dark .cal .day {
+  color: #e5eee8;
+  background-color: transparent;
+}
+.app.theme-dark .cal .day > b {
+  color: inherit;
+}
+.app.theme-dark .cal .day > .dn {
+  display: block;
+  color: #c6d5cc;
+  background: #34483d;
+  border: 1px solid #496052;
+  border-radius: 4px;
+  padding: 2px 4px;
+  line-height: 1.2;
+  text-align: center;
+}
+.app.theme-dark .cal .day.has {
+  background: #263b32;
+  color: #e5f3eb;
+}
+.app.theme-dark .cal .day.off-holiday,
+.app.theme-dark .cal .day.off-closed,
+.app.theme-dark .cal .day.off-unavailable,
+.app.theme-dark .cal .day.off-partial {
+  background: #382f20;
+  color: #f2dfb5;
+}
+.app.theme-dark .cal .day.sel,
+.app.theme-dark .cal .day.sel > b,
+.app.theme-dark .cal .day.sel > .dn {
+  color: #fff;
+}
+.app.theme-dark .cal .day.sel > .dn {
+  background: #176b50;
+  border-color: #56a887;
+}
+.app.theme-dark .cal .legend {
+  color: #d0ddd5;
+  line-height: 1.5;
+}
+.app.theme-dark .cal .hlist > li {
+  color: #f2dfb5;
+  line-height: 1.5;
+}
+.app.theme-dark .cal .hlist > .hl-t {
+  color: #fbbf24;
+}
+.app.theme-dark .cal .hlist > li:not(.hl-t) > b {
+  color: #fff0c9;
+}
+@media (max-width: 600px) {
+  .app.theme-dark .cal .day > .dn {
+    padding: 2px 2px;
+  }
+}
