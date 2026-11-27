@@ -116,12 +116,9 @@ if ($action === 'reset') {
     if (!preg_match('/^[a-f0-9]{64}$/i', $token) || strlen($newPassword) < 8) auth_reply(422, ['success'=>false, 'message'=>'Enter a valid reset token and a password of at least 8 characters.']);
     try {
         if (!auth_rate_limit($pdo, 'reset-ip:'.hash('sha256',auth_client_ip()), 10, 900)) auth_reply(429, ['success'=>false, 'message'=>'Too many reset attempts. Please try again later.']);
-        $stmt = $pdo->prepare('SELECT id FROM users WHERE password_reset_token_hash = :hash AND password_reset_expires > now() LIMIT 1');
-        $stmt->execute(['hash'=>hash('sha256',$token)]);
-        $userId = $stmt->fetchColumn();
-        if (!$userId) auth_reply(400, ['success'=>false, 'message'=>'This reset link is invalid or has expired. Request a new one.']);
-        $stmt = $pdo->prepare('UPDATE users SET password_hash = :password, password_reset_token_hash = NULL, password_reset_expires = NULL WHERE id = :id');
-        $stmt->execute(['password'=>password_hash($newPassword, PASSWORD_DEFAULT), 'id'=>$userId]);
+        $stmt = $pdo->prepare('UPDATE users SET password_hash = :password, password_reset_token_hash = NULL, password_reset_expires = NULL WHERE password_reset_token_hash = :hash AND password_reset_expires > now() RETURNING id');
+        $stmt->execute(['password'=>password_hash($newPassword, PASSWORD_DEFAULT), 'hash'=>hash('sha256',$token)]);
+        if (!$stmt->fetchColumn()) auth_reply(400, ['success'=>false, 'message'=>'This reset link is invalid or has expired. Request a new one.']);
         auth_reply(200, ['success'=>true, 'message'=>'Your password has been updated. You can sign in now.']);
     } catch (Throwable $e) {
         error_log('Password reset error: '.$e->getMessage());
