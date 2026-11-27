@@ -299,10 +299,12 @@ function showForgot() {
     <label>Email<span class="field"><i>${ICON.user}</i><input name="email" type="email" autocomplete="email" placeholder="Enter your email" maxlength="190" required></span></label>
     <div class="err" id="forgot-error" role="alert"></div>
     <button class="signin" id="forgot-submit">Send Reset Link</button>
+    <p class="sub" style="margin-bottom:0"><a href="#" id="forgot-token" style="color:var(--p);font-weight:600;text-decoration:none">I already have a reset token</a></p>
     <p class="sub" style="margin-bottom:0"><a href="#" id="forgot-back" style="color:var(--p);font-weight:600;text-decoration:none">Back to sign in</a></p>
   </form>`;
   const f = $('#forgot-form'), err = $('#forgot-error');
   $('#forgot-back').onclick = e => { e.preventDefault(); login(); };
+  $('#forgot-token').onclick = e => { e.preventDefault(); showReset(); };
   f.onsubmit = async e => {
     e.preventDefault(); err.textContent = '';
     const email = f.elements.email.value.trim();
