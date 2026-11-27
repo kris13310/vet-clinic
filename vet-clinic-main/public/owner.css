@@ -875,27 +875,6 @@ body.ov-lock { overflow: hidden; }
 .ov-app.theme-dark img { border-color: #46574c; }
 
 
-/* Align the appearance preference row consistently across viewport sizes. */
-.ov-settings-mode {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 14px 18px;
-}
-.ov-settings-mode .ov-settings-copy { flex: 1 1 220px; }
-.ov-settings-mode .ov-theme-toggle { flex: 0 0 auto; margin-left: auto; }
-.ov-app.theme-dark .ov-settings-mode .ov-theme-toggle {
-  background: #303c35;
-  color: #d4e5da;
-  border-color: #4a5a50;
-}
-.ov-app.theme-dark .ov-settings-mode .ov-theme-toggle:hover { background: #394b41; }
-@media (max-width: 520px) {
-  .ov-settings-mode { align-items: flex-start; }
-  .ov-settings-mode .ov-theme-toggle { margin-left: 58px; }
-}
-
-
 /* Keep the Pet Owner appearance setting balanced on desktop and mobile. */
 .ov-settings-mode {
   display: grid;
@@ -931,3 +910,188 @@ body.ov-lock { overflow: hidden; }
 .ov-pet-menu-list button:hover { background: var(--ov-soft); }
 .ov-pet-menu-list button.danger { color: #dc4545; }
 .ov-app.theme-dark .ov-pet-ph .ov-pimg { border-color: #29364a; }
+
+
+/* Dark-mode completeness pass: Pet Owner portal and body-mounted dialogs.
+   Use the same neutral charcoal/green palette as Admin and Staff. */
+.ov-app.theme-dark {
+  --ov-bg: #202923;
+  --ov-card: #29342e;
+  --ov-line: #3c4941;
+  --ov-ink: #e8eee9;
+  --ov-text: #dce5df;
+  --ov-muted: #aab7ae;
+  --ov-soft: #34483e;
+  color-scheme: dark;
+}
+.ov-app.theme-dark :is(
+  .ov-card, .ov-panel, .ov-stat, .ov-pet, .ov-appt, .ov-notif,
+  .ov-home-panel, .ov-settings-account, .ov-settings-section,
+  .ov-record-card, .ov-home-stats article, .ov-home-visit, .ov-home-pet,
+  .ov-home-notif, .ov-newpet, .ov-cal, .ov-slots, .ov-slot-panel,
+  .ov-bellpanel, .ov-settings-signout, .ov-photo, .ov-mini, .ov-vx,
+  .ov-record-report, .ov-tablewrap, .ov-filter, .ov-tab, .ov-date,
+  .ov-burger, .ov-icon, .ov-ghost, .ov-pet-menu > summary,
+  .ov-pet-menu-list, .ov-day, .ov-closed, .ov-notes, .ov-pet-doc
+) {
+  background-color: #29342e;
+  border-color: #3c4941;
+  color: #dce5df;
+}
+.ov-app.theme-dark :is(.ov-top, .ov-topbar) {
+  background: #29342e;
+  color: #e8eee9;
+  border-color: #3c4941;
+}
+.ov-app.theme-dark :is(.ov-content, .ov-main, .ov-page, .ov-page-content) {
+  background-color: #202923;
+  color: #dce5df;
+}
+.ov-app.theme-dark :is(.ov-content, .ov-main, .ov-card, .ov-panel, .ov-modal) :is(h1,h2,h3,h4,b,strong) {
+  color: #e8eee9;
+}
+.ov-app.theme-dark :is(.ov-content, .ov-card, .ov-panel, .ov-appt, .ov-notif, .ov-home-panel) :is(p,small,label,dt,dd,span) {
+  color: #c0ccc4;
+}
+.ov-app.theme-dark :is(.ov-pet-card, .ov-pet-info, .ov-pet-row, .ov-appointment-row, .ov-record-row, .ov-home-notif, .ov-home-visit, .ov-home-pet, .ov-notif:hover, .ov-notif.unread) {
+  background-color: #303c35;
+  border-color: #3c4941;
+}
+.ov-app.theme-dark :is(input:not([type=radio]):not([type=file]), select, textarea) {
+  background-color: #242f28;
+  color: #e4ebe6;
+  border-color: #4a5a50;
+  color-scheme: dark;
+}
+.ov-app.theme-dark :is(input,textarea)::placeholder { color: #9aa99f; }
+.ov-app.theme-dark :is(th, .ov-table th) { background: #303c35; color: #bac7be; border-color: #3c4941; }
+.ov-app.theme-dark :is(td, .ov-table td, tr) { border-color: #3c4941; color: #dce5df; }
+.ov-app.theme-dark .ov-table td b { color: #e8eee9; }
+.ov-app.theme-dark :is(.ov-burger, .ov-bell, .ov-icon, .ov-date, .ov-tab, .ov-filter, .ov-ghost, .ov-settings-row, .ov-settings-icon, .ov-settings-avatar, .ov-pet-menu > summary) {
+  background-color: #303c35;
+  color: #dce6df;
+  border-color: #46564c;
+}
+.ov-app.theme-dark :is(.ov-settings-row:hover, .ov-home-pet:hover, .ov-pet-menu-list button:hover, .ov-ghost:hover) { background: #394b41; }
+.ov-app.theme-dark .ov-settings-signout { background: #342a2b; border-color: #594344; }
+.ov-app.theme-dark .ov-settings-signout :is(b,small) { color: #e5c5c1; }
+.ov-app.theme-dark .ov-btn:not(.ghost):not(.danger), .ov-app.theme-dark .ov-tab.on, .ov-app.theme-dark .ov-day.sel, .ov-app.theme-dark .ov-slot.sel {
+  background-color: #18745f;
+  border-color: #18745f;
+  color: #fff;
+}
+.ov-app.theme-dark .ov-btn.ghost { background: #303c35; color: #d4e5da; border-color: #46564c; }
+.ov-app.theme-dark :is(.ov-day.past, .ov-day.closed, .ov-day.loading, .ov-slot:disabled) { background: #303c35; color: #9aa99f; border-color: #46564c; }
+/* Owner dialogs are mounted under document.body, not inside .ov-app. */
+html.theme-dark .ov-modal { color: #dce5df; }
+html.theme-dark .ov-modal .ov-mbox {
+  background: #29342e;
+  color: #dce5df;
+  border-color: #3c4941;
+}
+html.theme-dark .ov-modal .ov-mbox :is(h1,h2,h3,h4,b,strong,label,dt,dd) { color: #e8eee9; }
+html.theme-dark .ov-modal .ov-mbox :is(p,small,span) { color: #c0ccc4; }
+html.theme-dark .ov-modal .ov-mbox :is(input:not([type=file]),select,textarea) {
+  background: #242f28;
+  color: #e4ebe6;
+  border-color: #4a5a50;
+  color-scheme: dark;
+}
+html.theme-dark .ov-modal .ov-mbox :is(.ov-photo,.ov-mini,.ov-vx,.ov-notes,.ov-pet-doc,.ov-dl > div) {
+  background: #303c35;
+  border-color: #3c4941;
+}
+html.theme-dark .ov-modal .ov-mbox :is(th) { background: #303c35; color: #bac7be; }
+html.theme-dark .ov-modal .ov-mbox :is(td,th,tr) { border-color: #3c4941; }
+html.theme-dark .ov-modal .ov-mbox .ov-btn.ghost { background: #303c35; color: #d4e5da; border-color: #46564c; }
+html.theme-dark .ov-bellpanel { background: #29342e; color: #dce5df; border-color: #3c4941; }
+
+
+/* Unified responsive pass.
+   Breakpoints are intentionally ordered from tablet to phone so later rules
+   only refine smaller layouts instead of fighting earlier media queries. */
+@media (max-width: 1100px) {
+  .ov-app { --ov-side: 268px; }
+  .ov-content { padding-left: 24px; padding-right: 24px; }
+  .ov-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ov-date { display: none; }
+}
+@media (max-width: 900px) {
+  .ov-app { display: block; min-height: 100vh; }
+  .ov-side {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(320px, 86vw);
+    max-width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    transform: translateX(-105%);
+    transition: transform .25s ease;
+    z-index: 10020;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .ov-app.open .ov-side { transform: translateX(0); }
+  .ov-app.open .ov-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 10010;
+    background: rgba(15, 23, 42, .55);
+  }
+  .ov-main { margin-left: 0; min-width: 0; width: 100%; }
+  .ov-burger { display: grid; place-items: center; flex: 0 0 44px; }
+  .ov-top { height: auto; min-height: 72px; padding: 12px 18px; gap: 12px; }
+  .ov-top h1 { font-size: clamp(18px, 3vw, 22px); }
+  .ov-top-r { gap: 10px; }
+  .ov-content { padding: 24px 18px 36px; }
+  .ov-dt { grid-template-columns: minmax(0, 1fr); }
+  .ov-cal { width: 100%; max-width: 560px; margin-inline: auto; }
+  .ov-bellpanel { max-width: min(440px, calc(100vw - 28px)); }
+}
+@media (max-width: 640px) {
+  .ov-content { padding: 20px 14px 30px; }
+  .ov-top { min-height: 64px; padding: 10px 14px; gap: 9px; }
+  .ov-top h1 { font-size: 18px; }
+  .ov-top-r { gap: 8px; }
+  .ov-bell, .ov-burger { width: 42px; height: 42px; min-width: 42px; }
+  .ov-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .ov-stat { min-width: 0; padding: 14px; gap: 9px; }
+  .ov-stat strong { font-size: 24px; }
+  .ov-card { min-width: 0; padding: 18px 15px; }
+  .ov-grid, .ov-modal .ov-grid { grid-template-columns: minmax(0, 1fr); }
+  .ov-petgrid { grid-template-columns: minmax(0, 1fr); }
+  .ov-appt { grid-template-columns: auto minmax(0, 1fr); min-width: 0; }
+  .ov-appt-st { grid-column: 1 / -1; flex-wrap: wrap; justify-content: flex-start; }
+  .ov-appt-st .ov-btn { flex: 1 1 100%; width: 100%; }
+  .ov-actions { width: 100%; gap: 9px; }
+  .ov-actions .ov-btn { flex: 1 1 100%; width: 100%; }
+  .ov-actions .ov-msg { width: 100%; margin: 0; }
+  .ov-tablewrap { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ov-table { min-width: 680px; }
+  .ov-mbox { width: min(100%, 560px); max-height: 92dvh; overflow-y: auto; padding: 20px 16px; }
+  .ov-bellpanel { position: fixed; top: 72px; right: 12px; left: 12px; width: auto; max-width: none; }
+  .ov-settings-account { align-items: flex-start; flex-wrap: wrap; padding: 18px; }
+  .ov-settings-identity { flex: 1 1 calc(100% - 82px); }
+  .ov-settings-account > .ov-btn { margin-left: 82px; }
+  .ov-settings-section { padding: 18px; }
+  .ov-settings-row { gap: 10px; }
+  .ov-settings-signout { align-items: flex-start; flex-direction: column; }
+  .ov-settings-mode { grid-template-columns: 40px minmax(0, 1fr); gap: 12px; }
+  .ov-settings-mode .ov-settings-icon { grid-column: 1; }
+  .ov-settings-mode .ov-settings-copy { grid-column: 2; }
+  .ov-settings-mode .ov-theme-toggle { grid-column: 2; justify-self: start; margin: 4px 0 0; }
+}
+@media (max-width: 420px) {
+  .ov-content { padding-left: 10px; padding-right: 10px; }
+  .ov-top { padding-left: 10px; padding-right: 10px; }
+  .ov-top h1 { font-size: 16px; }
+  .ov-stats { grid-template-columns: minmax(0, 1fr); }
+  .ov-stat { flex-direction: row; align-items: center; }
+  .ov-intro { gap: 12px; }
+  .ov-intro h2 { font-size: 24px; }
+  .ov-card { padding: 16px 12px; }
+  .ov-settings-mode { grid-template-columns: 36px minmax(0, 1fr); }
+  .ov-settings-mode .ov-settings-icon { width: 36px; height: 36px; }
+  .ov-settings-mode .ov-theme-toggle { max-width: 100%; white-space: normal; }
+}

@@ -2828,3 +2828,1006 @@ html.theme-dark #app-loading-retry { background: #46564c; }
 .app.theme-dark .row-action-menu-list button { color: #e4ebe6; }
 .app.theme-dark .row-action-menu-list button:hover { background: #394b41; }
 .app.theme-dark .row-action-menu-list button.danger { color: #fca5a5; }
+
+
+/* Dark-mode completeness pass: Admin and Staff portal surfaces.
+   Keep the existing green brand accents and preserve the light theme. */
+.app.theme-dark {
+  --surface-1: #29342e;
+  --surface-2: #303c35;
+  --surface-3: #242f28;
+  --surface-border: #3c4941;
+  --surface-text: #e4ebe6;
+  --surface-muted: #aab7ae;
+}
+.app.theme-dark .mn,
+.app.theme-dark .ct,
+.app.theme-dark .page,
+.app.theme-dark .content,
+.app.theme-dark .main-content { background-color: #202923; color: var(--surface-text); }
+.app.theme-dark :is(
+  .hd, .card, .panel, .box, .tb, .stat, .sc, .li, .tc, .pc, .info,
+  .why, .vc, .ac, .sr, .qs, .search-box, .filter-bar, .toolbar,
+  .form-card, .form-panel, .detail-card, .detail-panel, .report-card,
+  .medical-report-card, .profile-card, .settings-card, .setting-card,
+  .calendar, .cal, .calendar-panel, .cal-panel, .slot-panel, .slot-list,
+  .drop, .dropdown, .menu-pop, .pop, .popover, .pagination, .pager,
+  .empty, .empty-state, .notice-card, .notification-card, .notification-item,
+  .list-item, .list-row, .data-row, .summary, .summary-card
+) {
+  background-color: var(--surface-1);
+  border-color: var(--surface-border);
+  color: var(--surface-text);
+}
+.app.theme-dark :is(.sr, .qs, .search-box, .filter-bar, .toolbar, .bar2) {
+  background-color: var(--surface-2);
+}
+.app.theme-dark :is(.li, .tc, .pc, .info, .why, .vc, .ac, .list-item, .list-row, .data-row, .notification-item) :is(p, span, small, label) {
+  color: var(--surface-muted);
+}
+.app.theme-dark :is(.card, .panel, .box, .tb, .stat, .sc, .form-card, .form-panel, .detail-card, .detail-panel, .report-card, .medical-report-card, .profile-card, .settings-card, .setting-card) :is(h1,h2,h3,h4,b,strong) {
+  color: var(--surface-text);
+}
+.app.theme-dark :is(input, select, textarea, .field, .field input, .sr input, .qs input) {
+  background-color: var(--surface-3);
+  color: var(--surface-text);
+  border-color: #4a5a50;
+  color-scheme: dark;
+}
+.app.theme-dark :is(input, textarea)::placeholder { color: #9aa99f; }
+.app.theme-dark :is(th, .table-head, .thead, .cal-head, .calendar-head) {
+  background-color: var(--surface-2);
+  color: #bac7be;
+  border-color: var(--surface-border);
+}
+.app.theme-dark :is(td, th, tr, .table-row, .divider, .form-row, .detail-row) {
+  border-color: var(--surface-border);
+}
+.app.theme-dark tbody tr:hover,
+.app.theme-dark :is(.li, .tc, .list-item, .list-row, .data-row):hover {
+  background-color: #34483e;
+}
+.app.theme-dark :is(.btn.ghost, .btn.out, .chip, .filter, .filter-btn, .pager button, .pagination button, .nv button, .icon-btn, .action-btn, .row-action-menu > summary) {
+  background-color: var(--surface-2);
+  color: #d4e1d8;
+  border-color: #4a5a50;
+}
+.app.theme-dark :is(.btn.ghost, .btn.out, .chip, .filter, .filter-btn, .pager button, .pagination button, .nv button, .icon-btn, .action-btn):hover {
+  background-color: #394b41;
+}
+.app.theme-dark :is(.chip.on, .filter.on, .filter-btn.active, .pager button.on, .pagination button.active) {
+  background-color: #18745f;
+  color: #fff;
+  border-color: #18745f;
+}
+/* Dialogs and popups may be appended directly to body, outside .app. */
+html.theme-dark :is(.modal, .dialog, .popover, .menu-pop, .dropdown-panel, .calendar-panel, .slot-panel) {
+  color: var(--surface-text, #e4ebe6);
+}
+html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-content, .pop, .popover-content, .menu-pop, .dropdown-panel, .calendar-panel, .slot-panel) {
+  background-color: #29342e;
+  color: #e4ebe6;
+  border-color: #3c4941;
+}
+html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-content) :is(h1,h2,h3,h4,b,strong,label,p,small,span) {
+  color: inherit;
+}
+html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-content) :is(input,select,textarea) {
+  background-color: #242f28;
+  color: #e4ebe6;
+  border-color: #4a5a50;
+  color-scheme: dark;
+}
+html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-content) :is(th) { background: #303c35; color: #bac7be; }
+html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-content) :is(td,th,tr) { border-color: #3c4941; }
+
+
+/* Final responsive normalization for Admin and Staff.
+   Preserve the existing tablet sidebar behavior; below 860px use the drawer. */
+@media (min-width: 861px) and (max-width: 1100px) {
+  .app { display: flex; }
+  .app > .sb {
+    position: sticky;
+    inset: auto;
+    width: 14.5em;
+    min-width: 14.5em;
+    height: 100vh;
+    height: 100dvh;
+    flex: 0 0 14.5em;
+    transform: none;
+    transition: none;
+  }
+  .app .mn { min-width: 0; width: calc(100% - 14.5em); }
+  .app .burger { display: none; }
+  .app.open > .ov { display: none; }
+}
+@media (max-width: 860px) {
+  .app { display: block; min-height: 100vh; }
+  .app > .sb {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(17.5em, 86vw);
+    max-width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    transform: translateX(-105%);
+    transition: transform .25s ease;
+    z-index: 10020;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .app.open > .sb { transform: translateX(0); }
+  .app > .mn { width: 100%; min-width: 0; margin: 0; }
+  .app .burger { display: inline-grid; place-items: center; flex: 0 0 auto; }
+  .app.open > .ov {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 10010;
+    background: rgba(15, 23, 42, .55);
+  }
+  .app .hd { min-width: 0; padding: 12px 16px; gap: 12px; }
+  .app .ct { min-width: 0; padding: 18px 16px 28px; }
+}
+@media (max-width: 600px) {
+  .app .hd { padding: 10px 12px; gap: 9px; }
+  .app .hd-t h1 { font-size: 1.08em; }
+  .app .hd-t small { display: none; }
+  .app .ct { padding: 14px 10px 24px; gap: 12px; }
+  .app .top { flex-wrap: wrap; align-items: stretch; gap: 8px; }
+  .app .top > * { min-width: 0; }
+  .app .top > .sr, .app .top.end > .sr { flex: 1 1 100%; width: 100%; }
+  .app .top > .btn { flex: 1 1 auto; }
+  .app .tabs { max-width: 100%; overflow-x: auto; justify-content: flex-start; }
+  .app .tabs .tab { flex: 0 0 auto; }
+  .app .g4, .app .g3:not(.sc-row), .app .sc-row, .app .side, .app .fg {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .app .cal-wrap { grid-template-columns: minmax(0, 1fr); }
+  .app .side { display: grid; }
+  .app .rt { min-width: 0; }
+  .app .rt td { min-width: 0; overflow-wrap: anywhere; }
+  .app .rt td > * { max-width: 100%; }
+  .app .modal, .app .dialog { max-width: calc(100vw - 20px); }
+}
+@media (max-width: 380px) {
+  .app .hd { padding-inline: 9px; }
+  .app .ct { padding-inline: 8px; }
+  .app .card { padding: 12px; }
+  .app .tab { padding-inline: 8px; font-size: .86em; }
+}
+
+/* Focused Admin/Staff layout and dark-surface corrections */
+.settings-mode-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 22px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.settings-mode-row > div {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.settings-mode-row > div > b {
+  display: block;
+  line-height: 1.4;
+}
+.settings-mode-row > div > p {
+  margin: 6px 0 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.settings-mode-row > .theme-toggle {
+  flex: 0 0 auto;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.profile-photo-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  min-width: 0;
+}
+#staff-profile-preview {
+  flex: 0 0 auto;
+}
+.profile-photo-row > div:last-child {
+  display: flex;
+  flex: 1 1 260px;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.profile-photo-row > div:last-child > label.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: 100%;
+  margin: 0;
+  line-height: 1.3;
+}
+.profile-photo-row > div:last-child > button {
+  flex: 0 0 auto;
+  max-width: 100%;
+  white-space: normal;
+}
+.profile-photo-row small {
+  flex: 1 0 100%;
+  width: auto;
+  display: block;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.app.theme-dark .sum {
+  background: #263b32;
+  border-color: #3c6250;
+  color: #e4ebe6;
+}
+.app.theme-dark .sum b {
+  color: #a7f3d0;
+}
+.app.theme-dark .sum small {
+  color: #b7c8bd;
+}
+.app.theme-dark .mini.y {
+  background: #3a3322;
+  border-color: #66552d;
+  color: #f3e5b2;
+}
+.app.theme-dark .mini.y b {
+  color: #fbbf24;
+}
+.app.theme-dark .mini.r {
+  background: #3b2929;
+  border-color: #684040;
+  color: #f3c4c4;
+}
+.app.theme-dark .mini.r b {
+  color: #fca5a5;
+}
+
+@media (max-width: 600px) {
+  .settings-mode-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .settings-mode-row > .theme-toggle {
+    align-self: flex-start;
+  }
+  .profile-photo-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .profile-photo-row > div:last-child {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+}
+@media (max-width: 380px) {
+  .profile-photo-row > div:last-child {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .profile-photo-row > div:last-child > label.btn,
+  .profile-photo-row > div:last-child > button {
+    width: 100%;
+  }
+}
+
+/* Appointments page: dark surfaces for calendar and schedule cards */
+.app.theme-dark .cal .day {
+  color: var(--tx);
+}
+.app.theme-dark .cal .day.has {
+  background: #263b32;
+  color: #e5f3eb;
+}
+.app.theme-dark .cal .day.today {
+  outline-color: #34d399;
+}
+.app.theme-dark .cal .day.sel {
+  background: #145c45;
+  color: #ffffff;
+}
+.app.theme-dark .cal .nv button {
+  background: #293a33;
+  color: #e5eee8;
+  border: 1px solid #40564a;
+}
+.app.theme-dark .cal .nv button:hover {
+  background: #354b40;
+}
+.app.theme-dark .cal .tc {
+  background: #202d27;
+  border-color: #3b5145;
+  color: #e5eee8;
+}
+.app.theme-dark .cal .tc p,
+.app.theme-dark .cal .tc small,
+.app.theme-dark .cal .tc .mu {
+  color: #b6c7bd;
+}
+.app.theme-dark .cal .legend {
+  background: #202d27;
+  border-color: #3b5145;
+  color: #c3d1c8;
+}
+.app.theme-dark .cal .hlist,
+.app.theme-dark .cal .hnote {
+  background: #382f20;
+  border-color: #66502d;
+  color: #f2dfb5;
+}
+.app.theme-dark .cal .hlist .hl-t {
+  color: #fbbf24;
+}
+.app.theme-dark .cal .hlist b {
+  color: #f5e7c5;
+}
+@media (max-width: 600px) {
+  .cal-wrap {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cal-wrap > .cal,
+  .cal-wrap > .side {
+    min-width: 0;
+    width: 100%;
+  }
+  .cal .legend {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .cal .tc-t {
+    flex-wrap: wrap;
+  }
+  .cal .tc .ac {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+
+/* Appointments calendar: enforce clear seven-column spacing and readable labels */
+.app .cal {
+  min-width: 0;
+  overflow: hidden;
+}
+.app .cal > .ch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.app .cal > .wd,
+.app .cal > .days {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  column-gap: clamp(3px, 0.7vw, 9px);
+  width: 100%;
+}
+.app .cal > .wd {
+  align-items: center;
+  margin-bottom: 8px;
+}
+.app .cal > .wd > span {
+  display: block;
+  min-width: 0;
+  padding: 8px 2px;
+  text-align: center;
+  white-space: nowrap;
+  font-size: clamp(10px, 0.85vw, 13px);
+  line-height: 1.3;
+  font-weight: 700;
+}
+.app .cal > .days {
+  row-gap: 8px;
+}
+.app .cal .day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  min-height: 82px;
+  height: auto;
+  padding: 10px 3px 8px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  line-height: 1.25;
+  white-space: normal;
+}
+.app .cal .day > b {
+  display: block;
+  line-height: 1.3;
+  font-size: 13px;
+}
+.app .cal .day > .dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 7px;
+}
+.app .cal .day > .dn {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+  line-height: 1.2;
+  font-weight: 600;
+}
+.app .cal .legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px 18px;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  line-height: 1.45;
+}
+.app .cal .legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  white-space: normal;
+}
+.app .cal .legend > span > i {
+  flex: 0 0 8px;
+}
+.app .cal .hlist {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 14px 16px;
+  line-height: 1.5;
+}
+.app .cal .hlist > li {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.app .cal .hlist > .hl-t {
+  margin-bottom: 2px;
+  line-height: 1.4;
+}
+.app .cal .hlist > li:not(.hl-t) {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.app .cal .hlist > li:not(.hl-t) > b {
+  flex: 0 0 22px;
+  min-width: 22px;
+}
+@media (max-width: 600px) {
+  .app .cal {
+    padding: 14px;
+  }
+  .app .cal > .wd,
+  .app .cal > .days {
+    column-gap: 3px;
+  }
+  .app .cal > .days {
+    row-gap: 5px;
+  }
+  .app .cal .day {
+    min-height: 68px;
+    padding: 7px 1px 5px;
+    gap: 4px;
+    border-radius: 7px;
+  }
+  .app .cal .day > b {
+    font-size: 12px;
+  }
+  .app .cal .day > .dn {
+    font-size: 8px;
+  }
+  .app .cal .legend {
+    gap: 8px 12px;
+    padding: 10px;
+    font-size: 11px;
+  }
+}
+@media (max-width: 380px) {
+  .app .cal > .wd > span {
+    font-size: 10px;
+  }
+  .app .cal .day {
+    min-height: 62px;
+  }
+  .app .cal .day > .dn {
+    max-width: 100%;
+    font-size: 7px;
+  }
+}
+
+/* Appointments calendar dark mode: preserve the same separated layout and readable contrast */
+.app.theme-dark .cal > .wd > span {
+  color: #b8c9bf;
+}
+.app.theme-dark .cal .day {
+  color: #e5eee8;
+  background-color: transparent;
+}
+.app.theme-dark .cal .day > b {
+  color: inherit;
+}
+.app.theme-dark .cal .day > .dn {
+  display: block;
+  color: #c6d5cc;
+  background: #34483d;
+  border: 1px solid #496052;
+  border-radius: 4px;
+  padding: 2px 4px;
+  line-height: 1.2;
+  text-align: center;
+}
+.app.theme-dark .cal .day.has {
+  background: #263b32;
+  color: #e5f3eb;
+}
+.app.theme-dark .cal .day.off-holiday,
+.app.theme-dark .cal .day.off-closed,
+.app.theme-dark .cal .day.off-unavailable,
+.app.theme-dark .cal .day.off-partial {
+  background: #382f20;
+  color: #f2dfb5;
+}
+.app.theme-dark .cal .day.sel,
+.app.theme-dark .cal .day.sel > b,
+.app.theme-dark .cal .day.sel > .dn {
+  color: #fff;
+}
+.app.theme-dark .cal .day.sel > .dn {
+  background: #176b50;
+  border-color: #56a887;
+}
+.app.theme-dark .cal .legend {
+  color: #d0ddd5;
+  line-height: 1.5;
+}
+.app.theme-dark .cal .hlist > li {
+  color: #f2dfb5;
+  line-height: 1.5;
+}
+.app.theme-dark .cal .hlist > .hl-t {
+  color: #fbbf24;
+}
+.app.theme-dark .cal .hlist > li:not(.hl-t) > b {
+  color: #fff0c9;
+}
+@media (max-width: 600px) {
+  .app.theme-dark .cal .day > .dn {
+    padding: 2px 2px;
+  }
+}
+
+/* Appointments side panels: Today's Schedule and This Week Summary in dark mode */
+.app.theme-dark .cal-wrap > .side > .card {
+  background: #1d2a23;
+  border-color: #3b5145;
+  color: #e5eee8;
+}
+.app.theme-dark .cal-wrap > .side > .card > h3 {
+  color: #f0f6f2;
+  margin-bottom: 0.35em;
+}
+.app.theme-dark .cal-wrap > .side > .card > .mu {
+  display: block;
+  margin-top: 5px;
+  color: #b6c7bd;
+  line-height: 1.5;
+}
+.app.theme-dark .cal-wrap > .side .hnote {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 12px 0 8px;
+  padding: 12px 14px;
+  background: #382f20;
+  border: 1px solid #66502d;
+  border-radius: 9px;
+  color: #f2dfb5;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.app.theme-dark .cal-wrap > .side .hnote b {
+  color: #ffe7a8;
+}
+.app.theme-dark .cal-wrap > .side .empty {
+  color: #b6c7bd;
+  line-height: 1.8;
+  padding: 24px 12px;
+}
+.app.theme-dark .cal-wrap > .side .wk {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 14px;
+}
+.app.theme-dark .cal-wrap > .side .wr {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 11px 14px;
+  border-radius: 9px;
+  background: #26362e;
+  border: 1px solid #40564a;
+  color: #e5eee8;
+  line-height: 1.45;
+}
+.app.theme-dark .cal-wrap > .side .wr > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.app.theme-dark .cal-wrap > .side .wr > b {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: #f0f6f2;
+  font-size: 1.15em;
+  line-height: 1.3;
+}
+.app.theme-dark .cal-wrap > .side .wr.g {
+  background: #1f382d;
+  border-color: #35634b;
+}
+.app.theme-dark .cal-wrap > .side .wr.g > b {
+  color: #86efac;
+}
+.app.theme-dark .cal-wrap > .side .wr.y {
+  background: #3a321f;
+  border-color: #6b592c;
+}
+.app.theme-dark .cal-wrap > .side .wr.y > b {
+  color: #fcd34d;
+}
+.app.theme-dark .cal-wrap > .side .wr.r {
+  background: #3a2527;
+  border-color: #714044;
+}
+.app.theme-dark .cal-wrap > .side .wr.r > b {
+  color: #fda4af;
+}
+@media (max-width: 600px) {
+  .app.theme-dark .cal-wrap > .side .wr {
+    gap: 10px;
+    padding: 10px 12px;
+  }
+}
+
+
+/* Calendar: make each date cell outline clearly visible in both themes */
+.app .cal .day:not(.blank) {
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.12);
+}
+.app .cal .day:not(.blank):hover {
+  border-color: #16845f;
+  background-color: #edf8f2;
+}
+.app .cal .day.today:not(.sel) {
+  border: 2px solid #16845f;
+}
+.app .cal .day.sel {
+  border: 2px solid #08734f;
+  background-color: #dff3e8;
+}
+.app .cal .day.off-holiday,
+.app .cal .day.off-closed,
+.app .cal .day.off-unavailable,
+.app .cal .day.off-partial {
+  border-color: #d6b66d;
+}
+.app.theme-dark .cal .day:not(.blank) {
+  border: 1px solid #536b5d;
+  background-color: #202e27;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.16);
+}
+.app.theme-dark .cal .day:not(.blank):hover {
+  border-color: #6ee7b7;
+  background-color: #2b4437;
+}
+.app.theme-dark .cal .day.today:not(.sel) {
+  border: 2px solid #34d399;
+}
+.app.theme-dark .cal .day.sel {
+  border: 2px solid #6ee7b7;
+  background-color: #145c45;
+}
+.app.theme-dark .cal .day.off-holiday,
+.app.theme-dark .cal .day.off-closed,
+.app.theme-dark .cal .day.off-unavailable,
+.app.theme-dark .cal .day.off-partial {
+  border-color: #8a7040;
+}
+.app .cal > .wd > span {
+  border-bottom: 1px solid #d8e1dc;
+}
+.app.theme-dark .cal > .wd > span {
+  border-bottom-color: #43594b;
+}
+
+
+/* Appointment schedule entries: make each appointment card outline visible */
+.app .cal-wrap .side .tc {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+.app .cal-wrap .side .tc-t {
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.app .cal-wrap .side .tc > strong {
+  margin-top: 5px;
+  margin-bottom: 7px;
+}
+.app .cal-wrap .side .tc > p {
+  margin: 5px 0;
+  line-height: 1.45;
+}
+.app .cal-wrap .side .tc > small {
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.app .cal-wrap .side .tc .ac.sm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+.app.theme-dark .cal-wrap .side .tc {
+  border: 1px solid #61796a;
+  background: #202d27;
+  box-shadow: 0 0 0 1px rgba(110, 231, 183, 0.08);
+}
+.app.theme-dark .cal-wrap .side .tc-t {
+  color: #e5eee8;
+}
+.app.theme-dark .cal-wrap .side .tc > strong {
+  color: #f0f6f2;
+}
+.app.theme-dark .cal-wrap .side .tc > p,
+.app.theme-dark .cal-wrap .side .tc > small {
+  color: #c3d1c8;
+}
+.app.theme-dark .cal-wrap .side .tc .ac.sm button.btn.ghost {
+  background: #293a33;
+  border-color: #536b5d;
+  color: #e5eee8;
+}
+.app.theme-dark .cal-wrap .side .tc .ac.sm button.btn.red {
+  background: #48292b;
+  border-color: #805056;
+  color: #fecaca;
+}
+@media (max-width: 600px) {
+  .app .cal-wrap .side .tc {
+    padding: 12px;
+  }
+  .app .cal-wrap .side .tc .ac.sm {
+    justify-content: flex-start;
+  }
+}
+
+
+/* Vaccinations page: use pet photos and keep every status surface readable in dark mode. */
+.app .vx .who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.app .vx .who > span:last-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.app .vx .who > span:last-child small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.app .vx .tile.has-img {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 10px;
+}
+.app.theme-dark .sc {
+  background: #29342e;
+  border-color: #4a5a50;
+  color: #e4ebe6;
+}
+.app.theme-dark .sc strong {
+  color: #e8eee9;
+}
+.app.theme-dark .sc small {
+  color: #aab7ae;
+}
+.app.theme-dark .sc.g {
+  border-left-color: #34d399;
+}
+.app.theme-dark .sc.g i {
+  background: #1f382d;
+  color: #86efac;
+}
+.app.theme-dark .sc.y {
+  border-left-color: #fbbf24;
+}
+.app.theme-dark .sc.y i {
+  background: #3a321f;
+  color: #fcd34d;
+}
+.app.theme-dark .sc.r {
+  border-left-color: #fb7185;
+}
+.app.theme-dark .sc.r i {
+  background: #3a2527;
+  color: #fda4af;
+}
+.app.theme-dark .sc.on {
+  outline: 2px solid #34d399;
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, .14);
+}
+.app.theme-dark .vx td,
+.app.theme-dark .vx td .who,
+.app.theme-dark .vx td .who b {
+  color: #e4ebe6;
+}
+.app.theme-dark .vx .vc {
+  background: #263b32;
+  border: 1px solid #3c6250;
+  color: #a7f3d0;
+}
+.app.theme-dark .vx .nd {
+  color: #e4ebe6;
+}
+.app.theme-dark .vx .nd-U { color: #86efac; }
+.app.theme-dark .vx .nd-D { color: #fcd34d; }
+.app.theme-dark .vx .nd-O { color: #fda4af; }
+.app.theme-dark .vx .tile:not(.has-img) {
+  color: #d4e5da;
+  border-color: #4a5a50;
+}
+.app.theme-dark .vx .tile.has-img img {
+  border-color: #536b5d;
+}
+@media (max-width: 600px) {
+  .app .vx .who {
+    gap: 8px;
+  }
+  .app .vx .tile.has-img {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+}
+
+
+/* Vaccinations: final table-specific contrast and reliable pet-photo sizing. */
+.app .tb .rt.vx .who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 150px;
+}
+.app .tb .rt.vx .who > .tile {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  flex: 0 0 42px;
+}
+.app .tb .rt.vx .who > .tile.has-img {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+}
+.app .tb .rt.vx .who > .tile.has-img img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+.app .tb .rt.vx .who > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.app .tb .rt.vx .who > span:last-child small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.app.theme-dark .tb .rt.vx thead th {
+  background: #26352d;
+  color: #e8f1eb;
+  border-color: #46584d;
+}
+.app.theme-dark .tb .rt.vx tbody tr {
+  background: #202d26;
+}
+.app.theme-dark .tb .rt.vx tbody tr:nth-child(even) {
+  background: #25332b;
+}
+.app.theme-dark .tb .rt.vx tbody td {
+  background: transparent;
+  color: #e1ebe4;
+  border-color: #3d4e43;
+}
+.app.theme-dark .tb .rt.vx .who b {
+  color: #f0f6f2;
+}
+.app.theme-dark .tb .rt.vx .who small {
+  color: #b5c5ba;
+}
+.app.theme-dark .tb .rt.vx .vc {
+  display: inline-flex;
+  align-items: center;
+  background: #294236;
+  border: 1px solid #496b56;
+  color: #b8f0cc;
+}
+.app.theme-dark .tb .rt.vx td.nd-U { color: #86efac; }
+.app.theme-dark .tb .rt.vx td.nd-D { color: #fcd34d; }
+.app.theme-dark .tb .rt.vx td.nd-O { color: #fda4af; }
+.app.theme-dark .tb .rt.vx .tile:not(.has-img) {
+  color: #d8e8dc;
+  border: 1px solid #53685a;
+}
+@media (max-width: 600px) {
+  .app .tb .rt.vx .who { min-width: 0; gap: 8px; }
+  .app .tb .rt.vx .who > .tile {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    flex-basis: 36px;
+  }
+  .app.theme-dark .tb .rt.vx tbody td {
+    background: #202d26;
+  }
+}
+
+
+/* Adoption pet photos */
+.app .pc-h {
+  position: relative;
+  overflow: hidden;
+}
+.app .pc-h .pc-photo {
+  display: block;
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  object-position: center;
+  margin: -1.4em -1.4em 12px;
+  width: calc(100% + 2.8em);
+  max-width: none;
+}
+.app .photo-prev .tile.has-img { display: block; overflow: hidden; }
+.app .photo-prev .tile.has-img img { display:block; width:100%; height:100%; object-fit:cover; }
+@media (max-width: 600px) {
+  .app .pc-h .pc-photo { height: 125px; }
+}

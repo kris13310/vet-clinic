@@ -159,10 +159,12 @@ const petVax = (p) => {
 };
 const tile = (species, i = 0) =>
   `<span class="tile t${i % 5}">${E[species] || "🐾"}</span>`;
-const petTile = (p, i = 0) =>
-  p && p.photo
-    ? `<span class="tile t${i % 5} has-img"><img src="${esc(p.photo)}" alt="" loading="lazy" onerror="this.parentNode.classList.remove('has-img');this.replaceWith(document.createTextNode('${E[p.species] || "🐾"}'))"></span>`
-    : tile(p && p.species, i);
+const petTile = (p, i = 0) => {
+  const photo = String(p && p.photo || "").trim();
+  if (!photo) return tile(p && p.species, i);
+  const fallback = E[p.species] || "🐾";
+  return `<span class="tile t${i % 5} has-img"><img src="${esc(photo)}" alt="${esc((p.name || "Pet") + " photo")}" loading="eager" decoding="async" onerror="this.closest('.tile')?.classList.remove('has-img');this.replaceWith(document.createTextNode('${fallback}'))"></span>`;
+};
 const byTime = (a, b) => (a.date + a.time).localeCompare(b.date + b.time);
 
 let state = {
@@ -387,7 +389,7 @@ async function loadRecordsFromDatabase() {
     ]);
     D.pets = (pets.pets || []).map((p) => ({ id: Number(p.id), name: p.name || "", species: p.species || "", breed: p.breed || "", owner: p.owner_name || "", ownerEmail: p.owner_email || "", phone: p.owner_phone || "", address: p.address || "", age: p.age || "", gender: p.gender || "Unknown", notes: p.notes || "", photo: p.photo_path || "", added: String(p.created_at || "").slice(0, 10) }));
     D.vaccinations = (vax.vaccinations || []).map((v) => ({ id: Number(v.id), petId: Number(v.pet_id), pet: v.pet_name || "", vaccine: v.vaccine || "", given: String(v.date_given || "").slice(0, 10), next: String(v.next_due || v.date_given || "").slice(0, 10), vet: v.vet_name || "Not recorded" }));
-    D.adoption = (adopt.adoption || []).map((a) => ({ id: Number(a.id), name: a.pet_name || "", species: a.species || "", breed: a.breed || "", age: a.age || "", gender: a.gender || "Unknown", health: a.health_status || "Unknown", status: a.status || "Available", reason: a.reason || "", adopter: a.adopter_name || "" }));
+    D.adoption = (adopt.adoption || []).map((a) => ({ id: Number(a.id), name: a.pet_name || "", species: a.species || "", breed: a.breed || "", age: a.age || "", gender: a.gender || "Unknown", health: a.health_status || "Unknown", status: a.status || "Available", reason: a.reason || "", adopter: a.adopter_name || "", photo: a.photo_path || "" }));
     D.doctor = meta.doctor || null;
     D.slots = meta.slots || [];
     Object.assign(D.settings, { name: "", email: "", phone: "", address: "" }, settings.settings || {});
@@ -897,7 +899,7 @@ function pVax() {
   $("#content").innerHTML = `
     <section class="g3 sc-row">${sc("Up-to-Date", "g", "✅")}${sc("Due Soon", "y", "⏰")}${sc("Overdue", "r", "🚨")}</section>
     <div class="card bar2">${search("Search pet or owner...")}${sel("vc", VACCINES, "All Vaccines")}<div class="chips">${chip("st", "", "All")}${chip("st", "Up-to-Date", "Up-to-Date")}${chip("st", "Due Soon", "Due Soon")}${chip("st", "Overdue", "Overdue")}</div><button class="btn" data-act="add" data-k="vaccinations">+ Add Vaccination</button></div>
-    ${rows.length ? table(["Pet", "Vaccine", "Date Given", "Next Due", "Status", "Veterinarian", "Actions"], items.map((v) => `<tr>${cell("Pet", `<div class="who">${tile(petOfRec(v).species, v.i)}<span><b>${esc(v.pet)}</b><small>${esc(v.owner)}</small></span></div>`)}${cell("Vaccine", `<span class="vc">💉 ${esc(v.vaccine)}</span>`)}${cell("Date Given", fmtDate(v.given), "cc")}${cell("Next Due", fmtDate(v.next), "cc nd-" + v.status[0])}${cell("Status", badge(v.status, 1), "cc")}${cell("Veterinarian", esc(ovVet(v.vet)), "cc")}${cell("Actions", acts("vaccinations", v.i), "cc")}</tr>`).join(""), foot, "vx") : `<div class="card">${empty("No vaccination records found.")}</div>`}`;
+    ${rows.length ? table(["Pet", "Vaccine", "Date Given", "Next Due", "Status", "Veterinarian", "Actions"], items.map((v) => `<tr>${cell("Pet", `<div class="who">${petTile(petOfRec(v), v.i)}<span><b>${esc(v.pet)}</b><small>${esc(v.owner)}</small></span></div>`)}${cell("Vaccine", `<span class="vc">💉 ${esc(v.vaccine)}</span>`)}${cell("Date Given", fmtDate(v.given), "cc")}${cell("Next Due", fmtDate(v.next), "cc nd-" + v.status[0])}${cell("Status", badge(v.status, 1), "cc")}${cell("Veterinarian", esc(ovVet(v.vet)), "cc")}${cell("Actions", acts("vaccinations", v.i), "cc")}</tr>`).join(""), foot, "vx") : `<div class="card">${empty("No vaccination records found.")}</div>`}`;
 }
 
 /* ===== Adoption ===== */
@@ -935,7 +937,7 @@ function pAdopt() {
             .map(
               (
                 a,
-              ) => `<article class="pc"><div class="pc-h ${HEADS[a.i % 6]}"><span class="pc-em">${E[a.species] || "🐾"}</span><h3>${esc(a.name)}</h3><small>${esc(a.breed)}</small></div>
+              ) => `<article class="pc"><div class="pc-h ${HEADS[a.i % 6]}">${a.photo ? `<img class="pc-photo" src="${esc(a.photo)}" alt="${esc(a.name)} photo" loading="lazy" onerror="this.remove()">` : `<span class="pc-em">${E[a.species] || "🐾"}</span>`}<h3>${esc(a.name)}</h3><small>${esc(a.breed)}</small></div>
       <div class="pc-b"><div class="info"><div><small>ANIMAL TYPE</small><b>${E[a.species] || ""} ${esc(a.species)}</b></div><div><small>AGE</small><b>${esc(a.age)}</b></div><div><small>GENDER</small><b>${a.gender === "Male" ? "♂" : a.gender === "Female" ? "♀" : "⚧"} ${esc(a.gender)}</b></div><div><small>HEALTH</small><b>${esc(a.health)}</b></div></div>
       <div class="why">📌 ${esc(a.reason)}</div><div class="pc-a"><button class="btn out" data-act="view" data-k="adoption" data-i="${a.i}">View Details</button>${primary(a)}</div></div></article>`,
             )
@@ -1086,7 +1088,7 @@ const FORM = {
     F("gender", "Gender", { sel: ["Male", "Female", "Unknown"] }),
     F("health", "Health", { sel: ["Vaccinated", "Not Vaccinated", "Under Treatment"] }),
     F("status", "Status", { sel: ["Available", "Pending", "Adopted"] }),
-    F("reason", "Reason / Notes", { full: 1 }),
+    F("reason", "Reason / Notes", { full: 1, opt: 1 }),
   ],
   users: (edit, rec) => [
     F("name", "Full Name"),
@@ -1122,7 +1124,7 @@ const DEF = {
     status: "Pending",
   }),
   vaccinations: () => ({ petId: state.vaxPet && D.pets.some((p) => String(p.id) === state.vaxPet) ? state.vaxPet : D.pets[0] ? String(D.pets[0].id) : "", given: TODAY_ISO, next: nextYear() }),
-  adoption: () => ({ status: "Available", health: "Vaccinated", gender: "Male" }),
+  adoption: () => ({ status: "Available", health: "Vaccinated", gender: "Male", photo: "" }),
   users: () => ({ status: "Active", role: "Veterinarian" }),
 };
 
@@ -1222,7 +1224,7 @@ const fieldHtml = (f, v) =>
 async function saveRecord(k, v, old, submittedFormData = null) {
   if (k === "users") return apiJson("api/users.php?action=save", { ...v, id: old ? old.id : 0 });
   if (k === "appointments") return apiJson("api/appointments.php?action=create", { pet_id: Number(v.petId), date: v.date, time: v.time, purpose: v.purpose, status: v.status });
-  if (k === "pets") {
+  if (k === "pets" || k === "adoption") {
     // Preserve the actual File object in the original multipart form data.
     const fd = submittedFormData || new FormData();
     if (!submittedFormData) Object.entries(v).forEach(([key, val]) => fd.append(key, val));
@@ -1239,9 +1241,9 @@ function form(k, i) {
     fs = FORM[k](edit, edit ? r : null);
   if (!edit && (k === "appointments" || k === "vaccinations") && !D.pets.length) { toast("Register a pet first."); return; }
   const m = modal(
-    `<form><h2>${edit ? "Edit " + NOUN[k] : ADD[k]}</h2>${!edit && (k === "appointments" || k === "vaccinations") ? `<p class="mu">${D.doctor ? `Veterinarian in charge: <b>${esc(drName(D.doctor.name))}</b> (assigned automatically)` : "No veterinarian yet. Set a user’s role to Veterinarian and they will be assigned automatically."}</p>` : ""}${k === "pets" ? `<div class="photo-pick"><div class="photo-prev" id="pp-prev">${petTile(r, 0)}</div><div><b>Pet picture</b><small class="mu" style="display:block">JPG, PNG or WebP · up to 2 MB (optional)</small><input type="file" name="photo" id="pp-file" accept="image/jpeg,image/png,image/webp" hidden><input type="hidden" name="remove_photo" value="0"><div class="photo-btns"><button type="button" class="btn ghost" id="pp-choose">📷 Choose picture</button>${edit && r.photo ? '<button type="button" class="btn ghost" id="pp-remove">Remove</button>' : ""}</div></div></div>` : ""}<div class="fg">${fs.map((f) => fieldHtml(f, r[f.k])).join("")}</div><div class="err" id="ferr"></div><div class="acts"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn">${edit ? "Save Changes" : "Save"}</button></div></form>`,
+    `<form><h2>${edit ? "Edit " + NOUN[k] : ADD[k]}</h2>${!edit && (k === "appointments" || k === "vaccinations") ? `<p class="mu">${D.doctor ? `Veterinarian in charge: <b>${esc(drName(D.doctor.name))}</b> (assigned automatically)` : "No veterinarian yet. Set a user’s role to Veterinarian and they will be assigned automatically."}</p>` : ""}${k === "pets" ? `<div class="photo-pick"><div class="photo-prev" id="pp-prev">${k === "pets" ? petTile(r, 0) : r.photo ? `<span class="tile has-img"><img src="${esc(r.photo)}" alt=""></span>` : tile(r.species, 0)}</div><div><b>Pet picture</b><small class="mu" style="display:block">JPG, PNG or WebP · up to 2 MB (optional)</small><input type="file" name="photo" id="pp-file" accept="image/jpeg,image/png,image/webp" hidden><input type="hidden" name="remove_photo" value="0"><div class="photo-btns"><button type="button" class="btn ghost" id="pp-choose">📷 Choose picture</button>${edit && r.photo ? '<button type="button" class="btn ghost" id="pp-remove">Remove</button>' : ""}</div></div></div>` : ""}<div class="fg">${fs.map((f) => fieldHtml(f, r[f.k])).join("")}</div><div class="err" id="ferr"></div><div class="acts"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn">${edit ? "Save Changes" : "Save"}</button></div></form>`,
   );
-  if (k === "pets") {
+  if (k === "pets" || k === "adoption") {
     const file = $("#pp-file", m), prev = $("#pp-prev", m), frm = $("form", m);
     $("#pp-choose", m).onclick = () => file.click();
     const rmv = $("#pp-remove", m);

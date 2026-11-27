@@ -45,7 +45,7 @@ try {
             rec_reply(200, ['success'=>true, 'vaccinations'=>$rows]);
         }
         if ($resource === 'adoption') {
-            $q = $pdo->query('SELECT id,pet_name,species,breed,age,gender,health_status,status,reason,adopter_name,adopted_at FROM adoption_records ORDER BY created_at DESC, id DESC');
+            $q = $pdo->query('SELECT id,pet_name,species,breed,age,gender,health_status,status,reason,adopter_name,adopted_at,photo_path FROM adoption_records ORDER BY created_at DESC, id DESC');
             rec_reply(200, ['success'=>true, 'adoption'=>$q->fetchAll()]);
         }
         if ($resource === 'settings') {
@@ -145,16 +145,32 @@ try {
             if (!in_array($gender, ['Male', 'Female', 'Unknown'], true)) rec_fail('Choose a valid gender.');
             if (!in_array($status, ['Available', 'Pending', 'Adopted'], true)) rec_fail('Choose a valid status.');
             $adoptedAt = $status === 'Adopted' ? date('Y-m-d') : null;
+            $existing = null;
             if ($id) {
-                $e = $pdo->prepare('SELECT adopted_at FROM adoption_records WHERE id=?'); $e->execute([$id]); $cur = $e->fetch();
-                if (!$cur) rec_fail('Adoption record not found.', 404);
-                if ($status === 'Adopted' && $cur['adopted_at']) $adoptedAt = (string)$cur['adopted_at'];
-                $pdo->prepare('UPDATE adoption_records SET pet_name=?,species=?,breed=?,age=?,gender=?,health_status=?,status=?,reason=?,adopted_at=? WHERE id=?')
-                    ->execute([$name, $species, $breed, $age, $gender, $health ?? 'Unknown', $status, $reason, $adoptedAt, $id]);
-                rec_reply(200, ['success'=>true, 'message'=>'Changes saved.', 'id'=>$id]);
+                $e = $pdo->prepare('SELECT adopted_at,photo_path FROM adoption_records WHERE id=?'); $e->execute([$id]); $existing = $e->fetch();
+                if (!$existing) rec_fail('Adoption record not found.', 404);
+                if ($status === 'Adopted' && $existing['adopted_at']) $adoptedAt = (string)$existing['adopted_at'];
             }
-            $newId = db_insert($pdo, 'INSERT INTO adoption_records (pet_name,species,breed,age,gender,health_status,status,reason,adopted_at) VALUES (?,?,?,?,?,?,?,?,?)', [$name, $species, $breed, $age, $gender, $health ?? 'Unknown', $status, $reason, $adoptedAt]);
-            rec_reply(201, ['success'=>true, 'message'=>'Record added.', 'id'=>$newId]);
+            $newPhoto = null;
+            if (!empty($_FILES['photo']) && (int)$_FILES['photo']['error'] !== UPLOAD_ERR_NO_FILE) {
+                try { $newPhoto = save_pet_photo($_FILES['photo'], 'adoption_'); }
+                catch (RuntimeException $ex) { rec_fail($ex->getMessage()); }
+            }
+            try {
+                if ($existing) {
+                    $photo = $existing['photo_path'];
+                    if ($newPhoto) $photo = $newPhoto; elseif (!empty($in['remove_photo'])) $photo = null;
+                    $pdo->prepare('UPDATE adoption_records SET pet_name=?,species=?,breed=?,age=?,gender=?,health_status=?,status=?,reason=?,adopted_at=?,photo_path=? WHERE id=?')
+                        ->execute([$name, $species, $breed, $age, $gender, $health ?? 'Unknown', $status, $reason, $adoptedAt, $photo, $id]);
+                    if ($photo !== $existing['photo_path']) delete_pet_photo($existing['photo_path']);
+                    rec_reply(200, ['success'=>true, 'message'=>'Changes saved.', 'id'=>$id]);
+                }
+                $newId = db_insert($pdo, 'INSERT INTO adoption_records (pet_name,species,breed,age,gender,health_status,status,reason,adopted_at,photo_path) VALUES (?,?,?,?,?,?,?,?,?,?)', [$name, $species, $breed, $age, $gender, $health ?? 'Unknown', $status, $reason, $adoptedAt, $newPhoto]);
+                rec_reply(201, ['success'=>true, 'message'=>'Record added.', 'id'=>$newId]);
+            } catch (Throwable $ex) {
+                if ($newPhoto) delete_pet_photo($newPhoto);
+                throw $ex;
+            }
         }
         if ($action === 'status') {
             $status = (string)($in['status'] ?? ''); $adopter = rec_text($in, 'adopter_name', 120);

@@ -100,8 +100,10 @@ CREATE TABLE IF NOT EXISTS adoption_records (
   reason        TEXT,
   adopter_name  VARCHAR(120),
   adopted_at    DATE,
+  photo_path    TEXT,
   created_at    TIMESTAMP NOT NULL DEFAULT (now() AT TIME ZONE 'Asia/Manila')
 );
+ALTER TABLE adoption_records ADD COLUMN IF NOT EXISTS photo_path TEXT;
 
 CREATE TABLE IF NOT EXISTS clinic_settings (
   id          SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
