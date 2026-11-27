@@ -931,3 +931,98 @@ body.ov-lock { overflow: hidden; }
 .ov-pet-menu-list button:hover { background: var(--ov-soft); }
 .ov-pet-menu-list button.danger { color: #dc4545; }
 .ov-app.theme-dark .ov-pet-ph .ov-pimg { border-color: #29364a; }
+
+
+/* Dark-mode completeness pass: Pet Owner portal and body-mounted dialogs.
+   Use the same neutral charcoal/green palette as Admin and Staff. */
+.ov-app.theme-dark {
+  --ov-bg: #202923;
+  --ov-card: #29342e;
+  --ov-line: #3c4941;
+  --ov-ink: #e8eee9;
+  --ov-text: #dce5df;
+  --ov-muted: #aab7ae;
+  --ov-soft: #34483e;
+  color-scheme: dark;
+}
+.ov-app.theme-dark :is(
+  .ov-card, .ov-panel, .ov-stat, .ov-pet, .ov-appt, .ov-notif,
+  .ov-home-panel, .ov-settings-account, .ov-settings-section,
+  .ov-record-card, .ov-home-stats article, .ov-home-visit, .ov-home-pet,
+  .ov-home-notif, .ov-newpet, .ov-cal, .ov-slots, .ov-slot-panel,
+  .ov-bellpanel, .ov-settings-signout, .ov-photo, .ov-mini, .ov-vx,
+  .ov-record-report, .ov-tablewrap, .ov-filter, .ov-tab, .ov-date,
+  .ov-burger, .ov-icon, .ov-ghost, .ov-pet-menu > summary,
+  .ov-pet-menu-list, .ov-day, .ov-closed, .ov-notes, .ov-pet-doc
+) {
+  background-color: #29342e;
+  border-color: #3c4941;
+  color: #dce5df;
+}
+.ov-app.theme-dark :is(.ov-top, .ov-topbar) {
+  background: #29342e;
+  color: #e8eee9;
+  border-color: #3c4941;
+}
+.ov-app.theme-dark :is(.ov-content, .ov-main, .ov-page, .ov-page-content) {
+  background-color: #202923;
+  color: #dce5df;
+}
+.ov-app.theme-dark :is(.ov-content, .ov-main, .ov-card, .ov-panel, .ov-modal) :is(h1,h2,h3,h4,b,strong) {
+  color: #e8eee9;
+}
+.ov-app.theme-dark :is(.ov-content, .ov-card, .ov-panel, .ov-appt, .ov-notif, .ov-home-panel) :is(p,small,label,dt,dd,span) {
+  color: #c0ccc4;
+}
+.ov-app.theme-dark :is(.ov-pet-card, .ov-pet-info, .ov-pet-row, .ov-appointment-row, .ov-record-row, .ov-home-notif, .ov-home-visit, .ov-home-pet, .ov-notif:hover, .ov-notif.unread) {
+  background-color: #303c35;
+  border-color: #3c4941;
+}
+.ov-app.theme-dark :is(input:not([type=radio]):not([type=file]), select, textarea) {
+  background-color: #242f28;
+  color: #e4ebe6;
+  border-color: #4a5a50;
+  color-scheme: dark;
+}
+.ov-app.theme-dark :is(input,textarea)::placeholder { color: #9aa99f; }
+.ov-app.theme-dark :is(th, .ov-table th) { background: #303c35; color: #bac7be; border-color: #3c4941; }
+.ov-app.theme-dark :is(td, .ov-table td, tr) { border-color: #3c4941; color: #dce5df; }
+.ov-app.theme-dark .ov-table td b { color: #e8eee9; }
+.ov-app.theme-dark :is(.ov-burger, .ov-bell, .ov-icon, .ov-date, .ov-tab, .ov-filter, .ov-ghost, .ov-settings-row, .ov-settings-icon, .ov-settings-avatar, .ov-pet-menu > summary) {
+  background-color: #303c35;
+  color: #dce6df;
+  border-color: #46564c;
+}
+.ov-app.theme-dark :is(.ov-settings-row:hover, .ov-home-pet:hover, .ov-pet-menu-list button:hover, .ov-ghost:hover) { background: #394b41; }
+.ov-app.theme-dark .ov-settings-signout { background: #342a2b; border-color: #594344; }
+.ov-app.theme-dark .ov-settings-signout :is(b,small) { color: #e5c5c1; }
+.ov-app.theme-dark .ov-btn:not(.ghost):not(.danger), .ov-app.theme-dark .ov-tab.on, .ov-app.theme-dark .ov-day.sel, .ov-app.theme-dark .ov-slot.sel {
+  background-color: #18745f;
+  border-color: #18745f;
+  color: #fff;
+}
+.ov-app.theme-dark .ov-btn.ghost { background: #303c35; color: #d4e5da; border-color: #46564c; }
+.ov-app.theme-dark :is(.ov-day.past, .ov-day.closed, .ov-day.loading, .ov-slot:disabled) { background: #303c35; color: #9aa99f; border-color: #46564c; }
+/* Owner dialogs are mounted under document.body, not inside .ov-app. */
+html.theme-dark .ov-modal { color: #dce5df; }
+html.theme-dark .ov-modal .ov-mbox {
+  background: #29342e;
+  color: #dce5df;
+  border-color: #3c4941;
+}
+html.theme-dark .ov-modal .ov-mbox :is(h1,h2,h3,h4,b,strong,label,dt,dd) { color: #e8eee9; }
+html.theme-dark .ov-modal .ov-mbox :is(p,small,span) { color: #c0ccc4; }
+html.theme-dark .ov-modal .ov-mbox :is(input:not([type=file]),select,textarea) {
+  background: #242f28;
+  color: #e4ebe6;
+  border-color: #4a5a50;
+  color-scheme: dark;
+}
+html.theme-dark .ov-modal .ov-mbox :is(.ov-photo,.ov-mini,.ov-vx,.ov-notes,.ov-pet-doc,.ov-dl > div) {
+  background: #303c35;
+  border-color: #3c4941;
+}
+html.theme-dark .ov-modal .ov-mbox :is(th) { background: #303c35; color: #bac7be; }
+html.theme-dark .ov-modal .ov-mbox :is(td,th,tr) { border-color: #3c4941; }
+html.theme-dark .ov-modal .ov-mbox .ov-btn.ghost { background: #303c35; color: #d4e5da; border-color: #46564c; }
+html.theme-dark .ov-bellpanel { background: #29342e; color: #dce5df; border-color: #3c4941; }
