@@ -3809,3 +3809,25 @@ html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-cont
     background: #202d26;
   }
 }
+
+
+/* Adoption pet photos */
+.app .pc-h {
+  position: relative;
+  overflow: hidden;
+}
+.app .pc-h .pc-photo {
+  display: block;
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  object-position: center;
+  margin: -1.4em -1.4em 12px;
+  width: calc(100% + 2.8em);
+  max-width: none;
+}
+.app .photo-prev .tile.has-img { display: block; overflow: hidden; }
+.app .photo-prev .tile.has-img img { display:block; width:100%; height:100%; object-fit:cover; }
+@media (max-width: 600px) {
+  .app .pc-h .pc-photo { height: 125px; }
+}
