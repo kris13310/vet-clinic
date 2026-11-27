@@ -263,7 +263,7 @@ function login() {
   }
   $('#switch-auth').onclick = e => { e.preventDefault(); setMode(authMode === 'login' ? 'signup' : 'login'); };
   $('#eye').onclick = () => { const show=f.p.type==='password'; f.p.type=show?'text':'password'; $('#eye').innerHTML=show?ICON.eyeOff:ICON.eye; };
-  $('#fp').onclick = e => { e.preventDefault(); $('#err').textContent='Please contact the system administrator to reset your password.'; };
+  $('#fp').onclick = e => { e.preventDefault(); showForgot(); };
   $('#help').onclick = () => alert('Need help? Contact your system administrator.');
   f.onsubmit = async e => {
     e.preventDefault(); const err=$('#err'), btn=$('#submit-auth'); err.textContent='';
@@ -283,6 +283,70 @@ function login() {
     } catch (error) { err.textContent=error.message; btn.disabled=false; btn.innerHTML=`${ICON.signin} ${authMode==='signup'?'Create Account':'Sign In'}`; }
   };
   setMode('login');
+  if (/^#reset-token=/.test(location.hash)) {
+    const token = decodeURIComponent(location.hash.slice('#reset-token='.length));
+    showReset(token);
+  }
+}
+
+/* ===== Password recovery ===== */
+function showForgot() {
+  const rp = $('.rp');
+  if (!rp) return;
+  rp.innerHTML = `<i class="bub b3"></i><form id="forgot-form" novalidate>
+    <div class="f-logo">${PAW("#3b2f5e")}</div><h1>Reset Password</h1>
+    <p class="sub">Enter the email address linked to your account. If it exists, we will send a reset link.</p>
+    <label>Email<span class="field"><i>${ICON.user}</i><input name="email" type="email" autocomplete="email" placeholder="Enter your email" maxlength="190" required></span></label>
+    <div class="err" id="forgot-error" role="alert"></div>
+    <button class="signin" id="forgot-submit">Send Reset Link</button>
+    <p class="sub" style="margin-bottom:0"><a href="#" id="forgot-token" style="color:var(--p);font-weight:600;text-decoration:none">I already have a reset token</a></p>
+    <p class="sub" style="margin-bottom:0"><a href="#" id="forgot-back" style="color:var(--p);font-weight:600;text-decoration:none">Back to sign in</a></p>
+  </form>`;
+  const f = $('#forgot-form'), err = $('#forgot-error');
+  $('#forgot-back').onclick = e => { e.preventDefault(); login(); };
+  $('#forgot-token').onclick = e => { e.preventDefault(); showReset(); };
+  f.onsubmit = async e => {
+    e.preventDefault(); err.textContent = '';
+    const email = f.elements.email.value.trim();
+    if (!email) { err.textContent = 'Please enter your email address.'; return; }
+    const btn = $('#forgot-submit'); btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      const result = await authRequest('forgot', {email});
+      err.textContent = result.message || 'If an account exists for that email, a reset link has been sent.';
+    } catch (error) { err.textContent = error.message; }
+    finally { btn.disabled = false; btn.textContent = 'Send Reset Link'; }
+  };
+}
+function showReset(tokenValue = '') {
+  const rp = $('.rp');
+  if (!rp) return;
+  rp.innerHTML = `<i class="bub b3"></i><form id="reset-form" novalidate>
+    <div class="f-logo">${PAW("#3b2f5e")}</div><h1>Choose a New Password</h1>
+    <p class="sub">Enter the reset token from your email and choose a new password.</p>
+    <label>Reset token<span class="field"><i>${ICON.lock}</i><input name="token" maxlength="64" autocomplete="off" required></span></label>
+    <label>New password<span class="field"><i>${ICON.lock}</i><input name="password" type="password" autocomplete="new-password" minlength="8" required></span></label>
+    <label>Confirm password<span class="field"><i>${ICON.lock}</i><input name="confirm" type="password" autocomplete="new-password" required></span></label>
+    <div class="err" id="reset-error" role="alert"></div>
+    <button class="signin" id="reset-submit">Update Password</button>
+    <p class="sub" style="margin-bottom:0"><a href="#" id="reset-back" style="color:var(--p);font-weight:600;text-decoration:none">Back to sign in</a></p>
+  </form>`;
+  const f = $('#reset-form'), err = $('#reset-error');
+  f.elements.token.value = tokenValue;
+  $('#reset-back').onclick = e => { e.preventDefault(); history.replaceState(null, '', location.pathname + location.search); login(); };
+  f.onsubmit = async e => {
+    e.preventDefault(); err.textContent = '';
+    const token = f.elements.token.value.trim(), password = f.elements.password.value;
+    if (!/^[a-f0-9]{64}$/i.test(token)) { err.textContent = 'Enter the valid reset token from your email.'; return; }
+    if (password.length < 8) { err.textContent = 'Password must be at least 8 characters.'; return; }
+    if (password !== f.elements.confirm.value) { err.textContent = 'Passwords do not match.'; return; }
+    const btn = $('#reset-submit'); btn.disabled = true; btn.textContent = 'Updating…';
+    try {
+      const result = await authRequest('reset', {token, password});
+      history.replaceState(null, '', location.pathname + location.search);
+      login();
+      $('#err').textContent = result.message || 'Password updated. You can sign in now.';
+    } catch (error) { err.textContent = error.message; btn.disabled = false; btn.textContent = 'Update Password'; }
+  };
 }
 
 /* ===== App shell ===== */
