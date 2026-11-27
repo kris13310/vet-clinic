@@ -220,3 +220,40 @@ html.theme-dark .ov-app :is(input:not([type=radio]):not([type=file]),select,text
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+
+/* Softer light surfaces: reduce stark white while keeping contrast and the green brand. */
+:root {
+  --bg: #edf2ef;
+  --bd: #dce6df;
+  --tx: #20342b;
+  --vc-shadow: 0 7px 24px rgba(23,52,40,.045);
+}
+body, .app, .app .mn, .app .ct,
+.ov-app, .ov-app .ov-content {
+  background-color: #edf2ef;
+}
+.app .hd, .ov-app .ov-top {
+  background: rgba(244,248,245,.96);
+  border-color: #dce6e0;
+}
+.app .card,
+.ov-app .ov-card, .ov-app .ov-panel, .ov-app .ov-stat, .ov-app .ov-pet,
+.ov-app .ov-appt, .ov-app .ov-notif, .ov-app .ov-home-panel,
+.ov-app .ov-settings-section, .ov-app .ov-record-card {
+  background-color: #f7faf8;
+  border-color: #dfe8e2;
+}
+.app input, .app select, .app textarea,
+.ov-app :is(input:not([type=radio]):not([type=file]), select, textarea) {
+  background-color: #f1f6f2;
+  border-color: #d8e3dc;
+}
+.app .bell, .app .burger {
+  background: #f2f6f3;
+  border-color: #dce6df;
+}
+.app th { background: #edf3ef; }
+.app tbody tr:hover { background: #eef5f0; }
+.app .li { background: #f1f6f2; border-color: #e0e9e3; }
+.ov-app { --ov-bg:#edf2ef; --ov-card:#f7faf8; --ov-line:#dfe8e2; --ov-soft:#eaf2ed; }
