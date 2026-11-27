@@ -2668,3 +2668,22 @@ td.cc,
   background: #06664f;
   filter: none;
 }
+
+/* Loading screen follows the saved clinic theme, including the first page paint. */
+html.theme-dark .app-loading {
+  background: rgba(8, 19, 33, .98);
+  color: #e5edf7;
+  color-scheme: dark;
+}
+html.theme-dark .app-loading__content {
+  background: #111c2e;
+  border-color: #29364a;
+  color: #e5edf7;
+  box-shadow: 0 18px 55px rgba(0, 0, 0, .38);
+}
+html.theme-dark .app-loading__brand { color: #f1f5f9; }
+html.theme-dark .app-loading__brand span { color: #6ee7b7; }
+html.theme-dark .app-loading__content p { color: #cbd5e1; }
+html.theme-dark .app-loading__content small { color: #9aa9bc; }
+html.theme-dark .app-loading__track { background: #29364a; }
+html.theme-dark .app-loading__mark::after { border-color: #285b4c; border-top-color: #6ee7b7; }
