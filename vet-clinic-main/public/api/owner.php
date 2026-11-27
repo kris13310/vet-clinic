@@ -141,15 +141,26 @@ try {
             if (slot_is_taken($pdo, $date, $time)) return [409, 'Sorry, that time slot was just reserved. Please choose another time.', null];
             $pid = $petId;
             if ($pid <= 0) {
-                $prof = $pdo->prepare('SELECT phone,address FROM users WHERE id=?'); $prof->execute([$uid]); $pr = $prof->fetch() ?: [];
-                $species = mb_substr(trim((string)($data['new_pet_species'] ?? '')), 0, 60); if ($species === '') $species = 'Other';
-                $breed = trim((string)($data['new_pet_breed'] ?? '')); $age = trim((string)($data['new_pet_age'] ?? ''));
-                $pid = db_insert($pdo, 'INSERT INTO pets (name,species,breed,owner_name,owner_email,owner_phone,address,age,created_by) VALUES (?,?,?,?,?,?,?,?,?)', [trim((string)$data['new_pet_name']), $species, $breed !== '' ? mb_substr($breed, 0, 120) : null, $ownerName, $email, (string)($pr['phone'] ?? ''), (string)($pr['address'] ?? ''), $age !== '' ? mb_substr($age, 0, 40) : null, $uid]);
-            } else {
-                $dup = $pdo->prepare("SELECT id FROM appointments WHERE pet_id=? AND appointment_date=? AND status IN ('Pending','Confirmed','In Progress') LIMIT 1");
-                $dup->execute([$pid, $date]);
-                if ($dup->fetch()) { return [409, 'This pet already has an appointment on that date. Choose another date.', null]; }
+                $petName = trim((string)$data['new_pet_name']);
+                // Reuse an existing pet owned by this account instead of creating duplicates
+                // when an owner submits the new-pet appointment form more than once.
+                $findPet = $pdo->prepare('SELECT id FROM pets WHERE LOWER(TRIM(owner_email))=LOWER(TRIM(?)) AND LOWER(TRIM(name))=LOWER(TRIM(?)) ORDER BY id LIMIT 1');
+                $findPet->execute([$email, $petName]);
+                $existingPetId = $findPet->fetchColumn();
+                if ($existingPetId !== false) {
+                    $pid = (int)$existingPetId;
+                } else {
+                    $prof = $pdo->prepare('SELECT phone,address FROM users WHERE id=?'); $prof->execute([$uid]); $pr = $prof->fetch() ?: [];
+                    $species = mb_substr(trim((string)($data['new_pet_species'] ?? '')), 0, 60); if ($species === '') $species = 'Other';
+                    $breed = trim((string)($data['new_pet_breed'] ?? '')); $age = trim((string)($data['new_pet_age'] ?? ''));
+                    $pid = db_insert($pdo, 'INSERT INTO pets (name,species,breed,owner_name,owner_email,owner_phone,address,age,created_by) VALUES (?,?,?,?,?,?,?,?,?)', [$petName, $species, $breed !== '' ? mb_substr($breed, 0, 120) : null, $ownerName, $email, (string)($pr['phone'] ?? ''), (string)($pr['address'] ?? ''), $age !== '' ? mb_substr($age, 0, 40) : null, $uid]);
+                }
             }
+            // Apply the same duplicate-day rule to both registered and newly entered pets.
+            $dup = $pdo->prepare("SELECT id FROM appointments WHERE pet_id=? AND appointment_date=? AND status IN ('Pending','Confirmed','In Progress') LIMIT 1");
+            $dup->execute([$pid, $date]);
+            if ($dup->fetch()) return [409, 'This pet already has an appointment on that date. Choose another date.', null];
+
             $aid = db_insert($pdo, "INSERT INTO appointments (pet_id, veterinarian_id, appointment_date, appointment_time, purpose, status, notes) VALUES (?,?,?,?,?, 'Pending', ?)", [$pid, $docId, $date, $time . ':00', $purpose, $notes !== '' ? $notes : null]);
             create_notification($pdo, $uid, $aid, 'request', 'Request received', 'Your appointment request for ' . human_date($date) . ' at ' . human_time($time) . ' was sent. It stays Pending until the clinic approves it.');
             return [201, 'Appointment request sent successfully. It is Pending until clinic staff approve it.', $aid];
@@ -254,14 +265,19 @@ try {
     /* ---- Update personal information ---- */
     if ($action === 'profile') {
         $name = trim((string)($data['name'] ?? '')); $newEmail = trim((string)($data['email'] ?? '')); $phone = trim((string)($data['phone'] ?? '')); $address = trim((string)($data['address'] ?? ''));
-        $current = $pdo->prepare('SELECT avatar_path FROM users WHERE id=?'); $current->execute([$uid]); $oldAvatar = $current->fetchColumn() ?: null;
-        $newAvatar = $oldAvatar;
-        if (!empty($_FILES['photo']) && (int)($_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) $newAvatar = save_pet_photo($_FILES['photo'], 'user_');
-        if (!empty($data['remove_photo']) && $data['remove_photo'] === '1') $newAvatar = null;
         if ($name === '' || !filter_var($newEmail, FILTER_VALIDATE_EMAIL)) owner_reply(422, ['success'=>false,'message'=>'Enter a valid name and email.']);
         if (mb_strlen($name) > 120 || mb_strlen($newEmail) > 190 || mb_strlen($phone) > 40 || mb_strlen($address) > 255) owner_reply(422, ['success'=>false,'message'=>'One of the fields is too long.']);
         $check = $pdo->prepare('SELECT id FROM users WHERE LOWER(email)=LOWER(?) AND id<>?'); $check->execute([$newEmail, $uid]);
         if ($check->fetch()) owner_reply(409, ['success'=>false,'message'=>'That email is already used by another account.']);
+
+        // Validate all profile fields before uploading a replacement avatar.
+        $current = $pdo->prepare('SELECT avatar_path FROM users WHERE id=?'); $current->execute([$uid]); $oldAvatar = $current->fetchColumn() ?: null;
+        $newAvatar = $oldAvatar;
+        if (!empty($_FILES['photo']) && (int)($_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            try { $newAvatar = save_pet_photo($_FILES['photo'], 'user_'); }
+            catch (RuntimeException $e) { owner_reply(422, ['success'=>false,'message'=>$e->getMessage()]); }
+        }
+        if (!empty($data['remove_photo']) && $data['remove_photo'] === '1') $newAvatar = null;
         $pdo->beginTransaction();
         try {
             $pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=?,avatar_path=? WHERE id=?')->execute([$name, $newEmail, $phone, $address, $newAvatar, $uid]);
