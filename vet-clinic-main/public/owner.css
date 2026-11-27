@@ -948,3 +948,62 @@ body.ov-lock { overflow: hidden; }
 .ov-app.theme-dark input[type="time"],
 .ov-app.theme-dark input[type="datetime-local"] { color-scheme: dark; }
 .ov-app.theme-dark :focus-visible { outline-color: #34d399; }
+
+
+/* Pet Owner dialogs are mounted under <body>, outside .ov-app.
+   Scope dark styles from the root theme class so modal surfaces and fields
+   cannot remain white while the portal itself is in dark mode. */
+html.theme-dark .ov-modal {
+  --ov-ink: #e5edf7;
+  --ov-text: #cbd5e1;
+  --ov-muted: #9aa9bc;
+  --ov-line: #29364a;
+  --ov-bg: #0b1220;
+  --ov-card: #111c2e;
+  --ov-soft: #17352f;
+  color: #cbd5e1;
+  color-scheme: dark;
+  background: #050b16dd;
+}
+html.theme-dark .ov-modal .ov-mbox {
+  background: #111c2e;
+  color: #cbd5e1;
+  border: 1px solid #29364a;
+  box-shadow: 0 24px 70px #0009;
+}
+html.theme-dark .ov-modal h1,
+html.theme-dark .ov-modal h2,
+html.theme-dark .ov-modal h3,
+html.theme-dark .ov-modal h4,
+html.theme-dark .ov-modal label,
+html.theme-dark .ov-modal b,
+html.theme-dark .ov-modal strong { color: #e5edf7; }
+html.theme-dark .ov-modal p,
+html.theme-dark .ov-modal small,
+html.theme-dark .ov-modal .ov-meta { color: #9aa9bc; }
+html.theme-dark .ov-modal input:not([type=radio]):not([type=checkbox]):not([type=file]),
+html.theme-dark .ov-modal select,
+html.theme-dark .ov-modal textarea {
+  background: #0f1a2b;
+  color: #e5edf7;
+  border-color: #35445b;
+  color-scheme: dark;
+}
+html.theme-dark .ov-modal input::placeholder,
+html.theme-dark .ov-modal textarea::placeholder { color: #8494aa; }
+html.theme-dark .ov-modal .ov-actions { border-color: #29364a; }
+html.theme-dark .ov-modal .ov-btn.ghost,
+html.theme-dark .ov-modal .ov-icon {
+  background: #172438;
+  color: #a7f3d0;
+  border-color: #35445b;
+}
+html.theme-dark .ov-modal .ov-btn.danger {
+  background: #40252d;
+  color: #fecaca;
+  border-color: #71343d;
+}
+html.theme-dark .ov-modal table,
+html.theme-dark .ov-modal th,
+html.theme-dark .ov-modal td { color: #cbd5e1; border-color: #29364a; }
+html.theme-dark .ov-modal th { background: #172438; color: #aebbd0; }
