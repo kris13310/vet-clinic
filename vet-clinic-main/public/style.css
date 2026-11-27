@@ -2687,3 +2687,118 @@ html.theme-dark .app-loading__content p { color: #cbd5e1; }
 html.theme-dark .app-loading__content small { color: #9aa9bc; }
 html.theme-dark .app-loading__track { background: #29364a; }
 html.theme-dark .app-loading__mark::after { border-color: #285b4c; border-top-color: #6ee7b7; }
+
+
+/* Complete Admin / Staff dark-theme coverage for secondary controls and data views. */
+.app.theme-dark {
+  --p: #10b981;
+  --p2: #34d399;
+  --line: #29364a;
+  --bd: #35445b;
+  --bg: #0b1220;
+  --tx: #e5edf7;
+  --mu: #9aa9bc;
+}
+.app.theme-dark .hd,
+.app.theme-dark .hd .qs,
+.app.theme-dark .bell-panel,
+.app.theme-dark .bell-menu,
+.app.theme-dark .drop,
+.app.theme-dark .dropdown,
+.app.theme-dark .menu-pop,
+.app.theme-dark .pop,
+.app.theme-dark .filter,
+.app.theme-dark .sr,
+.app.theme-dark .search,
+.app.theme-dark .search-box,
+.app.theme-dark .cal,
+.app.theme-dark .calendar,
+.app.theme-dark .calendar-panel,
+.app.theme-dark .slot-panel,
+.app.theme-dark .slot-list,
+.app.theme-dark .pagination,
+.app.theme-dark .empty,
+.app.theme-dark .empty-state {
+  background: #111c2e;
+  border-color: #29364a;
+  color: #e5edf7;
+}
+.app.theme-dark .bell-panel *,
+.app.theme-dark .bell-menu *,
+.app.theme-dark .drop *,
+.app.theme-dark .dropdown *,
+.app.theme-dark .menu-pop *,
+.app.theme-dark .pop * { color: inherit; }
+.app.theme-dark .bell-panel button,
+.app.theme-dark .drop button,
+.app.theme-dark .dropdown button,
+.app.theme-dark .menu-pop button {
+  background: transparent;
+  color: #e5edf7;
+}
+.app.theme-dark .bell-panel button:hover,
+.app.theme-dark .drop button:hover,
+.app.theme-dark .dropdown button:hover,
+.app.theme-dark .menu-pop button:hover { background: #1b3a34; }
+.app.theme-dark .day:not(.sel):not(.off-holiday):not(.off-closed):not(.off-unavailable):not(.off-partial),
+.app.theme-dark .slot:not(.sel):not(:disabled) {
+  background: #172438;
+  border-color: #35445b;
+  color: #dbe5f2;
+}
+.app.theme-dark .day:not(.sel):hover,
+.app.theme-dark .slot:not(.sel):not(:disabled):hover { background: #1b3a34; }
+.app.theme-dark .day.off-closed,
+.app.theme-dark .day.off-unavailable,
+.app.theme-dark .day.off-partial,
+.app.theme-dark .slot:disabled {
+  background: #202b3d;
+  border-color: #35445b;
+  color: #8494aa;
+}
+.app.theme-dark .day.off-holiday { background: #38291d; color: #fdba74; }
+.app.theme-dark .hlist,
+.app.theme-dark .hnote {
+  background: #38291d;
+  border-color: #80512b;
+  color: #fed7aa;
+}
+.app.theme-dark .hlist .hl-t { color: #fdba74; }
+.app.theme-dark .badge,
+.app.theme-dark .chip,
+.app.theme-dark .tab,
+.app.theme-dark .nv button,
+.app.theme-dark .pager button {
+  border-color: #35445b;
+}
+.app.theme-dark .btn.ghost,
+.app.theme-dark .btn.out,
+.app.theme-dark .ac button.btn.ghost {
+  background: #172438;
+  color: #a7f3d0;
+  border-color: #365448;
+}
+.app.theme-dark .btn.ghost:hover,
+.app.theme-dark .btn.out:hover,
+.app.theme-dark .ac button.btn.ghost:hover { background: #1b3a34; }
+.app.theme-dark .btn.red,
+.app.theme-dark .ac button.btn.red { background: #47252b; color: #fecaca; border-color: #71343d; }
+.app.theme-dark .ac button.btn { color: #fff; }
+.app.theme-dark .row,
+.app.theme-dark .li,
+.app.theme-dark .medical-report-card,
+.app.theme-dark .medical-report-head,
+.app.theme-dark .medical-report-fields section {
+  border-color: #29364a;
+}
+.app.theme-dark .medical-report-fields section b,
+.app.theme-dark .medical-report-vet small { color: #9aa9bc; }
+.app.theme-dark .settings-appearance,
+.app.theme-dark .settings-appearance h3,
+.app.theme-dark .settings-appearance p { color: #e5edf7; }
+.app.theme-dark .settings-appearance p { color: #9aa9bc; }
+.app.theme-dark .app-loading { color-scheme: dark; }
+.app.theme-dark input[type="date"],
+.app.theme-dark input[type="time"],
+.app.theme-dark input[type="datetime-local"] { color-scheme: dark; }
+.app.theme-dark :focus-visible { outline-color: #34d399; }
