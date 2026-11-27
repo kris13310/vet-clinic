@@ -3513,3 +3513,56 @@ html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-cont
     padding: 10px 12px;
   }
 }
+
+
+/* Calendar: make each date cell outline clearly visible in both themes */
+.app .cal .day:not(.blank) {
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.12);
+}
+.app .cal .day:not(.blank):hover {
+  border-color: #16845f;
+  background-color: #edf8f2;
+}
+.app .cal .day.today:not(.sel) {
+  border: 2px solid #16845f;
+}
+.app .cal .day.sel {
+  border: 2px solid #08734f;
+  background-color: #dff3e8;
+}
+.app .cal .day.off-holiday,
+.app .cal .day.off-closed,
+.app .cal .day.off-unavailable,
+.app .cal .day.off-partial {
+  border-color: #d6b66d;
+}
+.app.theme-dark .cal .day:not(.blank) {
+  border: 1px solid #536b5d;
+  background-color: #202e27;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.16);
+}
+.app.theme-dark .cal .day:not(.blank):hover {
+  border-color: #6ee7b7;
+  background-color: #2b4437;
+}
+.app.theme-dark .cal .day.today:not(.sel) {
+  border: 2px solid #34d399;
+}
+.app.theme-dark .cal .day.sel {
+  border: 2px solid #6ee7b7;
+  background-color: #145c45;
+}
+.app.theme-dark .cal .day.off-holiday,
+.app.theme-dark .cal .day.off-closed,
+.app.theme-dark .cal .day.off-unavailable,
+.app.theme-dark .cal .day.off-partial {
+  border-color: #8a7040;
+}
+.app .cal > .wd > span {
+  border-bottom: 1px solid #d8e1dc;
+}
+.app.theme-dark .cal > .wd > span {
+  border-bottom-color: #43594b;
+}
