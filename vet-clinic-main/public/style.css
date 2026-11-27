@@ -2996,3 +2996,125 @@ html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-cont
   .app .card { padding: 12px; }
   .app .tab { padding-inline: 8px; font-size: .86em; }
 }
+
+/* Focused Admin/Staff layout and dark-surface corrections */
+.settings-mode-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 22px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.settings-mode-row > div {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.settings-mode-row > div > b {
+  display: block;
+  line-height: 1.4;
+}
+.settings-mode-row > div > p {
+  margin: 6px 0 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.settings-mode-row > .theme-toggle {
+  flex: 0 0 auto;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.profile-photo-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  min-width: 0;
+}
+#staff-profile-preview {
+  flex: 0 0 auto;
+}
+.profile-photo-row > div:last-child {
+  display: flex;
+  flex: 1 1 260px;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.profile-photo-row > div:last-child > label.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: 100%;
+  margin: 0;
+  line-height: 1.3;
+}
+.profile-photo-row > div:last-child > button {
+  flex: 0 0 auto;
+  max-width: 100%;
+  white-space: normal;
+}
+.profile-photo-row small {
+  flex: 1 0 100%;
+  width: auto;
+  display: block;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.app.theme-dark .sum {
+  background: #263b32;
+  border-color: #3c6250;
+  color: #e4ebe6;
+}
+.app.theme-dark .sum b {
+  color: #a7f3d0;
+}
+.app.theme-dark .sum small {
+  color: #b7c8bd;
+}
+.app.theme-dark .mini.y {
+  background: #3a3322;
+  border-color: #66552d;
+  color: #f3e5b2;
+}
+.app.theme-dark .mini.y b {
+  color: #fbbf24;
+}
+.app.theme-dark .mini.r {
+  background: #3b2929;
+  border-color: #684040;
+  color: #f3c4c4;
+}
+.app.theme-dark .mini.r b {
+  color: #fca5a5;
+}
+
+@media (max-width: 600px) {
+  .settings-mode-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .settings-mode-row > .theme-toggle {
+    align-self: flex-start;
+  }
+  .profile-photo-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .profile-photo-row > div:last-child {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+}
+@media (max-width: 380px) {
+  .profile-photo-row > div:last-child {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .profile-photo-row > div:last-child > label.btn,
+  .profile-photo-row > div:last-child > button {
+    width: 100%;
+  }
+}
