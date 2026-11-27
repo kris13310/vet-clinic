@@ -875,27 +875,6 @@ body.ov-lock { overflow: hidden; }
 .ov-app.theme-dark img { border-color: #46574c; }
 
 
-/* Align the appearance preference row consistently across viewport sizes. */
-.ov-settings-mode {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 14px 18px;
-}
-.ov-settings-mode .ov-settings-copy { flex: 1 1 220px; }
-.ov-settings-mode .ov-theme-toggle { flex: 0 0 auto; margin-left: auto; }
-.ov-app.theme-dark .ov-settings-mode .ov-theme-toggle {
-  background: #303c35;
-  color: #d4e5da;
-  border-color: #4a5a50;
-}
-.ov-app.theme-dark .ov-settings-mode .ov-theme-toggle:hover { background: #394b41; }
-@media (max-width: 520px) {
-  .ov-settings-mode { align-items: flex-start; }
-  .ov-settings-mode .ov-theme-toggle { margin-left: 58px; }
-}
-
-
 /* Keep the Pet Owner appearance setting balanced on desktop and mobile. */
 .ov-settings-mode {
   display: grid;
@@ -1026,3 +1005,93 @@ html.theme-dark .ov-modal .ov-mbox :is(th) { background: #303c35; color: #bac7be
 html.theme-dark .ov-modal .ov-mbox :is(td,th,tr) { border-color: #3c4941; }
 html.theme-dark .ov-modal .ov-mbox .ov-btn.ghost { background: #303c35; color: #d4e5da; border-color: #46564c; }
 html.theme-dark .ov-bellpanel { background: #29342e; color: #dce5df; border-color: #3c4941; }
+
+
+/* Unified responsive pass.
+   Breakpoints are intentionally ordered from tablet to phone so later rules
+   only refine smaller layouts instead of fighting earlier media queries. */
+@media (max-width: 1100px) {
+  .ov-app { --ov-side: 268px; }
+  .ov-content { padding-left: 24px; padding-right: 24px; }
+  .ov-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ov-date { display: none; }
+}
+@media (max-width: 900px) {
+  .ov-app { display: block; min-height: 100vh; }
+  .ov-side {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(320px, 86vw);
+    max-width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    transform: translateX(-105%);
+    transition: transform .25s ease;
+    z-index: 10020;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .ov-app.open .ov-side { transform: translateX(0); }
+  .ov-app.open .ov-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 10010;
+    background: rgba(15, 23, 42, .55);
+  }
+  .ov-main { margin-left: 0; min-width: 0; width: 100%; }
+  .ov-burger { display: grid; place-items: center; flex: 0 0 44px; }
+  .ov-top { height: auto; min-height: 72px; padding: 12px 18px; gap: 12px; }
+  .ov-top h1 { font-size: clamp(18px, 3vw, 22px); }
+  .ov-top-r { gap: 10px; }
+  .ov-content { padding: 24px 18px 36px; }
+  .ov-dt { grid-template-columns: minmax(0, 1fr); }
+  .ov-cal { width: 100%; max-width: 560px; margin-inline: auto; }
+  .ov-bellpanel { max-width: min(440px, calc(100vw - 28px)); }
+}
+@media (max-width: 640px) {
+  .ov-content { padding: 20px 14px 30px; }
+  .ov-top { min-height: 64px; padding: 10px 14px; gap: 9px; }
+  .ov-top h1 { font-size: 18px; }
+  .ov-top-r { gap: 8px; }
+  .ov-bell, .ov-burger { width: 42px; height: 42px; min-width: 42px; }
+  .ov-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .ov-stat { min-width: 0; padding: 14px; gap: 9px; }
+  .ov-stat strong { font-size: 24px; }
+  .ov-card { min-width: 0; padding: 18px 15px; }
+  .ov-grid, .ov-modal .ov-grid { grid-template-columns: minmax(0, 1fr); }
+  .ov-petgrid { grid-template-columns: minmax(0, 1fr); }
+  .ov-appt { grid-template-columns: auto minmax(0, 1fr); min-width: 0; }
+  .ov-appt-st { grid-column: 1 / -1; flex-wrap: wrap; justify-content: flex-start; }
+  .ov-appt-st .ov-btn { flex: 1 1 100%; width: 100%; }
+  .ov-actions { width: 100%; gap: 9px; }
+  .ov-actions .ov-btn { flex: 1 1 100%; width: 100%; }
+  .ov-actions .ov-msg { width: 100%; margin: 0; }
+  .ov-tablewrap { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ov-table { min-width: 680px; }
+  .ov-mbox { width: min(100%, 560px); max-height: 92dvh; overflow-y: auto; padding: 20px 16px; }
+  .ov-bellpanel { position: fixed; top: 72px; right: 12px; left: 12px; width: auto; max-width: none; }
+  .ov-settings-account { align-items: flex-start; flex-wrap: wrap; padding: 18px; }
+  .ov-settings-identity { flex: 1 1 calc(100% - 82px); }
+  .ov-settings-account > .ov-btn { margin-left: 82px; }
+  .ov-settings-section { padding: 18px; }
+  .ov-settings-row { gap: 10px; }
+  .ov-settings-signout { align-items: flex-start; flex-direction: column; }
+  .ov-settings-mode { grid-template-columns: 40px minmax(0, 1fr); gap: 12px; }
+  .ov-settings-mode .ov-settings-icon { grid-column: 1; }
+  .ov-settings-mode .ov-settings-copy { grid-column: 2; }
+  .ov-settings-mode .ov-theme-toggle { grid-column: 2; justify-self: start; margin: 4px 0 0; }
+}
+@media (max-width: 420px) {
+  .ov-content { padding-left: 10px; padding-right: 10px; }
+  .ov-top { padding-left: 10px; padding-right: 10px; }
+  .ov-top h1 { font-size: 16px; }
+  .ov-stats { grid-template-columns: minmax(0, 1fr); }
+  .ov-stat { flex-direction: row; align-items: center; }
+  .ov-intro { gap: 12px; }
+  .ov-intro h2 { font-size: 24px; }
+  .ov-card { padding: 16px 12px; }
+  .ov-settings-mode { grid-template-columns: 36px minmax(0, 1fr); }
+  .ov-settings-mode .ov-settings-icon { width: 36px; height: 36px; }
+  .ov-settings-mode .ov-theme-toggle { max-width: 100%; white-space: normal; }
+}
