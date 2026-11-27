@@ -2920,3 +2920,79 @@ html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-cont
 }
 html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-content) :is(th) { background: #303c35; color: #bac7be; }
 html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-content) :is(td,th,tr) { border-color: #3c4941; }
+
+
+/* Final responsive normalization for Admin and Staff.
+   Preserve the existing tablet sidebar behavior; below 860px use the drawer. */
+@media (min-width: 861px) and (max-width: 1100px) {
+  .app { display: flex; }
+  .app > .sb {
+    position: sticky;
+    inset: auto;
+    width: 14.5em;
+    min-width: 14.5em;
+    height: 100vh;
+    height: 100dvh;
+    flex: 0 0 14.5em;
+    transform: none;
+    transition: none;
+  }
+  .app .mn { min-width: 0; width: calc(100% - 14.5em); }
+  .app .burger { display: none; }
+  .app.open > .ov { display: none; }
+}
+@media (max-width: 860px) {
+  .app { display: block; min-height: 100vh; }
+  .app > .sb {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(17.5em, 86vw);
+    max-width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    transform: translateX(-105%);
+    transition: transform .25s ease;
+    z-index: 10020;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .app.open > .sb { transform: translateX(0); }
+  .app > .mn { width: 100%; min-width: 0; margin: 0; }
+  .app .burger { display: inline-grid; place-items: center; flex: 0 0 auto; }
+  .app.open > .ov {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 10010;
+    background: rgba(15, 23, 42, .55);
+  }
+  .app .hd { min-width: 0; padding: 12px 16px; gap: 12px; }
+  .app .ct { min-width: 0; padding: 18px 16px 28px; }
+}
+@media (max-width: 600px) {
+  .app .hd { padding: 10px 12px; gap: 9px; }
+  .app .hd-t h1 { font-size: 1.08em; }
+  .app .hd-t small { display: none; }
+  .app .ct { padding: 14px 10px 24px; gap: 12px; }
+  .app .top { flex-wrap: wrap; align-items: stretch; gap: 8px; }
+  .app .top > * { min-width: 0; }
+  .app .top > .sr, .app .top.end > .sr { flex: 1 1 100%; width: 100%; }
+  .app .top > .btn { flex: 1 1 auto; }
+  .app .tabs { max-width: 100%; overflow-x: auto; justify-content: flex-start; }
+  .app .tabs .tab { flex: 0 0 auto; }
+  .app .g4, .app .g3:not(.sc-row), .app .sc-row, .app .side, .app .fg {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .app .cal-wrap { grid-template-columns: minmax(0, 1fr); }
+  .app .side { display: grid; }
+  .app .rt { min-width: 0; }
+  .app .rt td { min-width: 0; overflow-wrap: anywhere; }
+  .app .rt td > * { max-width: 100%; }
+  .app .modal, .app .dialog { max-width: calc(100vw - 20px); }
+}
+@media (max-width: 380px) {
+  .app .hd { padding-inline: 9px; }
+  .app .ct { padding-inline: 8px; }
+  .app .card { padding: 12px; }
+  .app .tab { padding-inline: 8px; font-size: .86em; }
+}
