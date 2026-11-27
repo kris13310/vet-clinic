@@ -3566,3 +3566,67 @@ html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-cont
 .app.theme-dark .cal > .wd > span {
   border-bottom-color: #43594b;
 }
+
+
+/* Appointment schedule entries: make each appointment card outline visible */
+.app .cal-wrap .side .tc {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+.app .cal-wrap .side .tc-t {
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.app .cal-wrap .side .tc > strong {
+  margin-top: 5px;
+  margin-bottom: 7px;
+}
+.app .cal-wrap .side .tc > p {
+  margin: 5px 0;
+  line-height: 1.45;
+}
+.app .cal-wrap .side .tc > small {
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.app .cal-wrap .side .tc .ac.sm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+.app.theme-dark .cal-wrap .side .tc {
+  border: 1px solid #61796a;
+  background: #202d27;
+  box-shadow: 0 0 0 1px rgba(110, 231, 183, 0.08);
+}
+.app.theme-dark .cal-wrap .side .tc-t {
+  color: #e5eee8;
+}
+.app.theme-dark .cal-wrap .side .tc > strong {
+  color: #f0f6f2;
+}
+.app.theme-dark .cal-wrap .side .tc > p,
+.app.theme-dark .cal-wrap .side .tc > small {
+  color: #c3d1c8;
+}
+.app.theme-dark .cal-wrap .side .tc .ac.sm button.btn.ghost {
+  background: #293a33;
+  border-color: #536b5d;
+  color: #e5eee8;
+}
+.app.theme-dark .cal-wrap .side .tc .ac.sm button.btn.red {
+  background: #48292b;
+  border-color: #805056;
+  color: #fecaca;
+}
+@media (max-width: 600px) {
+  .app .cal-wrap .side .tc {
+    padding: 12px;
+  }
+  .app .cal-wrap .side .tc .ac.sm {
+    justify-content: flex-start;
+  }
+}
