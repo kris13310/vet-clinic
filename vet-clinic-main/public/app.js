@@ -263,7 +263,7 @@ function login() {
   }
   $('#switch-auth').onclick = e => { e.preventDefault(); setMode(authMode === 'login' ? 'signup' : 'login'); };
   $('#eye').onclick = () => { const show=f.p.type==='password'; f.p.type=show?'text':'password'; $('#eye').innerHTML=show?ICON.eyeOff:ICON.eye; };
-  $('#fp').onclick = e => { e.preventDefault(); $('#err').textContent='Please contact the system administrator to reset your password.'; };
+  $('#fp').onclick = e => { e.preventDefault(); showForgot(); };
   $('#help').onclick = () => alert('Need help? Contact your system administrator.');
   f.onsubmit = async e => {
     e.preventDefault(); const err=$('#err'), btn=$('#submit-auth'); err.textContent='';
@@ -283,6 +283,98 @@ function login() {
     } catch (error) { err.textContent=error.message; btn.disabled=false; btn.innerHTML=`${ICON.signin} ${authMode==='signup'?'Create Account':'Sign In'}`; }
   };
   setMode('login');
+}
+
+
+/* ===== Password recovery ===== */
+function showForgot() {
+  const rp = $('.rp');
+  if (!rp) return;
+  rp.innerHTML = `<i class="bub b3"></i><form id="forgot-form" novalidate>
+    <div class="f-logo">${PAW("#3b2f5e")}</div>
+    <h1>Reset Password</h1>
+    <p class="sub">Enter the email address connected to your VETCARE account. We will send a secure reset link.</p>
+    <label>Email<span class="field"><i>${ICON.user}</i><input name="email" type="email" autocomplete="email" placeholder="Enter your email" maxlength="190" required></span></label>
+    <div class="err" id="f-err" role="alert"></div>
+    <button class="signin" id="forgot-submit">${ICON.signin} Send Reset Link</button>
+    <p class="sub" style="margin-bottom:0"><a href="#" id="back-to-login" style="color:var(--p);font-weight:600;text-decoration:none">Back to sign in</a></p>
+    <div class="notice">${ICON.lock.replace('width="17" height="17"', 'width="13" height="13"')} Reset links expire after 60 minutes and can only be used once.</div>
+  </form>`;
+  const f = document.getElementById('forgot-form');
+  const err = document.getElementById('f-err');
+  document.getElementById('back-to-login').onclick = e => { e.preventDefault(); login(); };
+  f.onsubmit = async e => {
+    e.preventDefault();
+    err.textContent = '';
+    err.style.color = '';
+    const email = f.elements.namedItem('email').value.trim();
+    if (!email) { err.textContent = 'Please enter your email address.'; return; }
+    const btn = document.getElementById('forgot-submit');
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    try {
+      const result = await authRequest('forgot', { email });
+      err.style.color = 'var(--ok)';
+      err.textContent = result.message || 'If an account exists for that email, a reset link has been sent.';
+    } catch (error) {
+      err.textContent = error.message || 'Unable to send the reset link.';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `${ICON.signin} Send Reset Link`;
+    }
+  };
+}
+
+function showReset(prefillToken = '') {
+  const rp = $('.rp');
+  if (!rp) return;
+  rp.innerHTML = `<i class="bub b3"></i><form id="reset-form" novalidate>
+    <div class="f-logo">${PAW("#3b2f5e")}</div>
+    <h1>Choose a New Password</h1>
+    <p class="sub">Enter a new password for your VETCARE account.</p>
+    <label>Reset token<span class="field"><i>${ICON.lock}</i><input name="token" autocomplete="one-time-code" placeholder="Reset token" maxlength="64" value="${esc(prefillToken)}" required></span></label>
+    <label>New password<span class="field"><i>${ICON.lock}</i><input name="password" type="password" autocomplete="new-password" placeholder="At least 8 characters" minlength="8" required></span></label>
+    <label>Confirm password<span class="field"><i>${ICON.lock}</i><input name="confirm" type="password" autocomplete="new-password" placeholder="Enter the password again" required></span></label>
+    <div class="err" id="r-err" role="alert"></div>
+    <button class="signin" id="reset-submit">${ICON.signin} Update Password</button>
+    <p class="sub" style="margin-bottom:0"><a href="#" id="back-to-login-2" style="color:var(--p);font-weight:600;text-decoration:none">Back to sign in</a></p>
+  </form>`;
+  const f = document.getElementById('reset-form');
+  const err = document.getElementById('r-err');
+  document.getElementById('back-to-login-2').onclick = e => { e.preventDefault(); login(); };
+  f.onsubmit = async e => {
+    e.preventDefault();
+    err.textContent = '';
+    const token = f.elements.namedItem('token').value.trim();
+    const password = f.elements.namedItem('password').value;
+    const confirm = f.elements.namedItem('confirm').value;
+    if (!/^[a-f0-9]{64}$/i.test(token)) { err.textContent = 'The reset token is invalid. Open the link from your email again or request a new one.'; return; }
+    if (password.length < 8) { err.textContent = 'Password must be at least 8 characters.'; return; }
+    if (password !== confirm) { err.textContent = 'Passwords do not match.'; return; }
+    const btn = document.getElementById('reset-submit');
+    btn.disabled = true;
+    btn.textContent = 'Updating…';
+    try {
+      const result = await authRequest('reset', { token, password });
+      try { history.replaceState(null, '', location.pathname + location.search); } catch (_) {}
+      login();
+      const loginError = $('#err');
+      if (loginError) {
+        loginError.style.color = 'var(--ok)';
+        loginError.textContent = result.message || 'Password updated. You can now sign in.';
+      }
+    } catch (error) {
+      err.textContent = error.message || 'Unable to update the password.';
+      btn.disabled = false;
+      btn.innerHTML = `${ICON.signin} Update Password`;
+    }
+  };
+}
+function openPasswordResetFromLink() {
+  const match = location.hash.match(/^#reset-token=([a-f0-9]{64})$/i);
+  if (!match) return;
+  if (!$('.rp')) login();
+  showReset(match[1]);
 }
 
 /* ===== App shell ===== */
@@ -1468,9 +1560,11 @@ app.addEventListener("keydown", (e) => {
     }
     if (state.account.role === 'Pet Owner') await loadOwnerData();
     render();
+    openPasswordResetFromLink();
   } catch (error) {
     state.user = null;
     login();
+    openPasswordResetFromLink();
   } finally {
     if (window.appLoadingFailsafe) clearTimeout(window.appLoadingFailsafe);
     if (typeof window.finishAppLoading === 'function') window.finishAppLoading();
