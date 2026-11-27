@@ -74,6 +74,21 @@ try {
         $cur = $pdo->prepare('SELECT role FROM users WHERE id = ?'); $cur->execute([$id]); $row = $cur->fetch();
         if (!$row) respond(404, ['success'=>false, 'message'=>'User not found.']);
         if (!in_array($row['role'], STAFF_ROLES, true)) respond(403, ['success'=>false, 'message'=>'Administrator and pet owner accounts cannot be deleted. Set them to Inactive instead.']);
+
+        // Keep staff accounts that are referenced by clinic history. The schema intentionally
+        // restricts medical-report deletion and nulls appointment/vaccination references, so
+        // deleting these accounts would either fail or erase the historical staff attribution.
+        $history = $pdo->prepare(
+            'SELECT
+                (SELECT COUNT(*) FROM appointments WHERE veterinarian_id = ?) +
+                (SELECT COUNT(*) FROM vaccinations WHERE veterinarian_id = ?) +
+                (SELECT COUNT(*) FROM medical_reports WHERE veterinarian_id = ?) AS total'
+        );
+        $history->execute([$id, $id, $id]);
+        if ((int)$history->fetchColumn() > 0) {
+            respond(409, ['success'=>false, 'message'=>'This staff account is linked to clinic history. Set the account to Inactive instead so past appointments and medical records keep their veterinarian information.']);
+        }
+
         $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$id]);
         respond(200, ['success'=>true, 'message'=>'User deleted.']);
     }
