@@ -837,3 +837,114 @@ body.ov-lock { overflow: hidden; }
 .owner-primary:hover {
   background: #06664f;
 }
+
+
+/* Complete Pet Owner dark-theme coverage for calendar, booking, notices and popovers. */
+.ov-app.theme-dark {
+  --ov-bg: #0b1220;
+  --ov-card: #111c2e;
+  --ov-line: #29364a;
+  --ov-ink: #e5edf7;
+  --ov-text: #cbd5e1;
+  --ov-muted: #9aa9bc;
+  --ov-soft: #17352f;
+  color-scheme: dark;
+}
+.ov-app.theme-dark .ov-bellpanel,
+.ov-app.theme-dark .ov-bp-head,
+.ov-app.theme-dark .ov-bp-foot,
+.ov-app.theme-dark .ov-cal,
+.ov-app.theme-dark .ov-slots,
+.ov-app.theme-dark .ov-closed,
+.ov-app.theme-dark .ov-modal,
+.ov-app.theme-dark .ov-modal-card,
+.ov-app.theme-dark .ov-notes,
+.ov-app.theme-dark .ov-vx,
+.ov-app.theme-dark .ov-record-report .ov-grid > div,
+.ov-app.theme-dark .ov-petpick .ov-pt,
+.ov-app.theme-dark .ov-appt,
+.ov-app.theme-dark .ov-table-wrap,
+.ov-app.theme-dark .ov-panel {
+  background: #111c2e;
+  border-color: #29364a;
+  color: #e5edf7;
+}
+.ov-app.theme-dark .ov-bellpanel { box-shadow: 0 18px 48px #0009; }
+.ov-app.theme-dark .ov-bp-head,
+.ov-app.theme-dark .ov-bp-foot { border-color: #29364a; }
+.ov-app.theme-dark .ov-bp-foot { background: #172438; color: #a7f3d0; }
+.ov-app.theme-dark .ov-bp-head b,
+.ov-app.theme-dark .ov-vx b,
+.ov-app.theme-dark .ov-petpick .ov-pt b { color: #e5edf7; }
+.ov-app.theme-dark .ov-bp-list,
+.ov-app.theme-dark .ov-bp-list * { border-color: #29364a; }
+.ov-app.theme-dark .ov-datebox,
+.ov-app.theme-dark .ov-petpick .ov-pt.sel {
+  background: #17352f;
+  border-color: #285b4c;
+  color: #a7f3d0;
+}
+.ov-app.theme-dark .ov-day {
+  background: #172438;
+  border-color: #35445b;
+  color: #dbe5f2;
+}
+.ov-app.theme-dark .ov-day small { color: #9aa9bc; }
+.ov-app.theme-dark .ov-day.past,
+.ov-app.theme-dark .ov-day.closed,
+.ov-app.theme-dark .ov-day.loading,
+.ov-app.theme-dark .ov-slot:disabled {
+  background: #202b3d;
+  border-color: #35445b;
+  color: #8494aa;
+}
+.ov-app.theme-dark .ov-day.full,
+.ov-app.theme-dark .ov-slot.booked { background: #40252d; border-color: #71343d; color: #fecaca; }
+.ov-app.theme-dark .ov-day.holiday,
+.ov-app.theme-dark .ov-closed,
+.ov-app.theme-dark .ov-notes { background: #38291d; border-color: #80512b; color: #fed7aa; }
+.ov-app.theme-dark .ov-day.unavailable,
+.ov-app.theme-dark .ov-slot.unavailable { background: #2d2850; border-color: #51458b; color: #ddd6fe; }
+.ov-app.theme-dark .ov-slot {
+  background: #17352f;
+  border-color: #285b4c;
+  color: #a7f3d0;
+}
+.ov-app.theme-dark .ov-slot.sel { background: #087f68; border-color: #087f68; color: #fff; }
+.ov-app.theme-dark .ov-slot.skel { background: linear-gradient(90deg,#172438,#29364a,#172438); }
+.ov-app.theme-dark .ov-pet-doc { background: #172b46; color: #bfdbfe; }
+.ov-app.theme-dark .ov-vx { border-color: #35445b; }
+.ov-app.theme-dark .ov-vx small,
+.ov-app.theme-dark .ov-record-report .ov-who small { color: #9aa9bc; }
+.ov-app.theme-dark .ov-appt-main > span,
+.ov-app.theme-dark .ov-meta,
+.ov-app.theme-dark .ov-footer,
+.ov-app.theme-dark .ov-settings-description { color: #9aa9bc; }
+.ov-app.theme-dark .ov-alert { background: #40252d; border-color: #71343d; color: #fecaca; }
+.ov-app.theme-dark .ov-btn.ghost,
+.ov-app.theme-dark .ov-icon,
+.ov-app.theme-dark .ov-tab,
+.ov-app.theme-dark .ov-filter {
+  background: #172438;
+  color: #a7f3d0;
+  border-color: #35445b;
+}
+.ov-app.theme-dark .ov-btn.ghost:hover,
+.ov-app.theme-dark .ov-icon:hover,
+.ov-app.theme-dark .ov-tab:hover { background: #1b3a34; }
+.ov-app.theme-dark .ov-btn.danger { background: #40252d; color: #fecaca; border-color: #71343d; }
+.ov-app.theme-dark .ov-form-grid label,
+.ov-app.theme-dark .ov-narrow label { color: #cbd5e1; }
+.ov-app.theme-dark .ov-table td,
+.ov-app.theme-dark .ov-table th { border-color: #29364a; }
+.ov-app.theme-dark .ov-table td { color: #cbd5e1; }
+.ov-app.theme-dark .ov-table td b { color: #e5edf7; }
+.ov-app.theme-dark .ov-settings-row small,
+.ov-app.theme-dark .ov-empty,
+.ov-app.theme-dark .ov-empty-state { color: #9aa9bc; }
+.ov-app.theme-dark .ov-top .ov-bell:hover,
+.ov-app.theme-dark .ov-top .ov-burger:hover { background: #1b3a34; }
+.ov-app.theme-dark input[type="date"],
+.ov-app.theme-dark input[type="time"],
+.ov-app.theme-dark input[type="datetime-local"] { color-scheme: dark; }
+.ov-app.theme-dark :focus-visible { outline-color: #34d399; }
