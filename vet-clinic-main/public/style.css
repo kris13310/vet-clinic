@@ -3723,3 +3723,89 @@ html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-cont
     flex-basis: 36px;
   }
 }
+
+
+/* Vaccinations: final table-specific contrast and reliable pet-photo sizing. */
+.app .tb .rt.vx .who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 150px;
+}
+.app .tb .rt.vx .who > .tile {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  flex: 0 0 42px;
+}
+.app .tb .rt.vx .who > .tile.has-img {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+}
+.app .tb .rt.vx .who > .tile.has-img img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+.app .tb .rt.vx .who > span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.app .tb .rt.vx .who > span:last-child small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.app.theme-dark .tb .rt.vx thead th {
+  background: #26352d;
+  color: #e8f1eb;
+  border-color: #46584d;
+}
+.app.theme-dark .tb .rt.vx tbody tr {
+  background: #202d26;
+}
+.app.theme-dark .tb .rt.vx tbody tr:nth-child(even) {
+  background: #25332b;
+}
+.app.theme-dark .tb .rt.vx tbody td {
+  background: transparent;
+  color: #e1ebe4;
+  border-color: #3d4e43;
+}
+.app.theme-dark .tb .rt.vx .who b {
+  color: #f0f6f2;
+}
+.app.theme-dark .tb .rt.vx .who small {
+  color: #b5c5ba;
+}
+.app.theme-dark .tb .rt.vx .vc {
+  display: inline-flex;
+  align-items: center;
+  background: #294236;
+  border: 1px solid #496b56;
+  color: #b8f0cc;
+}
+.app.theme-dark .tb .rt.vx td.nd-U { color: #86efac; }
+.app.theme-dark .tb .rt.vx td.nd-D { color: #fcd34d; }
+.app.theme-dark .tb .rt.vx td.nd-O { color: #fda4af; }
+.app.theme-dark .tb .rt.vx .tile:not(.has-img) {
+  color: #d8e8dc;
+  border: 1px solid #53685a;
+}
+@media (max-width: 600px) {
+  .app .tb .rt.vx .who { min-width: 0; gap: 8px; }
+  .app .tb .rt.vx .who > .tile {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    flex-basis: 36px;
+  }
+  .app.theme-dark .tb .rt.vx tbody td {
+    background: #202d26;
+  }
+}
