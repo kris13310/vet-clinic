@@ -101,7 +101,7 @@ if ($action === 'forgot') {
             if (!auth_send_reset_email((string)$user['email'], $token)) {
                 $pdo->prepare('UPDATE users SET password_reset_token_hash = NULL, password_reset_expires = NULL WHERE id = :id')->execute(['id'=>$user['id']]);
                 error_log('Password reset email delivery failed.');
-                auth_reply(502, ['success'=>false, 'message'=>'Unable to send the reset email right now. Please try again later.']);
+                auth_reply(200, ['success'=>true, 'message'=>'If an account exists for that email, a reset link has been sent.']);
             }
         }
         auth_reply(200, ['success'=>true, 'message'=>'If an account exists for that email, a reset link has been sent.']);
