@@ -275,12 +275,20 @@ function login() {
       if (password !== f.confirm.value) { err.textContent='Passwords do not match.'; return; }
     }
     btn.disabled=true; btn.textContent=authMode==='signup'?'Creating account…':'Signing in…';
+    const showLoginLoading = authMode === 'login';
+    if (showLoginLoading && typeof window.showAppLoading === 'function') window.showAppLoading('Signing in to your VETCARE account…');
     try {
       const result = await authRequest(authMode==='signup'?'register':'login', authMode==='signup' ? {name:f.name.value.trim(),email:f.email.value.trim(),username,password} : {username,password});
       state.user = result.user.username; state.account = result.user;
       if (state.account.role === 'Pet Owner') await loadOwnerData();
       render();
-    } catch (error) { err.textContent=error.message; btn.disabled=false; btn.innerHTML=`${ICON.signin} ${authMode==='signup'?'Create Account':'Sign In'}`; }
+    } catch (error) {
+      err.textContent=error.message;
+      btn.disabled=false;
+      btn.innerHTML=`${ICON.signin} ${authMode==='signup'?'Create Account':'Sign In'}`;
+    } finally {
+      if (showLoginLoading && typeof window.finishAppLoading === 'function') window.finishAppLoading();
+    }
   };
   setMode('login');
 }
