@@ -15,7 +15,7 @@ function auth_input(): array {
     return is_array($data) ? $data : [];
 }
 function auth_client_ip(): string {
-    $candidate = trim(explode(',', (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown'))[0]);
+    $candidate = trim((string)($_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown'));
     return filter_var($candidate, FILTER_VALIDATE_IP) ? $candidate : 'unknown';
 }
 function auth_rate_limit(PDO $pdo, string $key, int $max, int $windowSeconds): bool {
