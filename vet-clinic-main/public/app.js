@@ -279,6 +279,14 @@ function login() {
     if (showLoginLoading && typeof window.showAppLoading === 'function') window.showAppLoading('Signing in to your VETCARE account…');
     try {
       const result = await authRequest(authMode==='signup'?'register':'login', authMode==='signup' ? {name:f.name.value.trim(),email:f.email.value.trim(),username,password} : {username,password});
+      if (authMode === 'signup' && result.user && result.user.status === 'Inactive') {
+        setMode('login');
+        const loginError = $('#err');
+        if (loginError) loginError.textContent = result.message || 'Your account is waiting for administrator approval. You can sign in after it is activated.';
+        const loginButton = $('#submit-auth');
+        if (loginButton) loginButton.disabled = false;
+        return;
+      }
       state.user = result.user.username; state.account = result.user;
       if (state.account.role === 'Pet Owner') await loadOwnerData();
       render();

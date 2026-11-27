@@ -138,6 +138,9 @@ try {
     $password = (string)($data['password'] ?? '');
     if ($username === '' || $password === '') auth_reply(422, ['success'=>false, 'message'=>'Enter your username and password.']);
     if ($action === 'register') {
+        if (!auth_rate_limit($pdo, 'register-ip:' . $ipKey, 10, 3600)) {
+            auth_reply(429, ['success'=>false, 'message'=>'Too many registration attempts. Please try again in an hour.']);
+        }
         $name = trim((string)($data['name'] ?? ''));
         $email = trim((string)($data['email'] ?? ''));
         if ($name === '' || $email === '') auth_reply(422, ['success'=>false, 'message'=>'Enter your full name and email.']);
@@ -151,21 +154,25 @@ try {
             if (strcasecmp((string)$existing['username'], $username) === 0) auth_reply(409, ['success'=>false, 'message'=>'That username is already taken.']);
             auth_reply(409, ['success'=>false, 'message'=>'An account with that email already exists.']);
         }
-        // Preserve existing public registration behavior: new accounts are Pet Owners and Active.
-        $id = db_insert($pdo, "INSERT INTO users (full_name, username, email, password_hash, role, status) VALUES (:name, :username, :email, :hash, 'Pet Owner', 'Active')", ['name'=>$name, 'username'=>$username, 'email'=>$email, 'hash'=>password_hash($password, PASSWORD_DEFAULT)]);
-        $row = ['id'=>$id, 'full_name'=>$name, 'username'=>$username, 'email'=>$email, 'role'=>'Pet Owner', 'status'=>'Active'];
-        session_regenerate_id(true);
-        $_SESSION['account'] = public_user($row);
-        auth_reply(201, ['success'=>true, 'user'=>$_SESSION['account'], 'message'=>'Account created successfully.']);
+        // Public registrations are held inactive until an administrator approves them.
+        // The existing Users screen lets an administrator activate Pet Owner accounts.
+        $id = db_insert($pdo, "INSERT INTO users (full_name, username, email, password_hash, role, status) VALUES (:name, :username, :email, :hash, 'Pet Owner', 'Inactive')", ['name'=>$name, 'username'=>$username, 'email'=>$email, 'hash'=>password_hash($password, PASSWORD_DEFAULT)]);
+        $row = ['id'=>$id, 'full_name'=>$name, 'username'=>$username, 'email'=>$email, 'role'=>'Pet Owner', 'status'=>'Inactive'];
+        auth_reply(201, ['success'=>true, 'user'=>public_user($row), 'message'=>'Your account has been created and is waiting for administrator approval. You can sign in after the clinic activates it.']);
     }
 
     $loginKey = hash('sha256', strtolower($username));
-    if (!auth_rate_limit($pdo, 'login:' . $ipKey . ':' . $loginKey, 5, 900)) auth_reply(429, ['success'=>false, 'message'=>'Too many sign-in attempts. Please try again in 15 minutes.']);
+    // Limit by account as well as IP+account, so rotating/spoofing forwarded IPs
+    // cannot bypass the protection for one targeted username.
+    if (!auth_rate_limit($pdo, 'login-account:' . $loginKey, 5, 900)
+        || !auth_rate_limit($pdo, 'login:' . $ipKey . ':' . $loginKey, 5, 900)) {
+        auth_reply(429, ['success'=>false, 'message'=>'Too many sign-in attempts. Please try again in 15 minutes.']);
+    }
     $stmt = $pdo->prepare('SELECT id, full_name, username, email, password_hash, role, status FROM users WHERE LOWER(username) = LOWER(?) LIMIT 1');
     $stmt->execute([$username]);
     $row = $stmt->fetch();
     if (!$row || !password_verify($password, (string)$row['password_hash'])) auth_reply(401, ['success'=>false, 'message'=>'Incorrect username or password.']);
-    if (($row['status'] ?? 'Active') !== 'Active') auth_reply(403, ['success'=>false, 'message'=>'This account is inactive. Please contact the administrator.']);
+    if (($row['status'] ?? 'Active') !== 'Active') auth_reply(403, ['success'=>false, 'message'=>'This account is inactive or awaiting administrator approval. Please contact the clinic administrator.']);
     session_regenerate_id(true);
     $_SESSION['account'] = public_user($row);
     auth_reply(200, ['success'=>true, 'user'=>$_SESSION['account']]);
