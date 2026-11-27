@@ -2828,3 +2828,95 @@ html.theme-dark #app-loading-retry { background: #46564c; }
 .app.theme-dark .row-action-menu-list button { color: #e4ebe6; }
 .app.theme-dark .row-action-menu-list button:hover { background: #394b41; }
 .app.theme-dark .row-action-menu-list button.danger { color: #fca5a5; }
+
+
+/* Dark-mode completeness pass: Admin and Staff portal surfaces.
+   Keep the existing green brand accents and preserve the light theme. */
+.app.theme-dark {
+  --surface-1: #29342e;
+  --surface-2: #303c35;
+  --surface-3: #242f28;
+  --surface-border: #3c4941;
+  --surface-text: #e4ebe6;
+  --surface-muted: #aab7ae;
+}
+.app.theme-dark .mn,
+.app.theme-dark .ct,
+.app.theme-dark .page,
+.app.theme-dark .content,
+.app.theme-dark .main-content { background-color: #202923; color: var(--surface-text); }
+.app.theme-dark :is(
+  .hd, .card, .panel, .box, .tb, .stat, .sc, .li, .tc, .pc, .info,
+  .why, .vc, .ac, .sr, .qs, .search-box, .filter-bar, .toolbar,
+  .form-card, .form-panel, .detail-card, .detail-panel, .report-card,
+  .medical-report-card, .profile-card, .settings-card, .setting-card,
+  .calendar, .cal, .calendar-panel, .cal-panel, .slot-panel, .slot-list,
+  .drop, .dropdown, .menu-pop, .pop, .popover, .pagination, .pager,
+  .empty, .empty-state, .notice-card, .notification-card, .notification-item,
+  .list-item, .list-row, .data-row, .summary, .summary-card
+) {
+  background-color: var(--surface-1);
+  border-color: var(--surface-border);
+  color: var(--surface-text);
+}
+.app.theme-dark :is(.sr, .qs, .search-box, .filter-bar, .toolbar, .bar2) {
+  background-color: var(--surface-2);
+}
+.app.theme-dark :is(.li, .tc, .pc, .info, .why, .vc, .ac, .list-item, .list-row, .data-row, .notification-item) :is(p, span, small, label) {
+  color: var(--surface-muted);
+}
+.app.theme-dark :is(.card, .panel, .box, .tb, .stat, .sc, .form-card, .form-panel, .detail-card, .detail-panel, .report-card, .medical-report-card, .profile-card, .settings-card, .setting-card) :is(h1,h2,h3,h4,b,strong) {
+  color: var(--surface-text);
+}
+.app.theme-dark :is(input, select, textarea, .field, .field input, .sr input, .qs input) {
+  background-color: var(--surface-3);
+  color: var(--surface-text);
+  border-color: #4a5a50;
+  color-scheme: dark;
+}
+.app.theme-dark :is(input, textarea)::placeholder { color: #9aa99f; }
+.app.theme-dark :is(th, .table-head, .thead, .cal-head, .calendar-head) {
+  background-color: var(--surface-2);
+  color: #bac7be;
+  border-color: var(--surface-border);
+}
+.app.theme-dark :is(td, th, tr, .table-row, .divider, .form-row, .detail-row) {
+  border-color: var(--surface-border);
+}
+.app.theme-dark tbody tr:hover,
+.app.theme-dark :is(.li, .tc, .list-item, .list-row, .data-row):hover {
+  background-color: #34483e;
+}
+.app.theme-dark :is(.btn.ghost, .btn.out, .chip, .filter, .filter-btn, .pager button, .pagination button, .nv button, .icon-btn, .action-btn, .row-action-menu > summary) {
+  background-color: var(--surface-2);
+  color: #d4e1d8;
+  border-color: #4a5a50;
+}
+.app.theme-dark :is(.btn.ghost, .btn.out, .chip, .filter, .filter-btn, .pager button, .pagination button, .nv button, .icon-btn, .action-btn):hover {
+  background-color: #394b41;
+}
+.app.theme-dark :is(.chip.on, .filter.on, .filter-btn.active, .pager button.on, .pagination button.active) {
+  background-color: #18745f;
+  color: #fff;
+  border-color: #18745f;
+}
+/* Dialogs and popups may be appended directly to body, outside .app. */
+html.theme-dark :is(.modal, .dialog, .popover, .menu-pop, .dropdown-panel, .calendar-panel, .slot-panel) {
+  color: var(--surface-text, #e4ebe6);
+}
+html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-content, .pop, .popover-content, .menu-pop, .dropdown-panel, .calendar-panel, .slot-panel) {
+  background-color: #29342e;
+  color: #e4ebe6;
+  border-color: #3c4941;
+}
+html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-content) :is(h1,h2,h3,h4,b,strong,label,p,small,span) {
+  color: inherit;
+}
+html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-content) :is(input,select,textarea) {
+  background-color: #242f28;
+  color: #e4ebe6;
+  border-color: #4a5a50;
+  color-scheme: dark;
+}
+html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-content) :is(th) { background: #303c35; color: #bac7be; }
+html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-content) :is(td,th,tr) { border-color: #3c4941; }
