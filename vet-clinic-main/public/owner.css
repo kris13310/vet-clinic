@@ -1095,3 +1095,20 @@ html.theme-dark .ov-bellpanel { background: #29342e; color: #dce5df; border-colo
   .ov-settings-mode .ov-settings-icon { width: 36px; height: 36px; }
   .ov-settings-mode .ov-theme-toggle { max-width: 100%; white-space: normal; }
 }
+
+/* Unified dark-mode surface treatment for Pet Owner portal cards and panels. */
+.ov-app.theme-dark :is(
+  .ov-card,
+  .ov-panel,
+  .ov-stat,
+  .ov-pet,
+  .ov-appt,
+  .ov-notif,
+  .ov-home-panel,
+  .ov-settings-section,
+  .ov-record-card
+) {
+  background: #233229;
+  border-color: #35483c;
+  box-shadow: none;
+}
