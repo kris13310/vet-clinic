@@ -372,12 +372,9 @@ function showReset(prefillToken = '') {
 }
 function openPasswordResetFromLink() {
   const match = location.hash.match(/^#reset-token=([a-f0-9]{64})$/i);
-  if (match) showReset(match[1]);
-}
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', openPasswordResetFromLink, { once: true });
-} else {
-  openPasswordResetFromLink();
+  if (!match) return;
+  if (!$('.rp')) login();
+  showReset(match[1]);
 }
 
 /* ===== App shell ===== */
@@ -1563,9 +1560,11 @@ app.addEventListener("keydown", (e) => {
     }
     if (state.account.role === 'Pet Owner') await loadOwnerData();
     render();
+    openPasswordResetFromLink();
   } catch (error) {
     state.user = null;
     login();
+    openPasswordResetFromLink();
   } finally {
     if (window.appLoadingFailsafe) clearTimeout(window.appLoadingFailsafe);
     if (typeof window.finishAppLoading === 'function') window.finishAppLoading();
