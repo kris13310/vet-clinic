@@ -2802,3 +2802,32 @@ html.theme-dark .app-loading__mark::after { border-color: #285b4c; border-top-co
 .app.theme-dark input[type="time"],
 .app.theme-dark input[type="datetime-local"] { color-scheme: dark; }
 .app.theme-dark :focus-visible { outline-color: #34d399; }
+
+
+/* Dark theme for Admin/Staff dialogs that are mounted directly under <body>. */
+html.theme-dark .modal { background: #050b16dd; color: #e5edf7; color-scheme: dark; }
+html.theme-dark .modal .mbox,
+html.theme-dark .modal .dialog {
+  background: #111c2e;
+  color: #e5edf7;
+  border: 1px solid #29364a;
+  box-shadow: 0 24px 70px #0009;
+}
+html.theme-dark .modal .mbox h2,
+html.theme-dark .modal .mbox h3,
+html.theme-dark .modal .mbox label,
+html.theme-dark .modal .mbox dt,
+html.theme-dark .modal .mbox dd { color: #e5edf7; }
+html.theme-dark .modal .mbox input,
+html.theme-dark .modal .mbox select,
+html.theme-dark .modal .mbox textarea {
+  background: #0f1a2b;
+  color: #e5edf7;
+  border-color: #35445b;
+  color-scheme: dark;
+}
+html.theme-dark .modal .mbox input::placeholder,
+html.theme-dark .modal .mbox textarea::placeholder { color: #8494aa; }
+html.theme-dark .modal .mbox .dlist div { border-color: #29364a; }
+html.theme-dark .modal .mbox canvas { background: #172438 !important; }
+html.theme-dark .toast { background: #172438; color: #e5edf7; border: 1px solid #35445b; }
