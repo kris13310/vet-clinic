@@ -3703,12 +3703,9 @@ html.theme-dark :is(.mbox, .modal-box, .dialog-box, .dialog-content, .modal-cont
 .app.theme-dark .vx .nd {
   color: #e4ebe6;
 }
-.app.theme-dark .vx .nd-y {
-  color: #fcd34d;
-}
-.app.theme-dark .vx .nd-o {
-  color: #fda4af;
-}
+.app.theme-dark .vx .nd-U { color: #86efac; }
+.app.theme-dark .vx .nd-D { color: #fcd34d; }
+.app.theme-dark .vx .nd-O { color: #fda4af; }
 .app.theme-dark .vx .tile:not(.has-img) {
   color: #d4e5da;
   border-color: #4a5a50;
