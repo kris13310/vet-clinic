@@ -141,6 +141,7 @@ try {
     $username = trim((string)($data['username'] ?? ''));
     $password = (string)($data['password'] ?? '');
     if ($username === '' || $password === '') auth_reply(422, ['success'=>false, 'message'=>'Enter your username and password.']);
+    if (strlen($password) > 72) auth_reply(422, ['success'=>false, 'message'=>'Password cannot exceed 72 bytes.']);
     if ($action === 'register') {
         if (!auth_rate_limit($pdo, 'register-ip:' . $ipKey, 10, 3600)) {
             auth_reply(429, ['success'=>false, 'message'=>'Too many registration attempts. Please try again in an hour.']);
