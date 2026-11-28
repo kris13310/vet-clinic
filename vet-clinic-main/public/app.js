@@ -1425,7 +1425,8 @@ function form(k, i) {
       btn = e.submitter || $(".acts .btn:not(.ghost)", m);
     for (const f of fs) v[f.k] = f.type === "password" ? String(v[f.k] ?? "") : String(v[f.k] ?? "").trim();
     if (fs.some((f) => !f.opt && !v[f.k])) return fail("Please fill in every required field.");
-    if (k === "vaccinations" && v.next < v.given) return fail("Next due date must be after the date given.");
+    if (k === "vaccinations" && v.given > TODAY_ISO) return fail("Date given cannot be in the future.");
+  if (k === "vaccinations" && v.next <= v.given) return fail("Next due date must be after the date given.");
     if (k === "users" && v.password && v.password.length < 8) return fail("Password must be at least 8 characters.");
     btn.disabled = true;
     if (typeof window.showAppLoading === 'function') window.showAppLoading(edit ? 'Saving your changes…' : 'Creating your record…');
