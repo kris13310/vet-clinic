@@ -173,6 +173,9 @@ try {
     $row = $stmt->fetch();
     if (!$row || !password_verify($password, (string)$row['password_hash'])) auth_reply(401, ['success'=>false, 'message'=>'Incorrect username or password.']);
     if (($row['status'] ?? 'Active') !== 'Active') auth_reply(403, ['success'=>false, 'message'=>'This account is inactive or awaiting administrator approval. Please contact the clinic administrator.']);
+    // Successful authentication must not count toward the failed-login throttle.
+    $pdo->prepare('DELETE FROM public.auth_rate_limits WHERE bucket_key IN (?, ?)')
+        ->execute(['login-account:' . $loginKey, 'login:' . $ipKey . ':' . $loginKey]);
     session_regenerate_id(true);
     $_SESSION['account'] = public_user($row);
     // The session store retains inactive sessions for eight hours; persist the browser cookie for the same period only when requested.
