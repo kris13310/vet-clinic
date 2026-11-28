@@ -22,7 +22,7 @@ try {
  $q=$pdo->prepare('SELECT avatar_path FROM users WHERE id=?');$q->execute([$uid]);$old=$q->fetchColumn()?:null;$avatar=$old;
  $newUpload=null;
  if(!empty($_FILES['photo'])&&(int)($_FILES['photo']['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_NO_FILE){$newUpload=save_pet_photo($_FILES['photo'],'user_');$avatar=$newUpload;}
- if(($data['remove_photo']??'0')==='1')$avatar=null;
+ if(($data['remove_photo']??'0')==='1'){$avatar=null;if($newUpload)delete_pet_photo($newUpload);$newUpload=null;}
  try {
   $pdo->beginTransaction();
   $pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=?,avatar_path=? WHERE id=?')->execute([$name,$email,$phone,$address,$avatar,$uid]);
