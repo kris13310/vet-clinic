@@ -499,7 +499,7 @@ async function loadRecordsFromDatabase() {
       apiJson("api/records.php?resource=meta"), apiJson("api/records.php?resource=settings"),
     ]);
     D.pets = (pets.pets || []).map((p) => ({ id: Number(p.id), name: p.name || "", species: p.species || "", breed: p.breed || "", owner: p.owner_name || "", ownerEmail: p.owner_email || "", phone: p.owner_phone || "", address: p.address || "", age: p.age || "", gender: p.gender || "Unknown", notes: p.notes || "", photo: p.photo_path || "", added: String(p.created_at || "").slice(0, 10) }));
-    D.vaccinations = (vax.vaccinations || []).map((v) => ({ id: Number(v.id), petId: Number(v.pet_id), pet: v.pet_name || "", vaccine: v.vaccine || "", given: String(v.date_given || "").slice(0, 10), next: String(v.next_due || v.date_given || "").slice(0, 10), vet: v.vet_name || "Not recorded" }));
+    D.vaccinations = (vax.vaccinations || []).map((v) => ({ id: Number(v.id), petId: Number(v.pet_id), pet: v.pet_name || "", vaccine: v.vaccine || "", given: String(v.date_given || "").slice(0, 10), next: v.next_due ? String(v.next_due).slice(0, 10) : "", vet: v.vet_name || "Not recorded" }));
     D.adoption = (adopt.adoption || []).map((a) => ({ id: Number(a.id), name: a.pet_name || "", species: a.species || "", breed: a.breed || "", age: a.age || "", gender: a.gender || "Unknown", health: a.health_status || "Unknown", status: a.status || "Available", reason: a.reason || "", adopter: a.adopter_name || "", photo: a.photo_path || "" }));
     D.doctor = meta.doctor || null;
     D.slots = meta.slots || [];
