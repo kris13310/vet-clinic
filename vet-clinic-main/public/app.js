@@ -1383,7 +1383,7 @@ const fieldHtml = (f, v) =>
   `<label class="${f.full ? "full" : ""}">${f.l}${
     f.sel
       ? `<select name="${f.k}" ${f.opt ? "" : "required"}>${f.sel.map((o) => { const [val, lab] = optPair(o); return `<option value="${esc(val)}" ${String(val) === String(v ?? "") ? "selected" : ""}>${esc(lab)}</option>`; }).join("")}</select>`
-      : `<input name="${f.k}" type="${f.type || "text"}" value="${f.type === "password" ? "" : esc(v)}" placeholder="${esc(f.ph || "")}" ${f.type === "password" ? 'autocomplete="new-password"' : ""} ${f.opt ? "" : "required"}>`
+      : `<input name="${f.k}" type="${f.type || "text"}" value="${f.type === "password" ? "" : esc(v)}" placeholder="${esc(f.ph || "")}" ${f.type === "password" ? 'autocomplete="new-password" maxlength="72"' : ""} ${f.opt ? "" : "required"}>`
   }</label>`;
 
 async function saveRecord(k, v, old, submittedFormData = null) {
