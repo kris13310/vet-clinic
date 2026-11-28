@@ -40,7 +40,7 @@ try {
     $s=$pdo->prepare('SELECT id,pet_id,veterinarian_id,status FROM appointments WHERE id=?'); $s->execute([$appointmentId]); $a=$s->fetch();
     if (!$a) report_reply(404,['success'=>false,'message'=>'Appointment not found.']);
     if ((int)$a['veterinarian_id'] !== $uid) report_reply(403,['success'=>false,'message'=>'This appointment is not assigned to your veterinarian account.']);
-    if ($a['status']==='Cancelled') report_reply(409,['success'=>false,'message'=>'A cancelled appointment cannot receive a medical report.']);
+    if ($a['status']!=='In Progress') report_reply(409,['success'=>false,'message'=>'Start the appointment before submitting its medical report.']);
     $pdo->beginTransaction();
     try {
         $pdo->prepare("INSERT INTO medical_reports (appointment_id,pet_id,veterinarian_id,diagnosis,symptoms,observations,treatment,medication,recommendations,follow_up_date) VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT (appointment_id) DO UPDATE SET pet_id=EXCLUDED.pet_id,veterinarian_id=EXCLUDED.veterinarian_id,diagnosis=EXCLUDED.diagnosis,symptoms=EXCLUDED.symptoms,observations=EXCLUDED.observations,treatment=EXCLUDED.treatment,medication=EXCLUDED.medication,recommendations=EXCLUDED.recommendations,follow_up_date=EXCLUDED.follow_up_date,updated_at=now()")
