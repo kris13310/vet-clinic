@@ -102,7 +102,9 @@ try {
             FROM adoption_applications x JOIN adoption_records a ON a.id=x.adoption_id
             WHERE x.user_id=? ORDER BY x.created_at DESC,x.id DESC");
         $q->execute([$uid]);
-        $available = $pdo->query("SELECT id,pet_name,species,breed,age,gender,health_status,reason,photo_path FROM adoption_records WHERE status IN ('Available','Pending') ORDER BY created_at DESC,id DESC")->fetchAll();
+        $availableStmt = $pdo->prepare("SELECT a.id,a.pet_name,a.species,a.breed,a.age,a.gender,a.health_status,a.reason,a.photo_path FROM adoption_records a WHERE a.status IN ('Available','Pending') AND NOT EXISTS (SELECT 1 FROM adoption_applications x WHERE x.adoption_id=a.id AND x.user_id=? AND x.status='Pending') ORDER BY a.created_at DESC,a.id DESC");
+        $availableStmt->execute([$uid]);
+        $available = $availableStmt->fetchAll();
         owner_reply(200, ['success'=>true,'applications'=>$q->fetchAll(),'available'=>$available]);
     }
 
