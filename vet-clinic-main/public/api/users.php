@@ -64,14 +64,30 @@ try {
             $finalRole = $newRole;
         }
 
+        $replacementVetId = null;
+        $leavingVeterinarian = $row['role'] === 'Veterinarian' && ($finalRole !== 'Veterinarian' || $status !== 'Active');
+        if ($leavingVeterinarian) {
+            $nextVet = $pdo->prepare("SELECT id FROM users WHERE role='Veterinarian' AND status='Active' AND id<>? ORDER BY id LIMIT 1");
+            $nextVet->execute([$id]);
+            $replacementVetId = $nextVet->fetchColumn();
+            $openAppointments = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE veterinarian_id=? AND status IN ('Pending','Confirmed','In Progress')");
+            $openAppointments->execute([$id]);
+            if ((int)$openAppointments->fetchColumn() > 0 && !$replacementVetId) {
+                respond(409, ['success'=>false, 'message'=>'This veterinarian has active appointments. Activate another veterinarian before deactivating or changing this account.']);
+            }
+        }
+
         $pdo->beginTransaction();
         try {
             $pdo->prepare('UPDATE users SET full_name=?, username=?, email=?, role=?, status=? WHERE id=?')->execute([$name, $username, $email, $finalRole, $status, $id]);
             if ($password !== '') $pdo->prepare('UPDATE users SET password_hash=? WHERE id=?')->execute([password_hash($password, PASSWORD_DEFAULT), $id]);
-            // Pet Owner records are linked by email. Keep all linked pets attached when an admin edits the account.
             if ($row['role'] === 'Pet Owner') {
                 $pdo->prepare('UPDATE pets SET owner_email=?, owner_name=? WHERE LOWER(TRIM(owner_email))=LOWER(TRIM(?))')
                     ->execute([$email, $name, (string)$row['email']]);
+            }
+            if ($replacementVetId) {
+                $pdo->prepare("UPDATE appointments SET veterinarian_id=? WHERE veterinarian_id=? AND status IN ('Pending','Confirmed','In Progress')")
+                    ->execute([(int)$replacementVetId, $id]);
             }
             $pdo->commit();
         } catch (Throwable $e) {
@@ -90,7 +106,29 @@ try {
         $history = $pdo->prepare('SELECT (SELECT COUNT(*) FROM medical_reports WHERE veterinarian_id=?) + (SELECT COUNT(*) FROM appointments WHERE veterinarian_id=?) + (SELECT COUNT(*) FROM vaccinations WHERE veterinarian_id=?)');
         $history->execute([$id, $id, $id]);
         if ((int)$history->fetchColumn() > 0) {
-            $pdo->prepare("UPDATE users SET status='Inactive' WHERE id=?")->execute([$id]);
+            $replacementVetId = null;
+            if ($row['role'] === 'Veterinarian') {
+                $nextVet = $pdo->prepare("SELECT id FROM users WHERE role='Veterinarian' AND status='Active' AND id<>? ORDER BY id LIMIT 1");
+                $nextVet->execute([$id]);
+                $replacementVetId = $nextVet->fetchColumn();
+                $openAppointments = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE veterinarian_id=? AND status IN ('Pending','Confirmed','In Progress')");
+                $openAppointments->execute([$id]);
+                if ((int)$openAppointments->fetchColumn() > 0 && !$replacementVetId) {
+                    respond(409, ['success'=>false, 'message'=>'This veterinarian has active appointments. Activate another veterinarian before deleting this account.']);
+                }
+            }
+            $pdo->beginTransaction();
+            try {
+                if ($replacementVetId) {
+                    $pdo->prepare("UPDATE appointments SET veterinarian_id=? WHERE veterinarian_id=? AND status IN ('Pending','Confirmed','In Progress')")
+                        ->execute([(int)$replacementVetId, $id]);
+                }
+                $pdo->prepare("UPDATE users SET status='Inactive' WHERE id=?")->execute([$id]);
+                $pdo->commit();
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                throw $e;
+            }
             respond(200, ['success'=>true, 'message'=>'This staff account is linked to clinic history, so it was deactivated instead of deleted.']);
         }
         $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$id]);
