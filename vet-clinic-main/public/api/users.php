@@ -99,6 +99,9 @@ try {
             $_SESSION['account']['full_name'] = $name;
             $_SESSION['account']['username'] = $username;
             $_SESSION['account']['email'] = $email;
+            $_SESSION['account']['role'] = $finalRole;
+            $_SESSION['account']['status'] = $status;
+            $_SESSION['account']['auth_version'] = (int)($_SESSION['account']['auth_version'] ?? 1) + 1;
         }
         respond(200, ['success'=>true, 'message'=>$password !== '' ? 'Changes saved and the password was reset.' : 'Changes saved.', 'id'=>$id]);
     }
