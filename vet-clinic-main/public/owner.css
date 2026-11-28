@@ -214,7 +214,7 @@ body.ov-lock { overflow: hidden; }
 .ov-petgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 26px; }
 .ov-pet { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--ov-line); border-radius: 22px; overflow: hidden; box-shadow: 0 6px 24px #0f172a0a; transition: transform .15s, box-shadow .15s; }
 .ov-pet:hover { transform: translateY(-3px); box-shadow: 0 16px 36px #0f172a1a; }
-.ov-pet-ph { position: relative; aspect-ratio: 4 / 3; background: #e2e8f0; overflow: hidden; } .ov-pet-ph .ov-pimg { width: 100%; height: 100%; border: 25px solid #fff; box-sizing: border-box; border-radius: 0; }
+.ov-pet-ph { position: relative; aspect-ratio: 4 / 3; background: #e2e8f0; overflow: hidden; } .ov-pet-ph .ov-pimg { width: 100%; height: 100%; border: 15px solid #fff; box-sizing: border-box; border-radius: 0; }
 .ov-pill { position: absolute; left: 16px; top: 16px; background: #ffffffee; color: var(--ov-ink); padding: 8px 14px; border-radius: 30px; font-size: 14px; font-weight: 700; box-shadow: 0 4px 12px #0f172a22; }
 .ov-pet-b { padding: 24px 26px 8px; flex: 1; } .ov-pet-b h3 { font-size: 24px; letter-spacing: -.4px; } .ov-pet-b > p { margin: 4px 0 14px; color: var(--ov-muted); font-size: 16px; }
 .ov-chips { display: flex; flex-wrap: wrap; gap: 10px; } .ov-chips span { background: #f1f5f9; padding: 8px 14px; border-radius: 20px; font-size: 14.5px; font-weight: 600; color: #475569; }
@@ -886,8 +886,7 @@ body.ov-lock { overflow: hidden; }
 }
 
 
-/* Pet photo frame and three-dot actions on My Pets cards. */
-.ov-pet-ph .ov-pimg { border: 25px solid #fff; box-sizing: border-box; }
+/* Three-dot actions on My Pets cards. */
 .ov-pet-a { justify-content: flex-end; align-items: center; }
 .ov-pet-menu { position: relative; display: inline-block; }
 .ov-pet-menu > summary { list-style: none; display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--ov-line); border-radius: 11px; background: var(--ov-card); color: var(--ov-p); font-size: 27px; line-height: 1; cursor: pointer; }
