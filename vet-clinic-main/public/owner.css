@@ -909,7 +909,6 @@ body.ov-lock { overflow: hidden; }
 .ov-pet-menu-list button { width: 100%; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--ov-ink); text-align: left; font: inherit; font-size: 13px; cursor: pointer; }
 .ov-pet-menu-list button:hover { background: var(--ov-soft); }
 .ov-pet-menu-list button.danger { color: #dc4545; }
-.ov-app.theme-dark .ov-pet-ph .ov-pimg { border-color: #29364a; }
 
 
 /* Dark-mode completeness pass: Pet Owner portal and body-mounted dialogs.
