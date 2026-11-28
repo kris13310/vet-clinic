@@ -176,15 +176,7 @@ try {
                 throw $ex;
             }
         }
-        if ($action === 'status') {
-            $status = (string)($in['status'] ?? ''); $adopter = rec_text($in, 'adopter_name', 120);
-            if (!in_array($status, ['Available', 'Pending', 'Adopted'], true)) rec_fail('Choose a valid status.');
-            $e = $pdo->prepare('SELECT id FROM adoption_records WHERE id=?'); $e->execute([$id]);
-            if (!$e->fetch()) rec_fail('Adoption record not found.', 404);
-            if ($status === 'Adopted') $pdo->prepare('UPDATE adoption_records SET status=?, adopter_name=COALESCE(?, adopter_name), adopted_at=COALESCE(adopted_at, ?) WHERE id=?')->execute([$status, $adopter, date('Y-m-d'), $id]);
-            else $pdo->prepare('UPDATE adoption_records SET status=?, adopter_name=NULL, adopted_at=NULL WHERE id=?')->execute([$status, $id]);
-            rec_reply(200, ['success'=>true, 'message'=>'Status updated.']);
-        }
+        // Adoption status is changed only by adoption_applications.php after an application review.
         if ($action === 'delete') {
             $d = $pdo->prepare('DELETE FROM adoption_records WHERE id=?'); $d->execute([$id]);
             if (!$d->rowCount()) rec_fail('Adoption record not found.', 404);
