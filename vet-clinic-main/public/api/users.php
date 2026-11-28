@@ -42,7 +42,7 @@ try {
         if (!preg_match('/^[A-Za-z0-9_.-]{3,50}$/', $username)) respond(422, ['success'=>false, 'message'=>'Username must be 3-50 letters, numbers, dots, underscores or hyphens.']);
         if (!filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 190) respond(422, ['success'=>false, 'message'=>'Enter a valid email address.']);
         if (!in_array($status, ['Active', 'Inactive'], true)) respond(422, ['success'=>false, 'message'=>'Choose a valid status.']);
-        if ($password !== '' && strlen($password) < 8) respond(422, ['success'=>false, 'message'=>'Password must be at least 8 characters.']);
+        if ($password !== '' && (strlen($password) < 8 || strlen($password) > 72)) respond(422, ['success'=>false, 'message'=>'Password must be between 8 and 72 bytes.']);
 
         $dup = $pdo->prepare('SELECT username, email FROM users WHERE (LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)) AND id <> ? LIMIT 1');
         $dup->execute([$username, $email, $id]);
