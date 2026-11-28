@@ -79,7 +79,9 @@ try {
 
         $pdo->beginTransaction();
         try {
-            $pdo->prepare('UPDATE users SET full_name=?, username=?, email=?, role=?, status=?, auth_version=auth_version+1 WHERE id=?')->execute([$name, $username, $email, $finalRole, $status, $id]);
+            $versionUpdate = $pdo->prepare('UPDATE users SET full_name=?, username=?, email=?, role=?, status=?, auth_version=auth_version+1 WHERE id=? RETURNING auth_version');
+            $versionUpdate->execute([$name, $username, $email, $finalRole, $status, $id]);
+            $updatedAuthVersion = (int)$versionUpdate->fetchColumn();
             if ($password !== '') $pdo->prepare('UPDATE users SET password_hash=? WHERE id=?')->execute([password_hash($password, PASSWORD_DEFAULT), $id]);
             if ($row['role'] === 'Pet Owner') {
                 $pdo->prepare('UPDATE pets SET owner_email=?, owner_name=? WHERE LOWER(TRIM(owner_email))=LOWER(TRIM(?))')
@@ -101,7 +103,7 @@ try {
             $_SESSION['account']['email'] = $email;
             $_SESSION['account']['role'] = $finalRole;
             $_SESSION['account']['status'] = $status;
-            $_SESSION['account']['auth_version'] = (int)($_SESSION['account']['auth_version'] ?? 1) + 1;
+            $_SESSION['account']['auth_version'] = $updatedAuthVersion;
         }
         respond(200, ['success'=>true, 'message'=>$password !== '' ? 'Changes saved and the password was reset.' : 'Changes saved.', 'id'=>$id]);
     }
