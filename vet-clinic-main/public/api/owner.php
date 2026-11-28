@@ -96,6 +96,15 @@ try {
         owner_reply(200, ['success'=>true,'date'=>$date,'open'=>$open,'state'=>$tooFar ? 'closed' : $info['state'],'label'=>$tooFar ? 'Too far ahead' : $info['label'],'slots'=>$out]);
     }
 
+    if ($action === 'adoption_list') {
+        $q = $pdo->prepare("SELECT a.id AS adoption_id,a.pet_name,a.species,a.breed,a.age,a.gender,a.health_status,a.reason,a.photo_path,a.status AS pet_status,
+            x.id AS application_id,x.status AS application_status,x.message,x.created_at AS applied_at,x.staff_notes
+            FROM adoption_applications x JOIN adoption_records a ON a.id=x.adoption_id
+            WHERE x.user_id=? ORDER BY x.created_at DESC,x.id DESC");
+        $q->execute([$uid]);
+        owner_reply(200, ['success'=>true,'applications'=>$q->fetchAll()]);
+    }
+
     if ($action === 'notifications') {
         $n = $pdo->prepare('SELECT id,appointment_id,type,title,message,is_read,created_at FROM notifications WHERE user_id=? ORDER BY created_at DESC, id DESC LIMIT 50');
         $n->execute([$uid]);
@@ -108,6 +117,56 @@ try {
     $isMultipart = stripos((string)($_SERVER['CONTENT_TYPE'] ?? ''), 'multipart/form-data') !== false;
     $data = $isMultipart ? $_POST : owner_input();
     if ($isMultipart && !$_POST && !$_FILES && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) owner_reply(413, ['success'=>false,'message'=>'The upload is too large. Maximum picture size is 2 MB.']);
+
+    /* ---- Submit an adoption application ---- */
+    if ($action === 'adoption_apply') {
+        $adoptionId = (int)($data['adoption_id'] ?? 0);
+        $phone = trim((string)($data['phone'] ?? ''));
+        $address = trim((string)($data['address'] ?? ''));
+        $message = trim((string)($data['message'] ?? ''));
+        $name = trim((string)($account['name'] ?? $account['full_name'] ?? ''));
+        if ($adoptionId < 1 || $name === '' || $email === '' || $phone === '' || $address === '') owner_reply(422, ['success'=>false,'message'=>'Complete your name, email, phone number and address before applying.']);
+        if (mb_strlen($phone) > 40 || mb_strlen($address) > 255 || mb_strlen($message) > 2000) owner_reply(422, ['success'=>false,'message'=>'One or more application fields are too long.']);
+        $pdo->beginTransaction();
+        try {
+            $pet = $pdo->prepare("SELECT pet_name FROM adoption_records WHERE id=? AND status='Available' FOR UPDATE");
+            $pet->execute([$adoptionId]); $listed = $pet->fetch();
+            if (!$listed) { $pdo->rollBack(); owner_reply(409, ['success'=>false,'message'=>'This pet is no longer available for adoption.']); }
+            $exists = $pdo->prepare("SELECT id FROM adoption_applications WHERE adoption_id=? AND user_id=? AND status='Pending'");
+            $exists->execute([$adoptionId,$uid]);
+            if ($exists->fetch()) { $pdo->rollBack(); owner_reply(409, ['success'=>false,'message'=>'You already have a pending application for this pet.']); }
+            $appId = db_insert($pdo, "INSERT INTO adoption_applications (adoption_id,user_id,applicant_name,email,phone,address,message,status) VALUES (?,?,?,?,?,?,?,'Pending')",
+                [$adoptionId,$uid,$name,$email,$phone,$address,$message !== '' ? $message : null]);
+            $pdo->prepare("UPDATE adoption_records SET status='Pending' WHERE id=?")->execute([$adoptionId]);
+            $pdo->prepare("INSERT INTO notifications (user_id,appointment_id,type,title,message,is_read,created_at) VALUES (?,NULL,'adoption','Application submitted',?,0,?)")
+                ->execute([$uid,'Your adoption application for '.$listed['pet_name'].' was sent to the clinic for review.',date('Y-m-d H:i:s')]);
+            $staff = $pdo->query("SELECT id FROM users WHERE status='Active' AND role IN ('Administrator','Veterinarian','Veterinary Staff')")->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($staff as $staffId) {
+                $pdo->prepare("INSERT INTO notifications (user_id,appointment_id,type,title,message,is_read,created_at) VALUES (?,NULL,'adoption_application','New adoption application',?,0,?)")
+                    ->execute([(int)$staffId,$name.' submitted an application for '.$listed['pet_name'].'. Review it in Adoption.',date('Y-m-d H:i:s')]);
+            }
+            $pdo->commit();
+            owner_reply(201, ['success'=>true,'message'=>'Your adoption application has been submitted. The clinic will contact you after reviewing it.','application_id'=>$appId]);
+        } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
+    }
+
+    /* ---- Withdraw a pending adoption application ---- */
+    if ($action === 'adoption_withdraw') {
+        $appId = (int)($data['id'] ?? 0);
+        $pdo->beginTransaction();
+        try {
+            $q = $pdo->prepare("SELECT x.id,x.adoption_id,a.pet_name FROM adoption_applications x JOIN adoption_records a ON a.id=x.adoption_id WHERE x.id=? AND x.user_id=? AND x.status='Pending' FOR UPDATE");
+            $q->execute([$appId,$uid]); $app = $q->fetch();
+            if (!$app) { $pdo->rollBack(); owner_reply(404, ['success'=>false,'message'=>'Pending application not found.']); }
+            $pdo->prepare("UPDATE adoption_applications SET status='Withdrawn' WHERE id=?")->execute([$appId]);
+            $remaining = $pdo->prepare("SELECT COUNT(*) FROM adoption_applications WHERE adoption_id=? AND status='Pending'"); $remaining->execute([(int)$app['adoption_id']]);
+            if ((int)$remaining->fetchColumn() === 0) $pdo->prepare("UPDATE adoption_records SET status='Available' WHERE id=? AND status='Pending'")->execute([(int)$app['adoption_id']]);
+            $pdo->prepare("INSERT INTO notifications (user_id,appointment_id,type,title,message,is_read,created_at) VALUES (?,NULL,'adoption','Application withdrawn',?,0,?)")
+                ->execute([$uid,'Your application for '.$app['pet_name'].' was withdrawn.',date('Y-m-d H:i:s')]);
+            $pdo->commit();
+            owner_reply(200, ['success'=>true,'message'=>'Your adoption application was withdrawn.']);
+        } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
+    }
 
     /* ---- Mark notifications as read ---- */
     if ($action === 'mark_read') {
