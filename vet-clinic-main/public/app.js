@@ -944,7 +944,7 @@ function pAppts() {
     const key = iso(new Date(y, m, d)),
       ap = list.filter((a) => a.date === key),
       mark = ph[key];
-    cells += `<button class="day ${ap.length ? "has" : ""} ${mark ? "off-" + mark.state : ""} ${key === state.sel ? "sel" : ""} ${key === TODAY_ISO ? "today" : ""}" data-day="${key}" ${mark ? `title="${esc(mark.label || "")}"` : ""} aria-label="${fmtDate(key)}: ${plural(ap.length, "appointment")}${mark ? ", " + esc(mark.label || MARK[mark.state]) : ""}"><b>${d}</b><span class="dots">${ap
+    cells += `<button class="day ${ap.length ? "has" : ""} ${mark ? "off-" + mark.state : ""} ${key === state.sel ? "sel" : ""} ${key === TODAY_ISO ? "today" : ""}" data-day="${key}" ${mark ? `title="${esc(mark.label || "")}"` : ""} aria-label="${fmtDate(key)}: ${plural(ap.length, "appointment")}${mark ? ", " + esc(mark.label || MARK[mark.state]) : ""}" aria-pressed="${key === state.sel ? "true" : "false"}" ${key === TODAY_ISO ? 'aria-current="date"' : ""}><b>${d}</b><span class="dots">${ap
       .slice(0, 3)
       .map((a) => `<i class="d-${DOT[a.status]}"></i>`)
       .join("")}</span>${mark ? `<small class="dn">${MARK[mark.state]}</small>` : ""}</button>`;
