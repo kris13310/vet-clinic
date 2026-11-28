@@ -26,14 +26,14 @@ async function ownerRequest(action = 'data', data = null, query = '') {
   if (!response.ok || !result.success) throw new Error(result.message || 'Request failed.');
   return result;
 }
-const emptyOwnerData = () => ({ doctor: null, profile: {}, pets: [], appointments: [], vaccinations: [], medical_reports: [], adoption_applications: [], notifications: [], unread: 0, today: '', schedule: {} });
+const emptyOwnerData = () => ({ doctor: null, profile: {}, pets: [], appointments: [], vaccinations: [], medical_reports: [], adoption_applications: [], available_adoptions: [], notifications: [], unread: 0, today: '', schedule: {} });
 async function loadOwnerData() {
   try {
     const r = await ownerRequest('data');
     ownerData = { doctor: r.doctor || null, profile: r.profile || {}, pets: r.pets || [], appointments: r.appointments || [], vaccinations: r.vaccinations || [], medical_reports: r.medical_reports || [], adoption_applications: [], notifications: [], unread: r.unread || 0, today: r.today || '', schedule: r.schedule || {} };
     ownerLoadError = '';
     try { const n = await ownerRequest('notifications'); ownerData.notifications = n.notifications || []; ownerData.unread = n.unread || 0; } catch (e) { /* bell still works from the count */ }
-    try { const a = await ownerRequest('adoption_list'); ownerData.adoption_applications = a.applications || []; } catch (e) { ownerData.adoption_applications = []; }
+    try { const a = await ownerRequest('adoption_list'); ownerData.adoption_applications = a.applications || []; ownerData.available_adoptions = a.available || []; } catch (e) { ownerData.adoption_applications = []; ownerData.available_adoptions = []; }
   } catch (e) { ownerLoadError = e.message; ownerData = emptyOwnerData(); }
 }
 
