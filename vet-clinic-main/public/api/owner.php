@@ -346,7 +346,10 @@ try {
         if ($check->fetch()) owner_reply(409, ['success'=>false,'message'=>'That email is already used by another account.']);
         $current = $pdo->prepare('SELECT avatar_path FROM users WHERE id=?'); $current->execute([$uid]); $oldAvatar = $current->fetchColumn() ?: null;
         $newAvatar = $oldAvatar; $newUpload = null;
-        if (!empty($_FILES['photo']) && (int)($_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) { $newUpload = save_pet_photo($_FILES['photo'], 'user_'); $newAvatar = $newUpload; }
+        if (!empty($_FILES['photo']) && (int)($_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            try { $newUpload = save_pet_photo($_FILES['photo'], 'user_'); $newAvatar = $newUpload; }
+            catch (RuntimeException $e) { owner_reply(422, ['success'=>false,'message'=>$e->getMessage()]); }
+        }
         if (!empty($data['remove_photo']) && $data['remove_photo'] === '1') { $newAvatar = null; if ($newUpload) delete_pet_photo($newUpload); $newUpload = null; }
         $pdo->beginTransaction();
         try {
