@@ -453,10 +453,14 @@ function ovPetForm(pet) {
     <div class="ov-err" id="ov-pet-err" role="alert"></div>
     <div class="ov-actions"><button type="button" class="ov-btn ghost" data-close>Cancel</button><button class="ov-btn" type="submit" id="ov-pet-save">${edit ? 'Save changes' : 'Add pet'}</button></div></form>`, true);
   const file = $('#ov-file', m), prev = $('#ov-prev', m), err = $('#ov-photo-err', m), form = $('#ov-petform', m);
+  let previewObjectUrl = null;
+  const clearPreviewObjectUrl = () => { if (previewObjectUrl) { URL.revokeObjectURL(previewObjectUrl); previewObjectUrl = null; } };
+  const closeModal = m.close;
+  m.close = () => { clearPreviewObjectUrl(); closeModal(); };
   const species = () => form.elements.namedItem('species').value;
   $('#ov-choose', m).onclick = () => file.click();
   const rm = $('#ov-removephoto', m);
-  if (rm) rm.onclick = () => { file.value = ''; form.elements.namedItem('remove_photo').value = '1'; prev.innerHTML = petImg({ species: species() }, 'xl'); rm.remove(); err.textContent = ''; };
+  if (rm) rm.onclick = () => { clearPreviewObjectUrl(); file.value = ''; form.elements.namedItem('remove_photo').value = '1'; prev.innerHTML = petImg({ species: species() }, 'xl'); rm.remove(); err.textContent = ''; };
   file.onchange = async () => {
     err.textContent = ''; const f = file.files[0]; if (!f) return;
     if (!PHOTO_OK.includes(f.type)) { err.textContent = 'Only JPG, PNG or WebP pictures are allowed.'; file.value = ''; return; }
@@ -472,7 +476,7 @@ function ovPetForm(pet) {
       if (!file.files || !file.files.length) throw new Error('The edited picture could not be attached. Please choose it again.');
       err.textContent = '';
       form.elements.namedItem('remove_photo').value = '0';
-      prev.innerHTML = `<img class="ov-pimg xl" alt="Selected picture" src="${URL.createObjectURL(cropped)}">`;
+      clearPreviewObjectUrl(); previewObjectUrl = URL.createObjectURL(cropped); prev.innerHTML = `<img class="ov-pimg xl" alt="Selected picture" src="${previewObjectUrl}">`;
     } catch (error) {
       console.error('Pet Owner picture editor failed:', error);
       file.value = '';
@@ -566,6 +570,8 @@ function ovPageProfile() {
 function ovInitProfile() {
   const form = $('#owner-profile-form'); if (!form) return;
   const photo = $('#owner-profile-photo'), preview = $('#owner-avatar-preview'), remove = $('#owner-profile-remove');
+  let previewObjectUrl = null;
+  const clearPreviewObjectUrl = () => { if (previewObjectUrl) { URL.revokeObjectURL(previewObjectUrl); previewObjectUrl = null; } };
   photo.onchange = async () => {
     const file = photo.files?.[0]; if (!file) return;
     const msg = $('#owner-profile-msg');
@@ -580,19 +586,19 @@ function ovInitProfile() {
       if (typeof DataTransfer === 'undefined') throw new Error('Your browser cannot attach the edited picture. Please update your browser.');
       const transfer = new DataTransfer(); transfer.items.add(cropped); photo.files = transfer.files;
       if (!photo.files || !photo.files.length) throw new Error('The edited picture could not be attached. Please choose it again.');
-      preview.innerHTML = `<img class="ov-pimg xl" alt="Profile picture preview" src="${URL.createObjectURL(cropped)}">`;
+      clearPreviewObjectUrl(); previewObjectUrl = URL.createObjectURL(cropped); preview.innerHTML = `<img class="ov-pimg xl" alt="Profile picture preview" src="${previewObjectUrl}">`;
       form.elements.remove_photo.value = '0'; msg.textContent = '';
     } catch (error) {
       photo.value = ''; msg.textContent = error.message || 'Could not open the picture editor.'; msg.className = 'ov-msg error';
     }
   };
-  remove.onclick=()=>{photo.value='';form.elements.remove_photo.value='1';preview.innerHTML=`<div class="ov-avatar lg">${esc(ovInitials(form.elements.name.value))}</div>`;};
+  remove.onclick=()=>{clearPreviewObjectUrl();photo.value='';form.elements.remove_photo.value='1';preview.innerHTML=`<div class="ov-avatar lg">${esc(ovInitials(form.elements.name.value))}</div>`;};
   form.onsubmit = async e => {
     e.preventDefault(); const msg = $('#owner-profile-msg'); msg.textContent = 'Saving…'; msg.className = 'ov-msg';
     if (typeof window.showAppLoading === 'function') window.showAppLoading('Saving your profile…');
     try {
       const r = await ownerRequest('profile', new FormData(form));
-      state.account = { ...state.account, name: r.user.name, full_name: r.user.name, email: r.user.email, avatar_path: r.user.avatar_path || null };
+      clearPreviewObjectUrl(); state.account = { ...state.account, name: r.user.name, full_name: r.user.name, email: r.user.email, avatar_path: r.user.avatar_path || null };
       await loadOwnerData(); showSaveSuccess('Personal information saved.'); renderOwnerDashboard();
     } catch (err) { msg.textContent = err.message; msg.className = 'ov-msg error'; }
     finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
