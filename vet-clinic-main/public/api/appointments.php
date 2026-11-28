@@ -55,6 +55,9 @@ try {
         $result = with_slot_lock($pdo, function () use ($pdo, $petId, $date, $time, $purpose, $status) {
             $p = $pdo->prepare('SELECT id FROM pets WHERE id=?'); $p->execute([$petId]);
             if (!$p->fetch()) return [404, 'That pet was not found.'];
+            $sameDay = $pdo->prepare("SELECT 1 FROM appointments WHERE pet_id=? AND appointment_date=? AND status IN ('Pending','Confirmed','In Progress') LIMIT 1");
+            $sameDay->execute([$petId, $date]);
+            if ($sameDay->fetchColumn()) return [409, 'This pet already has an active appointment on that date. Choose another date.'];
             if (slot_is_taken($pdo, $date, $time)) return [409, 'That date and time is already reserved. Choose another slot.'];
             $aid = db_insert($pdo, 'INSERT INTO appointments (pet_id, veterinarian_id, appointment_date, appointment_time, purpose, status) VALUES (?,?,?,?,?,?)', [$petId, current_doctor($pdo)['id'] ?? null, $date, $time . ':00', $purpose, $status]); // the clinic's one doctor is assigned automatically
             if ($status === 'Confirmed') {
