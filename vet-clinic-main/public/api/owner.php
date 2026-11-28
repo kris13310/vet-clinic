@@ -321,7 +321,7 @@ try {
         $hash = $check->fetchColumn();
         if (!$hash || !password_verify($currentPassword, (string)$hash)) owner_reply(403, ['success'=>false,'message'=>'Your current password is incorrect.']);
         $updated = password_hash($newPassword, PASSWORD_DEFAULT);
-        $pdo->prepare('UPDATE users SET password_hash=? WHERE id=?')->execute([$updated, $uid]);
+        $pdo->prepare('UPDATE users SET password_hash=?, auth_version=auth_version+1 WHERE id=?')->execute([$updated, $uid]);
         owner_reply(200, ['success'=>true,'message'=>'Your password has been updated.']);
     }
 
