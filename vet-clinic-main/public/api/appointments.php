@@ -95,9 +95,12 @@ try {
                 return [409, 'That appointment status change is not allowed. Follow Pending → Confirmed → In Progress → Medical Report → Completed.'];
             }
             if ($status === 'In Progress') {
+                if ($role !== 'Veterinarian' || (int)$row['veterinarian_id'] !== $uid) {
+                    return [403, 'Only the veterinarian assigned to this appointment can start the visit.'];
+                }
                 $assignedVet = $pdo->prepare("SELECT 1 FROM users WHERE id=? AND role='Veterinarian' AND status='Active'");
-                $assignedVet->execute([(int)($row['veterinarian_id'] ?? 0)]);
-                if (!$assignedVet->fetchColumn()) return [409, 'This appointment has no active assigned veterinarian. Ask the administrator to assign an active veterinarian first.'];
+                $assignedVet->execute([$uid]);
+                if (!$assignedVet->fetchColumn()) return [409, 'Your veterinarian account is not active. Ask the administrator to activate it before starting visits.'];
             }
             if ($status === 'Completed') {
                 if ($role !== 'Veterinarian' || (int)$row['veterinarian_id'] !== $uid) {
