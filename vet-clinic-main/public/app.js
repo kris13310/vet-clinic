@@ -1516,23 +1516,6 @@ async function reviewAdoptionApplication(id, decision) {
   catch (error) { alert(error.message); }
 }
 
-async function adoptionStatus(i, status) {
-  const r = D.adoption[i];
-  let adopter = "";
-  if (status === "Adopted") {
-    adopter = prompt(`Who adopted ${r.name}? (optional)`);
-    if (adopter === null) return;
-  }
-  if (typeof window.showAppLoading === 'function') window.showAppLoading('Updating adoption status…');
-  try {
-    await recordRequest("adoption", "status", { id: r.id, status, adopter_name: adopter.trim() });
-    await loadRecordsFromDatabase();
-    state.tab = status;
-    toast(status === "Adopted" ? `${r.name} has been adopted! 🎉` : `${r.name} is now pending adoption.`);
-    refresh();
-  } catch (e) { alert(e.message); }
-  finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
-}
 
 function act(a, k, i) {
   if (a === 'reload-appointments') { state.apptDbLoaded = false; state.apptLoadError = ''; render(); }
@@ -1554,10 +1537,8 @@ function act(a, k, i) {
   else if (a === "edit") form(k, i);
   else if (a === "view") detail(k, i);
   else if (a === "del") remove(k, i);
-  else if (a === "adopt") { adoptionStatus(i, "Pending"); }
-  else if (a === "finish") { adoptionStatus(i, "Adopted"); 
-  } else if (a === "adoption-review") { reviewAdoptionApplication(i, k); 
-  } else if (a === "logout") {
+  else if (a === "adoption-review") { reviewAdoptionApplication(i, k); }
+  else if (a === "logout") {
     authRequest('logout').catch(() => {}).finally(() => {
       state.user = null; state.account = null; state.page = 'dashboard'; state.recordsLoaded = false; state.recordsError = ''; state.apptDbLoaded = false;
       Object.assign(D, { pets: [], appointments: [], vaccinations: [], adoption: [], adoptionApplications: [], users: [], doctor: null, slots: [] });
