@@ -299,8 +299,12 @@ function delete_pet_photo(?string $path): void {
  * Change a user's role to Veterinarian (Users page or phpMyAdmin) and that person becomes the doctor in charge.
  * If several active Veterinarian accounts exist, the oldest one is used.
  */
-function current_doctor(PDO $pdo): ?array {
-    $r = $pdo->query("SELECT id, full_name FROM users WHERE role='Veterinarian' AND status='Active' ORDER BY id LIMIT 1")->fetch();
+function current_doctor(PDO $pdo, bool $lockForBooking = false): ?array {
+    // Booking callers use FOR SHARE inside their transaction so an administrator cannot
+    // deactivate/reassign this veterinarian between assignment and appointment insertion.
+    $sql = "SELECT id, full_name FROM users WHERE role='Veterinarian' AND status='Active' ORDER BY id LIMIT 1";
+    if ($lockForBooking) $sql .= ' FOR SHARE';
+    $r = $pdo->query($sql)->fetch();
     return $r ? ['id' => (int)$r['id'], 'name' => (string)$r['full_name']] : null;
 }
 
