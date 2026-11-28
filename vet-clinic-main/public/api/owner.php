@@ -125,9 +125,9 @@ try {
         $phone = trim((string)($data['phone'] ?? ''));
         $address = trim((string)($data['address'] ?? ''));
         $message = trim((string)($data['message'] ?? ''));
-        $name = trim((string)($account['name'] ?? $account['full_name'] ?? ''));
+        $name = trim((string)($data['name'] ?? $account['name'] ?? $account['full_name'] ?? ''));
         if ($adoptionId < 1 || $name === '' || $email === '' || $phone === '' || $address === '') owner_reply(422, ['success'=>false,'message'=>'Complete your name, email, phone number and address before applying.']);
-        if (mb_strlen($phone) > 40 || mb_strlen($address) > 255 || mb_strlen($message) > 2000) owner_reply(422, ['success'=>false,'message'=>'One or more application fields are too long.']);
+        if (mb_strlen($name) > 120 || mb_strlen($phone) > 40 || mb_strlen($address) > 255 || mb_strlen($message) > 2000) owner_reply(422, ['success'=>false,'message'=>'One or more application fields are too long.']);
         $pdo->beginTransaction();
         try {
             $pet = $pdo->prepare("SELECT pet_name FROM adoption_records WHERE id=? AND status='Available' FOR UPDATE");
