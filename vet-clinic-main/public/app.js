@@ -281,7 +281,7 @@ function login() {
     const showLoginLoading = authMode === 'login';
     if (showLoginLoading && typeof window.showAppLoading === 'function') window.showAppLoading('Signing in to your VETCARE account…');
     try {
-      const result = await authRequest(authMode==='signup'?'register':'login', authMode==='signup' ? {name:f.name.value.trim(),email:f.email.value.trim(),username,password} : {username,password});
+      const result = await authRequest(authMode==='signup'?'register':'login', authMode==='signup' ? {name:f.name.value.trim(),email:f.email.value.trim(),username,password} : {username,password,remember:!!f.r.checked});
       if (authMode === 'signup' && result.user && result.user.status === 'Inactive') {
         setMode('login');
         const loginError = $('#err');
