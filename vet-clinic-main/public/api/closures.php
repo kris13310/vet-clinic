@@ -64,6 +64,14 @@ try {
         // Serialize closure changes with booking and rescheduling. The closure row,
         // affected-appointment lookup, and owner notifications commit as one operation.
         $n = with_slot_lock($pdo, function () use ($pdo, $date, $whole, $start, $end, $type, $reason, $account) {
+            if ($whole) {
+                $overlap = $pdo->prepare('SELECT 1 FROM clinic_closures WHERE closure_date=? LIMIT 1');
+                $overlap->execute([$date]);
+            } else {
+                $overlap = $pdo->prepare('SELECT 1 FROM clinic_closures WHERE closure_date=? AND (start_time IS NULL OR end_time IS NULL OR (start_time < ? AND end_time > ?)) LIMIT 1');
+                $overlap->execute([$date, $end . ':00', $start . ':00']);
+            }
+            if ($overlap->fetchColumn()) return -1; // duplicate/overlapping closure
             $pdo->prepare('INSERT INTO clinic_closures (closure_date, start_time, end_time, type, reason, created_by, created_at) VALUES (?,?,?,?,?,?,?)')
                 ->execute([$date, $whole ? null : $start . ':00', $whole ? null : $end . ':00', $type, $reason !== '' ? $reason : null, (int)$account['id'], date('Y-m-d H:i:s')]);
 
@@ -80,6 +88,7 @@ try {
             }
             return count($ids);
         });
+        if ($n < 0) closure_reply(409, ['success'=>false,'message'=>'That closure overlaps an existing clinic closure. Edit or remove the existing closure first.']);
         closure_reply(201, ['success'=>true, 'affected'=>$n, 'message'=>'Saved. Pet owners can no longer book that ' . ($whole ? 'day' : 'time') . '.' . ($n ? " $n existing appointment" . ($n === 1 ? '' : 's') . ' affected: the owner' . ($n === 1 ? ' was' : 's were') . ' notified, so reschedule ' . ($n === 1 ? 'it' : 'them') . ' from the Appointments page.' : '')]);
     }
 
