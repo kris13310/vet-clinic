@@ -362,7 +362,7 @@ try {
             $pdo->commit();
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
-            if ($newUpload) delete_pet_photo($newUpload);
+            if ($newUpload) delete_pet_photo($newUpload, $pdo);
             throw $e;
         }
         $_SESSION['account']['name'] = $name; $_SESSION['account']['full_name'] = $name; $_SESSION['account']['email'] = $newEmail;
