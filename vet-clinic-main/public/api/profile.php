@@ -26,6 +26,10 @@ try {
  try {
   $pdo->beginTransaction();
   $pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=?,avatar_path=? WHERE id=?')->execute([$name,$email,$phone,$address,$avatar,$uid]);
+  if (($account['role'] ?? '') === 'Pet Owner') {
+   $pdo->prepare('UPDATE pets SET owner_name=?,owner_email=?,owner_phone=?,address=? WHERE LOWER(TRIM(owner_email))=LOWER(TRIM(?))')
+    ->execute([$name,$email,$phone,$address,(string)($account['email'] ?? '')]);
+  }
   $pdo->commit();
  } catch(Throwable $e) {
   if($pdo->inTransaction())$pdo->rollBack();
