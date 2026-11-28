@@ -79,7 +79,7 @@ try {
 
         $pdo->beginTransaction();
         try {
-            $versionUpdate = $pdo->prepare('UPDATE users SET full_name=?, username=?, email=?, role=?, status=?, auth_version=auth_version+1 WHERE id=? RETURNING auth_version');
+            $versionUpdate = $pdo->prepare('UPDATE users SET full_name=?, username=?, email=?, role=?, status=?, auth_version=auth_version+1, password_reset_token_hash=NULL, password_reset_expires=NULL WHERE id=? RETURNING auth_version');
             $versionUpdate->execute([$name, $username, $email, $finalRole, $status, $id]);
             $updatedAuthVersion = (int)$versionUpdate->fetchColumn();
             if ($password !== '') $pdo->prepare('UPDATE users SET password_hash=? WHERE id=?')->execute([password_hash($password, PASSWORD_DEFAULT), $id]);
