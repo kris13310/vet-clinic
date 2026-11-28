@@ -120,17 +120,18 @@ try {
             $given = trim((string)($in['given'] ?? '')); $next = trim((string)($in['next'] ?? '')); $docId = current_doctor($pdo)['id'] ?? null; // the clinic's one doctor
             if (!valid_date_string($given)) rec_fail('Enter a valid date given.');
             if ($given > date('Y-m-d')) rec_fail('Date given cannot be in the future.');
-            if (!valid_date_string($next)) rec_fail('Enter a valid next due date.');
-            if ($next <= $given) rec_fail('Next due date must be after the date given.');
+            if ($next !== '' && !valid_date_string($next)) rec_fail('Enter a valid next due date.');
+            if ($next !== '' && $next <= $given) rec_fail('Next due date must be after the date given.');
+            $nextDue = $next !== '' ? $next : null;
             $p = $pdo->prepare('SELECT id FROM pets WHERE id=?'); $p->execute([$petId]);
             if (!$p->fetch()) rec_fail('Choose a registered pet.');
             if ($id) {
                 $e = $pdo->prepare('SELECT id FROM vaccinations WHERE id=?'); $e->execute([$id]);
                 if (!$e->fetch()) rec_fail('Vaccination record not found.', 404);
-                $pdo->prepare('UPDATE vaccinations SET pet_id=?,vaccine=?,date_given=?,next_due=?,veterinarian_id=COALESCE(veterinarian_id, ?) WHERE id=?')->execute([$petId, $vaccine, $given, $next, $docId, $id]);
+                $pdo->prepare('UPDATE vaccinations SET pet_id=?,vaccine=?,date_given=?,next_due=?,veterinarian_id=COALESCE(veterinarian_id, ?) WHERE id=?')->execute([$petId, $vaccine, $given, $nextDue, $docId, $id]);
                 rec_reply(200, ['success'=>true, 'message'=>'Changes saved.', 'id'=>$id]);
             }
-            $newId = db_insert($pdo, 'INSERT INTO vaccinations (pet_id,vaccine,date_given,next_due,veterinarian_id) VALUES (?,?,?,?,?)', [$petId, $vaccine, $given, $next, $docId]);
+            $newId = db_insert($pdo, 'INSERT INTO vaccinations (pet_id,vaccine,date_given,next_due,veterinarian_id) VALUES (?,?,?,?,?)', [$petId, $vaccine, $given, $nextDue, $docId]);
             rec_reply(201, ['success'=>true, 'message'=>'Record added.', 'id'=>$newId]);
         }
         if ($action === 'delete') {
