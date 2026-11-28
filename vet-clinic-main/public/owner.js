@@ -633,7 +633,7 @@ function ovPasswordForm() {
     <div class="ov-mhead"><div><span class="ov-eyebrow">ACCOUNT SECURITY</span><h2>Change password</h2><p>Choose a new password for your account.</p></div><button class="ov-x" data-close aria-label="Close">×</button></div>
     <form id="ov-password-form" class="ov-password-form">
       <label>Current password<input type="password" name="current_password" autocomplete="current-password" required></label>
-      <label>New password<input type="password" name="new_password" autocomplete="new-password" minlength="8" required><small>Use at least 8 characters.</small></label>
+      <label>New password<input type="password" name="new_password" autocomplete="new-password" minlength="8" maxlength="72" required><small>Use 8 to 72 characters.</small></label>
       <label>Confirm new password<input type="password" name="confirm_password" autocomplete="new-password" minlength="8" required></label>
       <p class="ov-msg" id="ov-password-msg" aria-live="polite"></p>
       <div class="ov-actions"><button type="button" class="ov-btn ghost" data-close>Cancel</button><button type="submit" class="ov-btn">Update password</button></div>
