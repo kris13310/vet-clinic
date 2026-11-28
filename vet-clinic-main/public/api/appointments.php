@@ -48,7 +48,7 @@ try {
         $purpose = trim((string)($input['purpose'] ?? '')); $status = (string)($input['status'] ?? 'Pending');
         if (!$petId || $purpose === '') appt_reply(422, ['success'=>false,'message'=>'Choose a pet and enter the purpose of the visit.']);
         if (mb_strlen($purpose) > 255) appt_reply(422, ['success'=>false,'message'=>'The purpose is too long (max 255 characters).']);
-        if (!in_array($status, ['Pending','Confirmed','In Progress'], true)) appt_reply(422, ['success'=>false,'message'=>'Choose a valid status.']);
+        if (!in_array($status, ['Pending','Confirmed'], true)) appt_reply(422, ['success'=>false,'message'=>'New appointments must start as Pending or Confirmed.']);
         $err = validate_slot($pdo, $date, $time, true);
         if ($err) appt_reply(422, ['success'=>false,'message'=>$err]);
 
@@ -57,7 +57,7 @@ try {
             if (!$p->fetch()) return [404, 'That pet was not found.'];
             if (slot_is_taken($pdo, $date, $time)) return [409, 'That date and time is already reserved. Choose another slot.'];
             $aid = db_insert($pdo, 'INSERT INTO appointments (pet_id, veterinarian_id, appointment_date, appointment_time, purpose, status) VALUES (?,?,?,?,?,?)', [$petId, current_doctor($pdo)['id'] ?? null, $date, $time . ':00', $purpose, $status]); // the clinic's one doctor is assigned automatically
-            notify_appointment_owner($pdo, $aid, 'approved', 'Appointment scheduled', 'The clinic scheduled an appointment for {pet} on {date} at {time}.');
+            if ($status === 'Confirmed') {\n                notify_appointment_owner($pdo, $aid, 'approved', 'Appointment approved', 'The clinic scheduled and approved an appointment for {pet} on {date} at {time}.');\n            } else {\n                notify_appointment_owner($pdo, $aid, 'request', 'Appointment request recorded', 'The clinic recorded an appointment request for {pet} on {date} at {time}. It is Pending until approved.');\n            }
             return [201, 'Appointment saved.'];
         });
         appt_reply($result[0], ['success'=>$result[0] === 201, 'message'=>$result[1]]);
@@ -73,8 +73,17 @@ try {
             $cur->execute([$id]);
             $row = $cur->fetch();
             if (!$row) return [404, 'Appointment not found.'];
-            if ($row['status'] === 'Completed' && $status !== 'Completed') return [409, 'A completed appointment cannot be reopened or changed.'];
             if ($role === 'Veterinarian' && (int)$row['veterinarian_id'] !== $uid) return [403, 'This appointment is not assigned to your veterinarian account.'];
+            $allowedTransitions = [
+                'Pending' => ['Confirmed', 'Cancelled'],
+                'Confirmed' => ['In Progress', 'Cancelled'],
+                'In Progress' => ['Completed'],
+                'Cancelled' => [],
+                'Completed' => [],
+            ];
+            if (!in_array($status, $allowedTransitions[(string)$row['status']] ?? [], true)) {
+                return [409, 'That appointment status change is not allowed. Follow Pending → Confirmed → In Progress → Medical Report → Completed.'];
+            }
             if ($status === 'Completed') {
                 if ($role !== 'Veterinarian' || (int)$row['veterinarian_id'] !== $uid) {
                     return [403, 'Only the veterinarian assigned to this appointment can complete it.'];
@@ -114,7 +123,7 @@ try {
             $row = $cur->fetch();
             if (!$row) return [404, 'Appointment not found.'];
             if ($role === 'Veterinarian' && (int)$row['veterinarian_id'] !== $uid) return [403, 'This appointment is not assigned to your veterinarian account.'];
-            if (in_array($row['status'], ['Completed','Cancelled'], true)) return [409, 'Completed or rejected appointments cannot be rescheduled.'];
+            if (!in_array($row['status'], ['Pending','Confirmed'], true)) return [409, 'Only Pending or Confirmed appointments can be rescheduled.'];
             if (slot_is_taken($pdo, $date, $time, $id)) return [409, 'That date and time is already reserved. Choose another slot.'];
             $pdo->prepare('UPDATE appointments SET appointment_date=?, appointment_time=? WHERE id=?')->execute([$date, $time . ':00', $id]);
             notify_appointment_owner($pdo, $id, 'rescheduled', 'Appointment rescheduled', 'The clinic moved your appointment for {pet} to {date} at {time}. Please contact the clinic if this time does not work for you.');
