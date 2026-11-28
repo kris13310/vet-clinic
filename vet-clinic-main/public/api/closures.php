@@ -59,7 +59,7 @@ try {
         if (!in_array($type, CLOSURE_TYPES, true)) closure_reply(422, ['success'=>false,'message'=>'Choose a valid type.']);
         if (mb_strlen($reason) > 190) closure_reply(422, ['success'=>false,'message'=>'The reason is too long (max 190 characters).']);
         if (!$whole) {
-            if (!preg_match('/^\d{2}:\d{2}$/', $start) || !preg_match('/^\d{2}:\d{2}$/', $end) || time_to_minutes($start) >= time_to_minutes($end)) closure_reply(422, ['success'=>false,'message'=>'Choose a start time that is earlier than the end time.']);
+            if (!preg_match('/^(?:[01]\\d|2[0-3]):[0-5]\\d$/', $start) || !preg_match('/^(?:[01]\\d|2[0-3]):[0-5]\\d$/', $end) || time_to_minutes($start) >= time_to_minutes($end)) closure_reply(422, ['success'=>false,'message'=>'Enter valid start and end times, with the start earlier than the end.']);
         }
         // Serialize closure changes with booking and rescheduling. The closure row,
         // affected-appointment lookup, and owner notifications commit as one operation.
