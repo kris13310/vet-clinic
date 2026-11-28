@@ -229,8 +229,8 @@ try {
         $ex = $pdo->prepare('SELECT id, photo_path FROM pets WHERE id=? AND LOWER(TRIM(owner_email))=LOWER(TRIM(?))'); $ex->execute([$petId, $email]); $pet = $ex->fetch();
         if (!$pet) owner_reply(403, ['success'=>false,'message'=>'That pet is not linked to your account.']);
         // Clinic medical history must not disappear because an owner removed a profile.
-        $hist = $pdo->prepare("SELECT (SELECT COUNT(*) FROM vaccinations WHERE pet_id=?) + (SELECT COUNT(*) FROM appointments WHERE pet_id=? AND status IN ('Confirmed','In Progress','Completed')) AS c");
-        $hist->execute([$petId, $petId]);
+        $hist = $pdo->prepare("SELECT (SELECT COUNT(*) FROM medical_reports WHERE pet_id=?) + (SELECT COUNT(*) FROM vaccinations WHERE pet_id=?) + (SELECT COUNT(*) FROM appointments WHERE pet_id=? AND status IN ('Confirmed','In Progress','Completed')) AS c");
+        $hist->execute([$petId, $petId, $petId]);
         if ((int)$hist->fetchColumn() > 0) owner_reply(409, ['success'=>false,'message'=>'This pet has approved appointments or clinic medical records, so it cannot be deleted online. Please contact the clinic to archive it.']);
         $pdo->prepare('DELETE FROM pets WHERE id=?')->execute([$petId]); // pending/rejected requests are removed with it (ON DELETE CASCADE)
         delete_pet_photo($pet['photo_path']);
