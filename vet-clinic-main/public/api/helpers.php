@@ -263,12 +263,30 @@ function supabase_project_url(): string {
 function storage_public_prefix(): string { return supabase_project_url() . '/storage/v1/object/public/' . rawurlencode(storage_bucket()) . '/'; }
 /** Calls the Supabase Storage REST API with the server-side service key. Returns [httpCode, body, curlError]. */
 function storage_call(string $method, string $path, ?string $body = null, ?string $mime = null): array {
-    $key = (string)getenv('SUPABASE_SERVICE_KEY');
-    $ch = curl_init(supabase_project_url() . '/storage/v1/' . ltrim($path, '/'));
+    $key = trim((string)getenv('SUPABASE_SERVICE_KEY'));
     // legacy service_role keys are JWTs (start with "eyJ") and are also sent as a Bearer token; the newer sb_secret_... keys go in apikey only
     $headers = ['apikey: ' . $key];
     if (str_starts_with($key, 'eyJ')) $headers[] = 'Authorization: Bearer ' . $key;
     if ($mime) $headers[] = 'Content-Type: ' . $mime;
+    $url = supabase_project_url() . '/storage/v1/' . ltrim($path, '/');
+    if (!function_exists('curl_init')) {
+        // Some PHP builds do not include ext-curl. Keep photo upload/delete working with streams.
+        $context = stream_context_create(['http'=>[
+            'method'=>$method,
+            'header'=>implode("\r\n", $headers) . "\r\n",
+            'content'=>$body ?? '',
+            'timeout'=>20,
+            'ignore_errors'=>true,
+        ]]);
+        $resp = @file_get_contents($url, false, $context);
+        $code = 0;
+        foreach (($http_response_header ?? []) as $header) {
+            if (preg_match('/^HTTP\\/\\S+\\s+(\\d{3})/', $header, $m)) $code = (int)$m[1];
+        }
+        $err = $resp === false ? (string)(error_get_last()['message'] ?? 'Storage request failed.') : '';
+        return [$code, is_string($resp) ? $resp : '', $err];
+    }
+    $ch = curl_init($url);
     $opts = [CURLOPT_CUSTOMREQUEST => $method, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 20, CURLOPT_HTTPHEADER => $headers];
     if ($body !== null) $opts[CURLOPT_POSTFIELDS] = $body;
     curl_setopt_array($ch, $opts);
