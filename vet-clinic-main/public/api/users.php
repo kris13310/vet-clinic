@@ -63,7 +63,7 @@ try {
             if (!in_array($newRole, STAFF_ROLES, true)) respond(422, ['success'=>false, 'message'=>'Choose Veterinarian or Veterinary Staff.']);
             $finalRole = $newRole;
         }                                                                 // Administrator / Pet Owner roles are never changed here
-        $pdo->prepare('UPDATE users SET full_name=?, username=?, email=?, role=?, status=? WHERE id=?')->execute([$name, $username, $email, $finalRole, $status, $id]);
+        $pdo->prepare('UPDATE users SET full_name=?, username=?, email=?, role=?, status=?, auth_version=auth_version+1 WHERE id=?')->execute([$name, $username, $email, $finalRole, $status, $id]);
         if ($password !== '') $pdo->prepare('UPDATE users SET password_hash=? WHERE id=?')->execute([password_hash($password, PASSWORD_DEFAULT), $id]);
         respond(200, ['success'=>true, 'message'=>$password !== '' ? 'Changes saved and the password was reset.' : 'Changes saved.', 'id'=>$id]);
     }
