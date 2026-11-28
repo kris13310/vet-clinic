@@ -72,7 +72,10 @@ session_start();
  * Account deactivation, role changes and password changes revoke old sessions.
  */
 $sessionAccount = $_SESSION['account'] ?? null;
-if (is_array($sessionAccount) && !empty($sessionAccount['id'])) {
+$authAction = (string)($_GET['action'] ?? '');
+$authEndpoint = basename((string)($_SERVER['SCRIPT_NAME'] ?? '')) === 'auth.php';
+$publicAuthAction = $authEndpoint && in_array($authAction, ['login', 'register', 'forgot', 'reset', 'logout'], true);
+if (!$publicAuthAction && is_array($sessionAccount) && !empty($sessionAccount['id'])) {
     try {
         $accountCheck = $pdo->prepare('SELECT role, status, auth_version FROM users WHERE id = ? LIMIT 1');
         $accountCheck->execute([(int)$sessionAccount['id']]);
