@@ -178,9 +178,13 @@ try {
         }
         // Adoption status is changed only by adoption_applications.php after an application review.
         if ($action === 'delete') {
+            $e = $pdo->prepare('SELECT photo_path FROM adoption_records WHERE id=?'); $e->execute([$id]); $listing = $e->fetch();
+            if (!$listing) rec_fail('Adoption record not found.', 404);
+            $history = $pdo->prepare('SELECT COUNT(*) FROM adoption_applications WHERE adoption_id=?'); $history->execute([$id]);
+            if ((int)$history->fetchColumn() > 0) rec_fail('This adoption listing has application history, so it cannot be deleted. Keep the record for clinic reference.', 409);
             $d = $pdo->prepare('DELETE FROM adoption_records WHERE id=?'); $d->execute([$id]);
-            if (!$d->rowCount()) rec_fail('Adoption record not found.', 404);
-            rec_reply(200, ['success'=>true, 'message'=>'Record deleted.']);
+            delete_pet_photo($listing['photo_path']);
+            rec_reply(200, ['success'=>true, 'message'=>'Adoption listing deleted.']);
         }
     }
 
