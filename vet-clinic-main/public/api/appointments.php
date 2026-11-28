@@ -78,7 +78,7 @@ try {
         if (!$id || !in_array($status, ['Confirmed','Cancelled','In Progress','Completed'], true)) appt_reply(422, ['success'=>false,'message'=>'Invalid appointment or status.']);
 
         $result = with_slot_lock($pdo, function () use ($pdo, $id, $status, $role, $uid) {
-            $cur = $pdo->prepare('SELECT id, veterinarian_id, status, appointment_date, appointment_time FROM appointments WHERE id=?');
+            $cur = $pdo->prepare('SELECT id, veterinarian_id, status, appointment_date, appointment_time FROM appointments WHERE id=? FOR UPDATE');
             $cur->execute([$id]);
             $row = $cur->fetch();
             if (!$row) return [404, 'Appointment not found.'];
@@ -128,7 +128,7 @@ try {
         if ($err) appt_reply(422, ['success'=>false,'message'=>$err]);
 
         $result = with_slot_lock($pdo, function () use ($pdo, $id, $date, $time, $role, $uid) {
-            $cur = $pdo->prepare('SELECT id, pet_id, veterinarian_id, status FROM appointments WHERE id=?');
+            $cur = $pdo->prepare('SELECT id, pet_id, veterinarian_id, status FROM appointments WHERE id=? FOR UPDATE');
             $cur->execute([$id]);
             $row = $cur->fetch();
             if (!$row) return [404, 'Appointment not found.'];
