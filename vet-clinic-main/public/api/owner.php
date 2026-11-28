@@ -322,7 +322,7 @@ try {
         $newPassword = (string)($data['new_password'] ?? '');
         $confirmPassword = (string)($data['confirm_password'] ?? '');
         if ($currentPassword === '' || $newPassword === '' || $confirmPassword === '') owner_reply(422, ['success'=>false,'message'=>'Complete all password fields.']);
-        if (strlen($newPassword) < 8) owner_reply(422, ['success'=>false,'message'=>'Your new password must be at least 8 characters.']);
+        if (strlen($newPassword) < 8 || strlen($newPassword) > 72) owner_reply(422, ['success'=>false,'message'=>'Your new password must be between 8 and 72 bytes.']);
         if (!hash_equals($newPassword, $confirmPassword)) owner_reply(422, ['success'=>false,'message'=>'The new passwords do not match.']);
         if (hash_equals($currentPassword, $newPassword)) owner_reply(422, ['success'=>false,'message'=>'Choose a password different from your current one.']);
         $check = $pdo->prepare('SELECT password_hash FROM users WHERE id=?');
