@@ -130,6 +130,7 @@ const D = {
   appointments: [],
   vaccinations: [],
   adoption: [],
+  adoptionApplications: [],
   users: [],
   doctor: null,
   slots: [],
@@ -494,13 +495,14 @@ async function apiJson(url, body) {
 const recordRequest = (resource, action, body) => apiJson(`api/records.php?resource=${resource}&action=${action}`, body);
 async function loadRecordsFromDatabase() {
   try {
-    const [pets, vax, adopt, meta, settings] = await Promise.all([
+    const [pets, vax, adopt, meta, settings, adoptionApps] = await Promise.all([
       apiJson("api/records.php?resource=pets"), apiJson("api/records.php?resource=vaccinations"), apiJson("api/records.php?resource=adoption"),
-      apiJson("api/records.php?resource=meta"), apiJson("api/records.php?resource=settings"),
+      apiJson("api/records.php?resource=meta"), apiJson("api/records.php?resource=settings"), apiJson("api/adoption_applications.php?action=list"),
     ]);
     D.pets = (pets.pets || []).map((p) => ({ id: Number(p.id), name: p.name || "", species: p.species || "", breed: p.breed || "", owner: p.owner_name || "", ownerEmail: p.owner_email || "", phone: p.owner_phone || "", address: p.address || "", age: p.age || "", gender: p.gender || "Unknown", notes: p.notes || "", photo: p.photo_path || "", added: String(p.created_at || "").slice(0, 10) }));
     D.vaccinations = (vax.vaccinations || []).map((v) => ({ id: Number(v.id), petId: Number(v.pet_id), pet: v.pet_name || "", vaccine: v.vaccine || "", given: String(v.date_given || "").slice(0, 10), next: v.next_due ? String(v.next_due).slice(0, 10) : "", vet: v.vet_name || "Not recorded" }));
     D.adoption = (adopt.adoption || []).map((a) => ({ id: Number(a.id), name: a.pet_name || "", species: a.species || "", breed: a.breed || "", age: a.age || "", gender: a.gender || "Unknown", health: a.health_status || "Unknown", status: a.status || "Available", reason: a.reason || "", adopter: a.adopter_name || "", photo: a.photo_path || "" }));
+    D.adoptionApplications = adoptionApps.applications || [];
     D.doctor = meta.doctor || null;
     D.slots = meta.slots || [];
     Object.assign(D.settings, { name: "", email: "", phone: "", address: "" }, settings.settings || {});
@@ -1086,7 +1088,10 @@ function pAdopt() {
       : a.status === "Pending"
         ? `<button class="btn" data-act="finish" data-k="adoption" data-i="${a.i}">Complete</button>`
         : `<button class="btn" disabled>Adopted ✓</button>`;
+  const pendingApps = (D.adoptionApplications || []).filter(a => a.status === "Pending");
+  const applicationHtml = pendingApps.map(a => '<article class="card" style="margin:10px 0;padding:14px"><b>' + esc(a.pet_name) + '</b><p class="mu">' + esc(a.applicant_name) + ' · ' + esc(a.email) + ' · ' + esc(a.phone) + '</p><p>' + esc(a.address) + '</p><p>' + esc(a.message || 'No additional message.') + '</p><button class="btn" data-act="adoption-review" data-k="Approved" data-i="' + a.id + '">Approve</button> <button class="btn red" data-act="adoption-review" data-k="Rejected" data-i="' + a.id + '">Reject</button></article>').join("") || '<div class="card">' + empty("No pending adoption applications.") + '</div>';
   $("#content").innerHTML = `
+    <section class="card"><h2>Adoption applications</h2><p class="mu">Review owner applications before approving an adoption.</p>${applicationHtml}</section>
     <div class="top">${search("Search pets for adoption...")}<button class="btn" data-act="add" data-k="adoption">+ Add Pet for Adoption</button></div>
     <div class="card tabs">${tabs.map(([t, c]) => `<button class="tab ${state.tab === t ? "on" : ""}" data-set="tab:${t}"><i class="dot-${c}"></i>${t}<em>${D.adoption.filter((a) => a.status === t).length}</em></button>`).join("")}</div>
     ${
@@ -1504,6 +1509,13 @@ async function remove(k, i) {
   } catch (e) { alert(e.message); }
   finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
 }
+async function reviewAdoptionApplication(id, decision) {
+  if (!confirm("Are you sure you want to " + decision.toLowerCase() + " this adoption application?")) return;
+  const staff_notes = prompt("Optional note for the applicant:") || "";
+  try { const result = await apiJson("api/adoption_applications.php?action=review", {id, decision, staff_notes}); await loadRecordsFromDatabase(); toast(result.message || "Application updated."); refresh(); }
+  catch (error) { alert(error.message); }
+}
+
 async function adoptionStatus(i, status) {
   const r = D.adoption[i];
   let adopter = "";
@@ -1544,10 +1556,11 @@ function act(a, k, i) {
   else if (a === "del") remove(k, i);
   else if (a === "adopt") { adoptionStatus(i, "Pending"); }
   else if (a === "finish") { adoptionStatus(i, "Adopted"); 
+  } else if (a === "adoption-review") { reviewAdoptionApplication(i, k); 
   } else if (a === "logout") {
     authRequest('logout').catch(() => {}).finally(() => {
       state.user = null; state.account = null; state.page = 'dashboard'; state.recordsLoaded = false; state.recordsError = ''; state.apptDbLoaded = false;
-      Object.assign(D, { pets: [], appointments: [], vaccinations: [], adoption: [], users: [], doctor: null, slots: [] });
+      Object.assign(D, { pets: [], appointments: [], vaccinations: [], adoption: [], adoptionApplications: [], users: [], doctor: null, slots: [] });
       login();
     });
   } else if (a === "bell") {
