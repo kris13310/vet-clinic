@@ -36,7 +36,9 @@ try {
     $appointmentId = (int)($input['appointment_id'] ?? 0); if ($appointmentId < 1) report_reply(422, ['success'=>false,'message'=>'Select a valid appointment.']);
     $diagnosis=report_text($input,'diagnosis',5000,true); $symptoms=report_text($input,'symptoms',5000,true); $observations=report_text($input,'observations',5000);
     $treatment=report_text($input,'treatment',5000,true); $medication=report_text($input,'medication',5000); $recommendations=report_text($input,'recommendations',5000);
-    $followUp=trim((string)($input['follow_up_date'] ?? '')); if ($followUp !== '' && !valid_date_string($followUp)) report_reply(422,['success'=>false,'message'=>'Enter a valid follow-up date.']);
+    $followUp=trim((string)($input['follow_up_date'] ?? ''));
+    if ($followUp !== '' && !valid_date_string($followUp)) report_reply(422,['success'=>false,'message'=>'Enter a valid follow-up date.']);
+    if ($followUp !== '' && $followUp < date('Y-m-d')) report_reply(422,['success'=>false,'message'=>'Follow-up date cannot be in the past.']);
     $s=$pdo->prepare('SELECT id,pet_id,veterinarian_id,status FROM appointments WHERE id=?'); $s->execute([$appointmentId]); $a=$s->fetch();
     if (!$a) report_reply(404,['success'=>false,'message'=>'Appointment not found.']);
     if ((int)$a['veterinarian_id'] !== $uid) report_reply(403,['success'=>false,'message'=>'This appointment is not assigned to your veterinarian account.']);
