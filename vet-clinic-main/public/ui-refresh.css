@@ -277,3 +277,17 @@ body, .app, .app .mn, .app .ct,
     white-space: normal;
   }
 }
+
+/* Prevent the login card's intrinsic content width from exceeding narrow phones.
+   The centered grid item otherwise keeps a desktop-sized min-content width and
+   clips the form at 320–390px viewports. */
+@media (max-width: 480px) {
+  .login .rp {
+    min-width: 0;
+  }
+  .login form {
+    width: 100%;
+    min-width: 0;
+    max-width: 32em;
+  }
+}
