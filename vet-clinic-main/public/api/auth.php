@@ -129,7 +129,7 @@ try {
     if ($action === 'reset') {
         $token = trim((string)($data['token'] ?? ''));
         $password = (string)($data['password'] ?? '');
-        if (!preg_match('/^[a-f0-9]{64}$/i', $token) || strlen($password) < 8 || strlen($password) > 72) auth_reply(422, ['success'=>false, 'message'=>'Enter a valid reset link and a password of at least 8 characters.']);
+        if (!preg_match('/^[a-f0-9]{64}$/i', $token) || strlen($password) < 8 || strlen($password) > 72) auth_reply(422, ['success'=>false, 'message'=>'Enter a valid reset link and a password between 8 and 72 bytes.']);
         if (!auth_rate_limit($pdo, 'reset-ip:' . $ipKey, 10, 900)) auth_reply(429, ['success'=>false, 'message'=>'Too many reset attempts. Please try again later.']);
         $tokenHash = hash('sha256', $token);
         $stmt = $pdo->prepare("UPDATE users SET password_hash = ?, password_reset_token_hash = NULL, password_reset_expires = NULL, auth_version = auth_version + 1 WHERE password_reset_token_hash = ? AND password_reset_expires > now() RETURNING id");
