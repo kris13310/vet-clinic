@@ -233,7 +233,7 @@ try {
     if ($action === 'cancel_appointment') {
         $aid = (int)($data['id'] ?? 0);
         $result = with_slot_lock($pdo, function () use ($pdo, $aid, $email, $uid) {
-            $s = $pdo->prepare('SELECT a.id, a.status, a.appointment_date, a.appointment_time, p.name AS pet_name FROM appointments a JOIN pets p ON p.id=a.pet_id WHERE a.id=? AND LOWER(TRIM(p.owner_email))=LOWER(TRIM(?))');
+            $s = $pdo->prepare('SELECT a.id, a.status, a.appointment_date, a.appointment_time, p.name AS pet_name FROM appointments a JOIN pets p ON p.id=a.pet_id WHERE a.id=? AND LOWER(TRIM(p.owner_email))=LOWER(TRIM(?)) FOR UPDATE OF a');
             $s->execute([$aid, $email]); $r = $s->fetch();
             if (!$r) return [403, 'That appointment is not linked to your account.'];
             if (!owner_can_cancel((string)$r['status'], (string)$r['appointment_date'], (string)$r['appointment_time'])) {
