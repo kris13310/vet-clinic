@@ -1511,7 +1511,8 @@ async function remove(k, i) {
 }
 async function reviewAdoptionApplication(id, decision) {
   if (!confirm("Are you sure you want to " + decision.toLowerCase() + " this adoption application?")) return;
-  const staff_notes = prompt("Optional note for the applicant:") || "";
+  const staff_notes = prompt("Optional note for the applicant (leave blank if none):");
+  if (staff_notes === null) return;
   try { const result = await apiJson("api/adoption_applications.php?action=review", {id, decision, staff_notes}); await loadRecordsFromDatabase(); toast(result.message || "Application updated."); refresh(); }
   catch (error) { alert(error.message); }
 }
