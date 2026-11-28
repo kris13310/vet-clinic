@@ -150,7 +150,7 @@ try {
         if ($name === '' || $email === '') auth_reply(422, ['success'=>false, 'message'=>'Enter your full name and email.']);
         if (!filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 190) auth_reply(422, ['success'=>false, 'message'=>'Enter a valid email address (up to 190 characters).']);
         if (mb_strlen($name) > 120 || !preg_match('/^[A-Za-z0-9_.-]{3,50}$/', $username)) auth_reply(422, ['success'=>false, 'message'=>'Use a username of 3-50 letters, numbers, dots, underscores, or hyphens.']);
-        if (strlen($password) < 8) auth_reply(422, ['success'=>false, 'message'=>'Password must be at least 8 characters.']);
+        if (strlen($password) < 8 || strlen($password) > 72) auth_reply(422, ['success'=>false, 'message'=>'Password must be between 8 and 72 bytes.']);
         $check = $pdo->prepare('SELECT username, email FROM users WHERE LOWER(username) = LOWER(:username) OR LOWER(email) = LOWER(:email) LIMIT 1');
         $check->execute(['username'=>$username, 'email'=>$email]);
         $existing = $check->fetch();
