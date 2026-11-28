@@ -66,6 +66,16 @@ try {
         }
         $pdo->prepare("INSERT INTO notifications (user_id,appointment_id,type,title,message,is_read,created_at) VALUES (?,NULL,'adoption',?,?,0,?)")
             ->execute([(int)$app['user_id'],$title,$message,date('Y-m-d H:i:s')]);
+
+        // Keep the rest of the clinic team informed about the final review decision.
+        $staff = $pdo->prepare("SELECT id FROM users WHERE status='Active' AND role IN ('Administrator','Veterinarian','Veterinary Staff') AND id<>?");
+        $staff->execute([$uid]);
+        $staffTitle = $decision === 'Approved' ? 'Adoption application approved' : 'Adoption application rejected';
+        $staffMessage = 'Application for '.$app['pet_name'].' from '.$app['applicant_name'].' was '.$decision.'.';
+        foreach ($staff->fetchAll(PDO::FETCH_COLUMN) as $staffId) {
+            $pdo->prepare("INSERT INTO notifications (user_id,appointment_id,type,title,message,is_read,created_at) VALUES (?,NULL,'adoption_review',?,?,0,?)")
+                ->execute([(int)$staffId,$staffTitle,$staffMessage,date('Y-m-d H:i:s')]);
+        }
         $pdo->commit();
         adoption_reply(200, ['success'=>true,'message'=>$decision === 'Approved' ? 'Application approved. The pet is now marked as adopted.' : 'Application rejected. The pet is available again if no other applications are pending.']);
     } catch (Throwable $e) {
