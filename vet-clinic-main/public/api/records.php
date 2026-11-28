@@ -145,16 +145,16 @@ try {
         if ($action === 'save') {
             $name = rec_text($in, 'name', 120, true, 'Name'); $species = rec_text($in, 'species', 40, true, 'Type of animal');
             $breed = rec_text($in, 'breed', 120); $age = rec_text($in, 'age', 40); $health = rec_text($in, 'health', 80); $reason = rec_text($in, 'reason', 2000);
-            $gender = (string)($in['gender'] ?? 'Unknown'); $status = (string)($in['status'] ?? 'Available');
+            $gender = (string)($in['gender'] ?? 'Unknown');
             if (!in_array($gender, ['Male', 'Female', 'Unknown'], true)) rec_fail('Choose a valid gender.');
-            if (!in_array($status, ['Available', 'Pending', 'Adopted'], true)) rec_fail('Choose a valid status.');
-            $adoptedAt = $status === 'Adopted' ? date('Y-m-d') : null;
             $existing = null;
             if ($id) {
-                $e = $pdo->prepare('SELECT adopted_at,photo_path FROM adoption_records WHERE id=?'); $e->execute([$id]); $existing = $e->fetch();
+                $e = $pdo->prepare('SELECT status,adopted_at,photo_path FROM adoption_records WHERE id=?'); $e->execute([$id]); $existing = $e->fetch();
                 if (!$existing) rec_fail('Adoption record not found.', 404);
-                if ($status === 'Adopted' && $existing['adopted_at']) $adoptedAt = (string)$existing['adopted_at'];
             }
+            // Existing listing status is controlled by owner application review, not the edit form.
+            $status = $existing ? (string)$existing['status'] : 'Available';
+            $adoptedAt = $status === 'Adopted' ? (string)($existing['adopted_at'] ?? date('Y-m-d')) : null;
             $newPhoto = null;
             if (!empty($_FILES['photo']) && (int)$_FILES['photo']['error'] !== UPLOAD_ERR_NO_FILE) {
                 try { $newPhoto = save_pet_photo($_FILES['photo'], 'adoption_'); }
