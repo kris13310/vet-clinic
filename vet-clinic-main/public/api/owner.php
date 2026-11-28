@@ -166,6 +166,13 @@ try {
             if ((int)$remaining->fetchColumn() === 0) $pdo->prepare("UPDATE adoption_records SET status='Available' WHERE id=? AND status='Pending'")->execute([(int)$app['adoption_id']]);
             $pdo->prepare("INSERT INTO notifications (user_id,appointment_id,type,title,message,is_read,created_at) VALUES (?,NULL,'adoption','Application withdrawn',?,0,?)")
                 ->execute([$uid,'Your application for '.$app['pet_name'].' was withdrawn.',date('Y-m-d H:i:s')]);
+            // Let the clinic know when an owner withdraws so staff can review the remaining applications.
+            $staff = $pdo->query("SELECT id FROM users WHERE status='Active' AND role IN ('Administrator','Veterinarian','Veterinary Staff')")->fetchAll(PDO::FETCH_COLUMN);
+            $staffMessage = $app['pet_name'].' has an adoption application withdrawn. Check the remaining applications in Adoption.';
+            foreach ($staff as $staffId) {
+                $pdo->prepare("INSERT INTO notifications (user_id,appointment_id,type,title,message,is_read,created_at) VALUES (?,NULL,'adoption_withdrawn','Adoption application withdrawn',?,0,?)")
+                    ->execute([(int)$staffId,$staffMessage,date('Y-m-d H:i:s')]);
+            }
             $pdo->commit();
             owner_reply(200, ['success'=>true,'message'=>'Your adoption application was withdrawn.']);
         } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
