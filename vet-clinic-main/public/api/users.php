@@ -55,16 +55,29 @@ try {
             respond(201, ['success'=>true, 'message'=>'User added.', 'id'=>$newId]);
         }
 
-        $cur = $pdo->prepare('SELECT id, role FROM users WHERE id = ?'); $cur->execute([$id]); $row = $cur->fetch();
+        $cur = $pdo->prepare('SELECT id, role, email FROM users WHERE id = ?'); $cur->execute([$id]); $row = $cur->fetch();
         if (!$row) respond(404, ['success'=>false, 'message'=>'User not found.']);
         if ($id === $meId && $status !== 'Active') respond(422, ['success'=>false, 'message'=>'You cannot deactivate your own account.']);
         $finalRole = (string)$row['role'];
-        if (in_array($finalRole, STAFF_ROLES, true)) {                    // staff may switch between the two staff roles only
+        if (in_array($finalRole, STAFF_ROLES, true)) {
             if (!in_array($newRole, STAFF_ROLES, true)) respond(422, ['success'=>false, 'message'=>'Choose Veterinarian or Veterinary Staff.']);
             $finalRole = $newRole;
-        }                                                                 // Administrator / Pet Owner roles are never changed here
-        $pdo->prepare('UPDATE users SET full_name=?, username=?, email=?, role=?, status=? WHERE id=?')->execute([$name, $username, $email, $finalRole, $status, $id]);
-        if ($password !== '') $pdo->prepare('UPDATE users SET password_hash=? WHERE id=?')->execute([password_hash($password, PASSWORD_DEFAULT), $id]);
+        }
+
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare('UPDATE users SET full_name=?, username=?, email=?, role=?, status=? WHERE id=?')->execute([$name, $username, $email, $finalRole, $status, $id]);
+            if ($password !== '') $pdo->prepare('UPDATE users SET password_hash=? WHERE id=?')->execute([password_hash($password, PASSWORD_DEFAULT), $id]);
+            // Pet Owner records are linked by email. Keep all linked pets attached when an admin edits the account.
+            if ($row['role'] === 'Pet Owner') {
+                $pdo->prepare('UPDATE pets SET owner_email=?, owner_name=? WHERE LOWER(TRIM(owner_email))=LOWER(TRIM(?))')
+                    ->execute([$email, $name, (string)$row['email']]);
+            }
+            $pdo->commit();
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            throw $e;
+        }
         respond(200, ['success'=>true, 'message'=>$password !== '' ? 'Changes saved and the password was reset.' : 'Changes saved.', 'id'=>$id]);
     }
 
@@ -74,6 +87,12 @@ try {
         $cur = $pdo->prepare('SELECT role FROM users WHERE id = ?'); $cur->execute([$id]); $row = $cur->fetch();
         if (!$row) respond(404, ['success'=>false, 'message'=>'User not found.']);
         if (!in_array($row['role'], STAFF_ROLES, true)) respond(403, ['success'=>false, 'message'=>'Administrator and pet owner accounts cannot be deleted. Set them to Inactive instead.']);
+        $history = $pdo->prepare('SELECT (SELECT COUNT(*) FROM medical_reports WHERE veterinarian_id=?) + (SELECT COUNT(*) FROM appointments WHERE veterinarian_id=?) + (SELECT COUNT(*) FROM vaccinations WHERE veterinarian_id=?)');
+        $history->execute([$id, $id, $id]);
+        if ((int)$history->fetchColumn() > 0) {
+            $pdo->prepare("UPDATE users SET status='Inactive' WHERE id=?")->execute([$id]);
+            respond(200, ['success'=>true, 'message'=>'This staff account is linked to clinic history, so it was deactivated instead of deleted.']);
+        }
         $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$id]);
         respond(200, ['success'=>true, 'message'=>'User deleted.']);
     }
