@@ -506,7 +506,7 @@ function ovPetView(p) {
 }
 function ovPetDelete(p) {
   const m = ovModal(`<div class="ov-mhead"><h2>Delete ${esc(p.name)}?</h2><button type="button" class="ov-icon" data-close aria-label="Close">✕</button></div>
-    <div class="ov-confirm">${petImg(p, 'lg')}<p>This permanently removes <b>${esc(p.name)}</b>'s profile and picture, and any appointment requests that are still waiting for approval. This cannot be undone.</p></div>
+    <div class="ov-confirm">${petImg(p, 'lg')}<p>This permanently removes <b>${esc(p.name)}</b>'s profile and picture. Pets with any appointment, vaccination, or medical history cannot be deleted online so the clinic can preserve those records.</p></div>
     <div class="ov-err" id="ov-del-err" role="alert"></div>
     <div class="ov-actions"><button class="ov-btn ghost" data-close>Keep pet</button><button class="ov-btn danger solid" id="ov-del-go">Yes, delete</button></div>`);
   $('#ov-del-go', m).onclick = async e => {
