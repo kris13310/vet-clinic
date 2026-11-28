@@ -354,7 +354,7 @@ function showReset(prefillToken = '') {
     <h1>Choose a New Password</h1>
     <p class="sub">Enter a new password for your VETCARE account.</p>
     <label>Reset token<span class="field"><i>${ICON.lock}</i><input name="token" autocomplete="one-time-code" placeholder="Reset token" maxlength="64" value="${esc(prefillToken)}" required></span></label>
-    <label>New password<span class="field"><i>${ICON.lock}</i><input name="password" type="password" autocomplete="new-password" placeholder="At least 8 characters" minlength="8" required></span></label>
+    <label>New password<span class="field"><i>${ICON.lock}</i><input name="password" type="password" autocomplete="new-password" placeholder="8 to 72 characters" minlength="8" maxlength="72" required></span></label>
     <label>Confirm password<span class="field"><i>${ICON.lock}</i><input name="confirm" type="password" autocomplete="new-password" placeholder="Enter the password again" required></span></label>
     <div class="err" id="r-err" role="alert"></div>
     <button class="signin" id="reset-submit">${ICON.signin} Update Password</button>
