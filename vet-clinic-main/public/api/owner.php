@@ -350,7 +350,7 @@ try {
         if (!empty($data['remove_photo']) && $data['remove_photo'] === '1') { $newAvatar = null; if ($newUpload) delete_pet_photo($newUpload); $newUpload = null; }
         $pdo->beginTransaction();
         try {
-            $versionUpdate = $pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=?,avatar_path=?,auth_version=auth_version+1 WHERE id=? RETURNING auth_version');
+            $versionUpdate = $pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=?,avatar_path=?,password_reset_token_hash=NULL,password_reset_expires=NULL,auth_version=auth_version+1 WHERE id=? RETURNING auth_version');
             $versionUpdate->execute([$name, $newEmail, $phone, $address, $newAvatar, $uid]);
             $updatedAuthVersion = (int)$versionUpdate->fetchColumn();
             // Pets are linked by email, so keep them linked when the owner changes it.
