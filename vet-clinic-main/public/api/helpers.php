@@ -139,6 +139,28 @@ function notify_appointment_owner(PDO $pdo, int $appointmentId, string $type, st
     create_notification($pdo, (int)$r['user_id'], $appointmentId, $type, $ttl, $msg);
 }
 
+/**
+ * Notifies active clinic staff about an owner action on an appointment.
+ * Notifications remain per-user, so each staff member can mark their own as read.
+ */
+function notify_clinic_staff(PDO $pdo, int $appointmentId, string $type, string $title, string $messageTemplate): void {
+    $s = $pdo->prepare("SELECT a.appointment_date, a.appointment_time, p.name AS pet_name, p.owner_name
+        FROM appointments a JOIN pets p ON p.id=a.pet_id WHERE a.id=?");
+    $s->execute([$appointmentId]);
+    $r = $s->fetch();
+    if (!$r) return;
+    $message = strtr($messageTemplate, [
+        '{pet}' => (string)$r['pet_name'],
+        '{owner}' => (string)$r['owner_name'],
+        '{date}' => human_date((string)$r['appointment_date']),
+        '{time}' => human_time((string)$r['appointment_time']),
+    ]);
+    $recipients = $pdo->query("SELECT id FROM users WHERE status='Active' AND role IN ('Administrator','Veterinarian','Veterinary Staff')")->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($recipients as $recipientId) {
+        create_notification($pdo, (int)$recipientId, $appointmentId, $type, $title, $message);
+    }
+}
+
 /* =====================================================================
    PHILIPPINE HOLIDAYS (calculated automatically) + CLINIC CLOSURES
    ===================================================================== */
