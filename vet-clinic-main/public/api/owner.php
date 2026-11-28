@@ -31,7 +31,7 @@ try {
         $ids = array_map(static fn($x) => (int)$x['id'], $pets);
         $profile = $pdo->prepare('SELECT full_name AS name,email,phone,address,avatar_path FROM users WHERE id=?'); $profile->execute([$uid]); $prof = $profile->fetch() ?: [];
         $doctor = current_doctor($pdo);
-        $base = ['success'=>true,'profile'=>$prof,'doctor'=>$doctor ? ['name'=>$doctor['name']] : null,'pets'=>$pets,'appointments'=>[],'vaccinations'=>[],'unread'=>$unread(),'today'=>date('Y-m-d'),
+        $base = ['success'=>true,'profile'=>$prof,'doctor'=>$doctor ? ['name'=>$doctor['name']] : null,'pets'=>$pets,'appointments'=>[],'vaccinations'=>[],'medical_reports'=>[],'unread'=>$unread(),'today'=>date('Y-m-d'),
                  'schedule'=>['open'=>CLINIC_OPEN,'close'=>CLINIC_CLOSE,'slot_minutes'=>SLOT_MINUTES,'window_days'=>BOOKING_WINDOW_DAYS]];
         if (!$ids) owner_reply(200, $base);
         $marks = implode(',', array_fill(0, count($ids), '?'));
