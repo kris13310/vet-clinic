@@ -21,5 +21,6 @@ CREATE TABLE IF NOT EXISTS public.auth_rate_limits (
   window_started_at TIMESTAMPTZ NOT NULL,
   attempts INTEGER NOT NULL DEFAULT 0
 );
+CREATE INDEX IF NOT EXISTS auth_rate_limits_window_started_idx ON public.auth_rate_limits (window_started_at);
 ALTER TABLE public.auth_rate_limits ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.auth_rate_limits FROM anon, authenticated;
