@@ -1250,7 +1250,7 @@ const FORM = {
     F("age", "Age", { ph: "e.g. 2 yrs" }),
     F("gender", "Gender", { sel: ["Male", "Female", "Unknown"] }),
     F("health", "Health", { sel: ["Vaccinated", "Not Vaccinated", "Under Treatment"] }),
-    F("status", "Status", { sel: ["Available", "Pending", "Adopted"] }),
+    // Adoption status is changed only by the application review workflow.
     F("reason", "Reason / Notes", { full: 1, opt: 1 }),
   ],
   users: (edit, rec) => [
