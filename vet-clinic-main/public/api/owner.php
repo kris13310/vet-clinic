@@ -323,9 +323,10 @@ try {
         $hash = $check->fetchColumn();
         if (!$hash || !password_verify($currentPassword, (string)$hash)) owner_reply(403, ['success'=>false,'message'=>'Your current password is incorrect.']);
         $updated = password_hash($newPassword, PASSWORD_DEFAULT);
-        $pdo->prepare('UPDATE users SET password_hash=?, auth_version=auth_version+1 WHERE id=?')->execute([$updated, $uid]);
+        $versionUpdate = $pdo->prepare('UPDATE users SET password_hash=?, auth_version=auth_version+1 WHERE id=? RETURNING auth_version');
+        $versionUpdate->execute([$updated, $uid]);
         // Keep this browser session valid while the increment revokes other sessions.
-        $_SESSION['account']['auth_version'] = (int)($_SESSION['account']['auth_version'] ?? 1) + 1;
+        $_SESSION['account']['auth_version'] = (int)$versionUpdate->fetchColumn();
         owner_reply(200, ['success'=>true,'message'=>'Your password has been updated.']);
     }
 
@@ -342,7 +343,9 @@ try {
         if (!empty($data['remove_photo']) && $data['remove_photo'] === '1') { $newAvatar = null; if ($newUpload) delete_pet_photo($newUpload); $newUpload = null; }
         $pdo->beginTransaction();
         try {
-            $pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=?,avatar_path=?,auth_version=auth_version+1 WHERE id=?')->execute([$name, $newEmail, $phone, $address, $newAvatar, $uid]);
+            $versionUpdate = $pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=?,avatar_path=?,auth_version=auth_version+1 WHERE id=? RETURNING auth_version');
+            $versionUpdate->execute([$name, $newEmail, $phone, $address, $newAvatar, $uid]);
+            $updatedAuthVersion = (int)$versionUpdate->fetchColumn();
             // Pets are linked by email, so keep them linked when the owner changes it.
             $pdo->prepare('UPDATE pets SET owner_email=?,owner_name=?,owner_phone=?,address=? WHERE LOWER(TRIM(owner_email))=LOWER(TRIM(?))')->execute([$newEmail, $name, $phone, $address, $email]);
             $pdo->commit();
@@ -354,7 +357,7 @@ try {
         $_SESSION['account']['name'] = $name; $_SESSION['account']['full_name'] = $name; $_SESSION['account']['email'] = $newEmail;
         $_SESSION['account']['avatar_path'] = $newAvatar;
         // Refresh this session after revoking other sessions on profile changes.
-        $_SESSION['account']['auth_version'] = (int)($_SESSION['account']['auth_version'] ?? 1) + 1;
+        $_SESSION['account']['auth_version'] = $updatedAuthVersion;
         if ($newAvatar !== $oldAvatar) delete_pet_photo($oldAvatar);
         owner_reply(200, ['success'=>true,'user'=>['name'=>$name,'email'=>$newEmail,'phone'=>$phone,'address'=>$address,'avatar_path'=>$newAvatar,'username'=>(string)($account['username'] ?? '')]]);
     }
