@@ -309,7 +309,11 @@ function delete_pet_photo(?string $path): void {
     if (!$path || strncmp($path, $prefix, strlen($prefix)) !== 0) return;
     $name = rawurldecode(substr($path, strlen($prefix)));
     if (!preg_match('/^[A-Za-z0-9_.-]+$/', $name)) return;
-    storage_call('DELETE', 'object/' . rawurlencode(storage_bucket()) . '/' . rawurlencode($name));
+    [$code, $resp, $err] = storage_call('DELETE', 'object/' . rawurlencode(storage_bucket()) . '/' . rawurlencode($name));
+    // A missing object is already clean; log other failures so orphaned files can be diagnosed.
+    if (!in_array($code, [200, 204, 404], true)) {
+        error_log("Supabase photo deletion failed ($code): $err $resp");
+    }
 }
 
 /**
