@@ -3,7 +3,7 @@
 :root {
   --p: #087f67;
   --p2: #12a982;
-  --bg: #f5f8f7;
+  --bg: #eef3f0;
   --bd: #e3ebe7;
   --mu: #64756d;
   --tx: #172923;
@@ -48,11 +48,11 @@ button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
   box-shadow: 0 7px 18px rgba(18,169,130,.2);
 }
 .app .sb-user { margin: 12px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.07); }
-.app .mn { background: #f5f8f7; }
+.app .mn { background: #eef3f0; }
 .app .hd {
   min-height: 76px;
   padding: 14px clamp(18px, 2.5vw, 38px);
-  background: rgba(255,255,255,.94);
+  background: rgba(241,246,243,.96);
   border-bottom: 1px solid #e6eeea;
   box-shadow: 0 3px 14px rgba(20,48,36,.025);
   backdrop-filter: blur(12px);
@@ -60,7 +60,7 @@ button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .app .hd-t h1 { color: #19372d; letter-spacing: -.025em; }
 .app .hd-r { gap: 12px; }
 .app .qs { background: #f7faf8; border-color: #e5ede8; border-radius: 11px; }
-.app .bell, .app .burger { border-color: #e3ebe7; border-radius: 11px; background: #fff; transition: .18s ease; }
+.app .bell, .app .burger { border-color: #dce6e0; border-radius: 11px; background: #f0f5f2; transition: .18s ease; }
 .app .bell:hover, .app .burger:hover { background: #edf8f3; border-color: #b7dfcf; }
 .app .ct { padding: clamp(18px, 2.4vw, 36px); gap: 20px; }
 .app .card {
@@ -110,12 +110,12 @@ button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 .app .chip.on { background: #e7f7ef; border-color: #a8ddc4; color: #087f67; }
 .app .tb { border-radius: var(--vc-radius); }
 .app table { font-size: .9em; }
-.app th { background: #f5f9f7; color: #65776e; padding: 14px 16px; }
+.app th { background: #eaf1ed; color: #65776e; padding: 14px 16px; }
 .app td { padding: 13px 16px; border-bottom-color: #edf2ef; }
 .app tbody tr { transition: background .14s ease; }
-.app tbody tr:hover { background: #f6fbf8; }
+.app tbody tr:hover { background: #eaf3ee; }
 .app .tag { padding: 5px 10px; border-radius: 999px; }
-.app .li { border-radius: 12px; background: #f8fbf9; border-color: #edf2ef; }
+.app .li { border-radius: 12px; background: #edf3ef; border-color: #edf2ef; }
 .app .modal, .app .mbox, .app .dialog { border-radius: 18px; }
 
 /* Pet Owner portal */
@@ -141,7 +141,7 @@ button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
   box-shadow: 0 3px 14px rgba(20,48,36,.025);
   backdrop-filter: blur(12px);
 }
-.ov-app .ov-content { background: #f5f8f7; }
+.ov-app .ov-content { background: #eef3f0; }
 .ov-app .ov-card, .ov-app .ov-panel, .ov-app .ov-stat, .ov-app .ov-pet,
 .ov-app .ov-appt, .ov-app .ov-notif, .ov-app .ov-home-panel,
 .ov-app .ov-settings-section, .ov-app .ov-record-card {
