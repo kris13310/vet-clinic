@@ -330,7 +330,7 @@ try {
         $hash = $check->fetchColumn();
         if (!$hash || !password_verify($currentPassword, (string)$hash)) owner_reply(403, ['success'=>false,'message'=>'Your current password is incorrect.']);
         $updated = password_hash($newPassword, PASSWORD_DEFAULT);
-        $versionUpdate = $pdo->prepare('UPDATE users SET password_hash=?, auth_version=auth_version+1 WHERE id=? RETURNING auth_version');
+        $versionUpdate = $pdo->prepare('UPDATE users SET password_hash=?, password_reset_token_hash=NULL, password_reset_expires=NULL, auth_version=auth_version+1 WHERE id=? RETURNING auth_version');
         $versionUpdate->execute([$updated, $uid]);
         // Keep this browser session valid while the increment revokes other sessions.
         $_SESSION['account']['auth_version'] = (int)$versionUpdate->fetchColumn();
