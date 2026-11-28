@@ -175,6 +175,18 @@ try {
     if (($row['status'] ?? 'Active') !== 'Active') auth_reply(403, ['success'=>false, 'message'=>'This account is inactive or awaiting administrator approval. Please contact the clinic administrator.']);
     session_regenerate_id(true);
     $_SESSION['account'] = public_user($row);
+    // The session store retains inactive sessions for eight hours; persist the browser cookie for the same period only when requested.
+    if (!empty($data['remember'])) {
+        $cookie = session_get_cookie_params();
+        setcookie(session_name(), session_id(), [
+            'expires' => time() + 28800,
+            'path' => $cookie['path'] ?: '/',
+            'domain' => $cookie['domain'],
+            'secure' => $cookie['secure'],
+            'httponly' => $cookie['httponly'],
+            'samesite' => $cookie['samesite'] ?? 'Lax',
+        ]);
+    }
     auth_reply(200, ['success'=>true, 'user'=>$_SESSION['account']]);
 } catch (Throwable $e) {
     error_log('Authentication endpoint error: '.$e->getMessage());
