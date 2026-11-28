@@ -79,7 +79,7 @@ try {
 
         $pdo->beginTransaction();
         try {
-            $pdo->prepare('UPDATE users SET full_name=?, username=?, email=?, role=?, status=? WHERE id=?')->execute([$name, $username, $email, $finalRole, $status, $id]);
+            $pdo->prepare('UPDATE users SET full_name=?, username=?, email=?, role=?, status=?, auth_version=auth_version+1 WHERE id=?')->execute([$name, $username, $email, $finalRole, $status, $id]);
             if ($password !== '') $pdo->prepare('UPDATE users SET password_hash=? WHERE id=?')->execute([password_hash($password, PASSWORD_DEFAULT), $id]);
             if ($row['role'] === 'Pet Owner') {
                 $pdo->prepare('UPDATE pets SET owner_email=?, owner_name=? WHERE LOWER(TRIM(owner_email))=LOWER(TRIM(?))')
