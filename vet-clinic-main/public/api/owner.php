@@ -205,10 +205,10 @@ try {
             if (mb_strlen($petName) > 120) owner_reply(422, ['success'=>false,'message'=>'Pet name is too long.']);
         }
 
-        $doctor = current_doctor($pdo);
-        if (!$doctor) owner_reply(409, ['success'=>false,'message'=>'The clinic has no active veterinarian assigned yet. Please contact the clinic before booking.']);
-        $docId = (int)$doctor['id'];
-        $result = with_slot_lock($pdo, function () use ($pdo, $data, $date, $time, $purpose, $notes, $email, $ownerName, $uid, $petId, $docId) {
+        $result = with_slot_lock($pdo, function () use ($pdo, $data, $date, $time, $purpose, $notes, $email, $ownerName, $uid, $petId) {
+            $doctor = current_doctor($pdo, true);
+            if (!$doctor) return [409, 'The clinic has no active veterinarian assigned yet. Please contact the clinic before booking.', null];
+            $docId = (int)$doctor['id'];
             if (slot_is_taken($pdo, $date, $time)) return [409, 'Sorry, that time slot was just reserved. Please choose another time.', null];
             $pid = $petId;
             if ($pid <= 0) {
