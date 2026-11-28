@@ -8,8 +8,8 @@
   --mu: #64756d;
   --tx: #172923;
   --ok: #15966f;
-  --wa: #c78319;
-  --er: #d94b4b;
+  --wa: #965f00;
+  --er: #c62828;
   --vc-radius: 16px;
   --vc-shadow: 0 8px 28px rgba(23, 52, 40, .055);
 }
@@ -126,7 +126,7 @@ button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
   --ov-line: #e3ebe7;
   --ov-ink: #172923;
   --ov-text: #43564c;
-  --ov-muted: #718078;
+  --ov-muted: #64756d;
   --ov-soft: #edf7f2;
   background: var(--ov-bg);
   color: var(--ov-ink);
