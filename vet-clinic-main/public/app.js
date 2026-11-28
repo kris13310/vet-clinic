@@ -1499,7 +1499,7 @@ async function remove(k, i) {
     label = r.name || r.pet;
   const extra =
     k === "pets"
-      ? " Their appointments and vaccination records will also be removed."
+      ? " Pets with any appointment, vaccination, or medical history cannot be deleted; contact the clinic to preserve those records."
       : "";
   if (!confirm(`Delete "${label}"?${extra}`)) return;
   if (typeof window.showAppLoading === 'function') window.showAppLoading('Deleting record…');
