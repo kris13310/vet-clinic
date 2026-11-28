@@ -164,8 +164,8 @@ try {
                 if ($existing) {
                     $photo = $existing['photo_path'];
                     if ($newPhoto) $photo = $newPhoto; elseif (!empty($in['remove_photo'])) $photo = null;
-                    $pdo->prepare('UPDATE adoption_records SET pet_name=?,species=?,breed=?,age=?,gender=?,health_status=?,status=?,reason=?,adopted_at=?,photo_path=? WHERE id=?')
-                        ->execute([$name, $species, $breed, $age, $gender, $health ?? 'Unknown', $status, $reason, $adoptedAt, $photo, $id]);
+                    $pdo->prepare("UPDATE adoption_records SET pet_name=?,species=?,breed=?,age=?,gender=?,health_status=?,status=?,reason=?,adopter_name=CASE WHEN ?='Adopted' THEN adopter_name ELSE NULL END,adopted_at=?,photo_path=? WHERE id=?")
+                        ->execute([$name, $species, $breed, $age, $gender, $health ?? 'Unknown', $status, $reason, $status, $adoptedAt, $photo, $id]);
                     if ($photo !== $existing['photo_path']) delete_pet_photo($existing['photo_path']);
                     rec_reply(200, ['success'=>true, 'message'=>'Changes saved.', 'id'=>$id]);
                 }
@@ -182,7 +182,7 @@ try {
             $e = $pdo->prepare('SELECT id FROM adoption_records WHERE id=?'); $e->execute([$id]);
             if (!$e->fetch()) rec_fail('Adoption record not found.', 404);
             if ($status === 'Adopted') $pdo->prepare('UPDATE adoption_records SET status=?, adopter_name=COALESCE(?, adopter_name), adopted_at=COALESCE(adopted_at, ?) WHERE id=?')->execute([$status, $adopter, date('Y-m-d'), $id]);
-            else $pdo->prepare('UPDATE adoption_records SET status=?, adopted_at=NULL WHERE id=?')->execute([$status, $id]);
+            else $pdo->prepare('UPDATE adoption_records SET status=?, adopter_name=NULL, adopted_at=NULL WHERE id=?')->execute([$status, $id]);
             rec_reply(200, ['success'=>true, 'message'=>'Status updated.']);
         }
         if ($action === 'delete') {
