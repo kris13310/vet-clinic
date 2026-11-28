@@ -102,7 +102,7 @@ try {
             FROM adoption_applications x JOIN adoption_records a ON a.id=x.adoption_id
             WHERE x.user_id=? ORDER BY x.created_at DESC,x.id DESC");
         $q->execute([$uid]);
-        $available = $pdo->query("SELECT id,pet_name,species,breed,age,gender,health_status,reason,photo_path FROM adoption_records WHERE status='Available' ORDER BY created_at DESC,id DESC")->fetchAll();
+        $available = $pdo->query("SELECT id,pet_name,species,breed,age,gender,health_status,reason,photo_path FROM adoption_records WHERE status IN ('Available','Pending') ORDER BY created_at DESC,id DESC")->fetchAll();
         owner_reply(200, ['success'=>true,'applications'=>$q->fetchAll(),'available'=>$available]);
     }
 
@@ -130,7 +130,7 @@ try {
         if (mb_strlen($name) > 120 || mb_strlen($phone) > 40 || mb_strlen($address) > 255 || mb_strlen($message) > 2000) owner_reply(422, ['success'=>false,'message'=>'One or more application fields are too long.']);
         $pdo->beginTransaction();
         try {
-            $pet = $pdo->prepare("SELECT pet_name FROM adoption_records WHERE id=? AND status='Available' FOR UPDATE");
+            $pet = $pdo->prepare("SELECT pet_name FROM adoption_records WHERE id=? AND status IN ('Available','Pending') FOR UPDATE");
             $pet->execute([$adoptionId]); $listed = $pet->fetch();
             if (!$listed) { $pdo->rollBack(); owner_reply(409, ['success'=>false,'message'=>'This pet is no longer available for adoption.']); }
             $exists = $pdo->prepare("SELECT id FROM adoption_applications WHERE adoption_id=? AND user_id=? AND status='Pending'");
