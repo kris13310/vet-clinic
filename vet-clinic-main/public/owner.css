@@ -886,8 +886,7 @@ body.ov-lock { overflow: hidden; }
 }
 
 
-/* Pet photo frame and three-dot actions on My Pets cards. */
-.ov-pet-ph .ov-pimg { border: 25px solid #fff; box-sizing: border-box; }
+/* Three-dot actions on My Pets cards. */
 .ov-pet-a { justify-content: flex-end; align-items: center; }
 .ov-pet-menu { position: relative; display: inline-block; }
 .ov-pet-menu > summary { list-style: none; display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--ov-line); border-radius: 11px; background: var(--ov-card); color: var(--ov-p); font-size: 27px; line-height: 1; cursor: pointer; }
