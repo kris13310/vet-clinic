@@ -12,3 +12,14 @@ ALTER TABLE public.users
 CREATE INDEX IF NOT EXISTS users_password_reset_token_hash_idx
   ON public.users (password_reset_token_hash)
   WHERE password_reset_token_hash IS NOT NULL;
+
+
+-- Rate-limit storage used by login, registration, and password recovery.
+-- Include this here so existing deployments receive it without rerunning the full schema.
+CREATE TABLE IF NOT EXISTS public.auth_rate_limits (
+  bucket_key TEXT PRIMARY KEY,
+  window_started_at TIMESTAMPTZ NOT NULL,
+  attempts INTEGER NOT NULL DEFAULT 0
+);
+ALTER TABLE public.auth_rate_limits ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.auth_rate_limits FROM anon, authenticated;
