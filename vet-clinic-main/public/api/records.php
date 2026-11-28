@@ -119,8 +119,9 @@ try {
             $petId = (int)($in['petId'] ?? 0); $vaccine = rec_text($in, 'vaccine', 120, true, 'Vaccine');
             $given = trim((string)($in['given'] ?? '')); $next = trim((string)($in['next'] ?? '')); $docId = current_doctor($pdo)['id'] ?? null; // the clinic's one doctor
             if (!valid_date_string($given)) rec_fail('Enter a valid date given.');
+            if ($given > date('Y-m-d')) rec_fail('Date given cannot be in the future.');
             if (!valid_date_string($next)) rec_fail('Enter a valid next due date.');
-            if ($next < $given) rec_fail('Next due date must be after the date given.');
+            if ($next <= $given) rec_fail('Next due date must be after the date given.');
             $p = $pdo->prepare('SELECT id FROM pets WHERE id=?'); $p->execute([$petId]);
             if (!$p->fetch()) rec_fail('Choose a registered pet.');
             if ($id) {
