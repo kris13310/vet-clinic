@@ -169,7 +169,8 @@ try {
                     if ($photo !== $existing['photo_path']) delete_pet_photo($existing['photo_path']);
                     rec_reply(200, ['success'=>true, 'message'=>'Changes saved.', 'id'=>$id]);
                 }
-                $newId = db_insert($pdo, 'INSERT INTO adoption_records (pet_name,species,breed,age,gender,health_status,status,reason,adopted_at,photo_path) VALUES (?,?,?,?,?,?,?,?,?,?)', [$name, $species, $breed, $age, $gender, $health ?? 'Unknown', $status, $reason, $adoptedAt, $newPhoto]);
+                // New listings always begin as Available; only application review can change status.
+                $newId = db_insert($pdo, 'INSERT INTO adoption_records (pet_name,species,breed,age,gender,health_status,status,reason,adopted_at,photo_path) VALUES (?,?,?,?,?,?,?,?,?,?)', [$name, $species, $breed, $age, $gender, $health !== '' ? $health : 'Unknown', 'Available', $reason, null, $newPhoto]);
                 rec_reply(201, ['success'=>true, 'message'=>'Record added.', 'id'=>$newId]);
             } catch (Throwable $ex) {
                 if ($newPhoto) delete_pet_photo($newPhoto);
