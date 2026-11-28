@@ -53,6 +53,21 @@ try {
                 ->execute([$notes !== '' ? $notes : null,$uid,$id]);
             $pdo->prepare("UPDATE adoption_records SET status='Adopted',adopter_name=?,adopted_at=COALESCE(adopted_at,CURRENT_DATE) WHERE id=?")
                 ->execute([$app['applicant_name'],(int)$app['adoption_id']]);
+
+            // Once one applicant is approved, close every competing pending application
+            // so no other owner is left with a permanently pending request for an adopted pet.
+            $others = $pdo->prepare("SELECT id,user_id FROM adoption_applications WHERE adoption_id=? AND status='Pending' AND id<>? FOR UPDATE");
+            $others->execute([(int)$app['adoption_id'],$id]);
+            $otherApps = $others->fetchAll();
+            if ($otherApps) {
+                $pdo->prepare("UPDATE adoption_applications SET status='Rejected',staff_notes='Another application was approved for this pet.',reviewed_by=?,reviewed_at=now() WHERE adoption_id=? AND status='Pending' AND id<>?")
+                    ->execute([$uid,(int)$app['adoption_id'],$id]);
+                $otherMessage = 'Another adoption application for '.$app['pet_name'].' was approved, so this listing is now closed. Thank you for your interest.';
+                $notifyOther = $pdo->prepare("INSERT INTO notifications (user_id,appointment_id,type,title,message,is_read,created_at) VALUES (?,NULL,'adoption','Adoption listing closed',?,0,?)");
+                foreach ($otherApps as $other) {
+                    $notifyOther->execute([(int)$other['user_id'],$otherMessage,date('Y-m-d H:i:s')]);
+                }
+            }
             $title = 'Adoption application approved';
             $message = 'Your application for '.$app['pet_name'].' has been approved. Please contact the clinic for the next steps.';
         } else {
