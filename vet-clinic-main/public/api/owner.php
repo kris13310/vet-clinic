@@ -263,7 +263,7 @@ try {
         $current = $pdo->prepare('SELECT avatar_path FROM users WHERE id=?'); $current->execute([$uid]); $oldAvatar = $current->fetchColumn() ?: null;
         $newAvatar = $oldAvatar; $newUpload = null;
         if (!empty($_FILES['photo']) && (int)($_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) { $newUpload = save_pet_photo($_FILES['photo'], 'user_'); $newAvatar = $newUpload; }
-        if (!empty($data['remove_photo']) && $data['remove_photo'] === '1') $newAvatar = null;
+        if (!empty($data['remove_photo']) && $data['remove_photo'] === '1') { $newAvatar = null; if ($newUpload) delete_pet_photo($newUpload); $newUpload = null; }
         $pdo->beginTransaction();
         try {
             $pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=?,avatar_path=? WHERE id=?')->execute([$name, $newEmail, $phone, $address, $newAvatar, $uid]);
