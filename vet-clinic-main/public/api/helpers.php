@@ -303,16 +303,58 @@ function storage_upload(string $tmpFile, string $name, string $mime): string {
     if ($code < 200 || $code >= 300) { error_log("Storage upload failed ($code): $err $resp"); throw new RuntimeException('The picture could not be saved. Please try again later.'); }
     return storage_public_prefix() . rawurlencode($name);
 }
-/** Deletes an uploaded pet picture. Only ever touches files inside our own bucket. */
-function delete_pet_photo(?string $path): void {
+/** Delete a stored picture. Returns true when the object is gone or was already missing. */
+function delete_pet_photo(?string $path, ?PDO $pdo = null): bool {
     $prefix = storage_public_prefix();
-    if (!$path || strncmp($path, $prefix, strlen($prefix)) !== 0) return;
+    if (!$path) return true;
+    if (strncmp($path, $prefix, strlen($prefix)) !== 0) return true;
     $name = rawurldecode(substr($path, strlen($prefix)));
-    if (!preg_match('/^[A-Za-z0-9_.-]+$/', $name)) return;
+    if (!preg_match('/^[A-Za-z0-9_.-]+$/', $name)) return true;
     [$code, $resp, $err] = storage_call('DELETE', 'object/' . rawurlencode(storage_bucket()) . '/' . rawurlencode($name));
-    // A missing object is already clean; log other failures so orphaned files can be diagnosed.
-    if (!in_array($code, [200, 204, 404], true)) {
-        error_log("Supabase photo deletion failed ($code): $err $resp");
+    if (in_array($code, [200, 204, 404], true)) return true;
+
+    error_log("Supabase photo deletion failed ($code): $err $resp");
+    // Persist failed cleanup so a later authenticated API request can retry it.
+    if ($pdo) {
+        try {
+            $q = $pdo->prepare('INSERT INTO photo_cleanup_queue (object_path, attempts, last_error, created_at, updated_at) VALUES (?, 1, ?, now(), now()) ON CONFLICT (object_path) DO UPDATE SET attempts = photo_cleanup_queue.attempts + 1, last_error = EXCLUDED.last_error, updated_at = now()');
+            $q->execute([$path, substr("HTTP $code: $err $resp", 0, 1000)]);
+        } catch (Throwable $queueError) {
+            error_log('Could not queue failed photo cleanup: ' . $queueError->getMessage());
+        }
+    }
+    return false;
+}
+
+/** Retry a bounded number of previously failed picture deletions. */
+function retry_photo_cleanup(PDO $pdo, int $limit = 10): void {
+    try {
+        $s = $pdo->prepare('SELECT id, object_path FROM photo_cleanup_queue ORDER BY created_at ASC LIMIT ?');
+        $s->bindValue(1, max(1, min(50, $limit)), PDO::PARAM_INT);
+        $s->execute();
+        foreach ($s->fetchAll() as $item) {
+            $path = (string)$item['object_path'];
+            $prefix = storage_public_prefix();
+            if (strncmp($path, $prefix, strlen($prefix)) !== 0) {
+                $pdo->prepare('DELETE FROM photo_cleanup_queue WHERE id=?')->execute([(int)$item['id']]);
+                continue;
+            }
+            $name = rawurldecode(substr($path, strlen($prefix)));
+            if (!preg_match('/^[A-Za-z0-9_.-]+$/', $name)) {
+                $pdo->prepare('DELETE FROM photo_cleanup_queue WHERE id=?')->execute([(int)$item['id']]);
+                continue;
+            }
+            [$code, $resp, $err] = storage_call('DELETE', 'object/' . rawurlencode(storage_bucket()) . '/' . rawurlencode($name));
+            if (in_array($code, [200, 204, 404], true)) {
+                $pdo->prepare('DELETE FROM photo_cleanup_queue WHERE id=?')->execute([(int)$item['id']]);
+            } else {
+                $pdo->prepare('UPDATE photo_cleanup_queue SET attempts=attempts+1, last_error=?, updated_at=now() WHERE id=?')
+                    ->execute([substr("HTTP $code: $err $resp", 0, 1000), (int)$item['id']]);
+            }
+        }
+    } catch (Throwable $e) {
+        // The queue is introduced by a migration; do not break normal portal requests if it is not installed yet.
+        error_log('Photo cleanup retry skipped: ' . $e->getMessage());
     }
 }
 
