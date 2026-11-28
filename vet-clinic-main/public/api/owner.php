@@ -158,7 +158,7 @@ try {
         $appId = (int)($data['id'] ?? 0);
         $pdo->beginTransaction();
         try {
-            $q = $pdo->prepare("SELECT x.id,x.adoption_id,a.pet_name FROM adoption_applications x JOIN adoption_records a ON a.id=x.adoption_id WHERE x.id=? AND x.user_id=? AND x.status='Pending' FOR UPDATE");
+            $q = $pdo->prepare("SELECT x.id,x.adoption_id,a.pet_name FROM adoption_applications x JOIN adoption_records a ON a.id=x.adoption_id WHERE x.id=? AND x.user_id=? AND x.status='Pending' FOR UPDATE OF x,a");
             $q->execute([$appId,$uid]); $app = $q->fetch();
             if (!$app) { $pdo->rollBack(); owner_reply(404, ['success'=>false,'message'=>'Pending application not found.']); }
             $pdo->prepare("UPDATE adoption_applications SET status='Withdrawn' WHERE id=?")->execute([$appId]);
