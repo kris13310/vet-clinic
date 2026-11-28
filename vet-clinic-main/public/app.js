@@ -445,7 +445,7 @@ function buildShell() {
         <div class="hd-t"><h1 id="ttl"></h1><small>${fmtLong(TODAY)}</small></div>
         <div class="hd-r">
           <div class="qs"><span>🔍</span><input id="qs" placeholder="Quick search..." aria-label="Quick search"></div>
-          <button class="bell" data-act="bell" aria-label="Notifications">🔔<i></i></button>
+          <button class="bell" data-act="bell" aria-label="Notifications" aria-haspopup="dialog">🔔<i id="staff-notif-dot" hidden></i></button>
           <div class="me"><span class="av">${me.avatar ? `<img src="${esc(me.avatar)}" alt="">` : esc(me.ini)}</span><span class="me-t"><b>${esc(me.short)}</b><small>${esc(me.role)}</small></span></div>
         </div>
       </header>
@@ -582,6 +582,51 @@ function openClosureForm() {
       m.remove(); state.avail = null; state.availError = ""; state.holi = null; state.apptDbLoaded = false; pAvail(); toast(r.message);
     } catch (er) { err.textContent = er.message; btn.disabled = false; }
   };
+}
+
+/* Staff notifications: each clinic account has its own read/unread inbox. */
+async function staffNotifRequest(action = 'list', data = null) {
+  const response = await fetch('api/staff_notifications.php?action=' + encodeURIComponent(action), {
+    method: data ? 'POST' : 'GET', credentials: 'same-origin',
+    headers: data ? {'Content-Type':'application/json'} : {},
+    body: data ? JSON.stringify(data) : undefined
+  });
+  const result = await response.json().catch(() => ({success:false,message:'Invalid server response.'}));
+  if (!response.ok || !result.success) throw new Error(result.message || 'Unable to load notifications.');
+  return result;
+}
+async function refreshStaffNotificationBadge() {
+  if (!['Administrator','Veterinarian','Veterinary Staff'].includes(state.account?.role)) return;
+  try {
+    const result = await staffNotifRequest('list');
+    const dot = $('#staff-notif-dot');
+    if (dot) dot.hidden = !(result.unread > 0);
+  } catch (error) { /* The notification inbox reports its own load errors when opened. */ }
+}
+async function openStaffNotifications() {
+  const m = modal('<div class="staff-notif-panel"><div class="ch"><h2>Notifications</h2><button type="button" class="btn ghost" data-x>Close</button></div><p class="mu" id="staff-notif-status">Loading notifications…</p><div id="staff-notif-list"></div></div>');
+  const list = $('#staff-notif-list', m), status = $('#staff-notif-status', m);
+  async function load() {
+    status.textContent = 'Loading notifications…';
+    try {
+      const result = await staffNotifRequest('list');
+      const rows = result.notifications || [];
+      status.textContent = result.unread ? result.unread + ' unread notification' + (result.unread === 1 ? '' : 's') : 'You are all caught up.';
+      list.innerHTML = rows.length ? (result.unread ? '<div class="acts"><button type="button" class="btn ghost" data-act="staff-notif-all">Mark all as read</button></div>' : '') + rows.map(n => '<article class="card" style="margin:10px 0;padding:14px"><div style="display:flex;justify-content:space-between;gap:12px;align-items:start"><div><b>' + esc(n.title) + '</b><p>' + esc(n.message) + '</p><small class="mu">' + esc(new Date(n.created_at).toLocaleString()) + (n.is_read ? '' : ' · New') + '</small></div>' + (n.is_read ? '' : '<button type="button" class="btn sm ghost" data-act="staff-notif-read" data-i="' + n.id + '">Read</button>') + '</div></article>').join('') : '<div class="card">' + empty('No notifications yet.') + '</div>';
+      const dot = $('#staff-notif-dot');
+      if (dot) dot.hidden = !(result.unread > 0);
+    } catch (error) { status.textContent = error.message; list.innerHTML = ''; }
+  }
+  await load();
+  m.addEventListener('click', async e => {
+    const button = e.target.closest('[data-act="staff-notif-read"],[data-act="staff-notif-all"]');
+    if (!button) return;
+    button.disabled = true;
+    try {
+      await staffNotifRequest('mark_read', button.dataset.act === 'staff-notif-all' ? {all:1} : {id:Number(button.dataset.i)});
+      await load();
+    } catch (error) { status.textContent = error.message; button.disabled = false; }
+  });
 }
 
 /* Staff action buttons for one appointment (all changes are saved in the database and the pet owner is notified). */
@@ -1500,11 +1545,10 @@ function act(a, k, i) {
       login();
     });
   } else if (a === "bell") {
-    const o = D.vaccinations.filter((v) => vaxStatus(v) === "Overdue").length,
-      t = D.appointments.filter((x) => x.date === TODAY_ISO).length;
-    toast(
-      `${plural(o, "overdue vaccination")} · ${plural(t, "appointment")} today`,
-    );
+    openStaffNotifications().catch(error => toast(error.message));
+  } else if (a === "staff-notif-read" || a === "staff-notif-all") {
+    staffNotifRequest('mark_read', a === 'staff-notif-all' ? {all:1} : {id:i})
+      .then(refreshStaffNotificationBadge).catch(error => toast(error.message));
   }
 }
 
@@ -1576,6 +1620,7 @@ app.addEventListener("keydown", (e) => {
     }
     if (state.account.role === 'Pet Owner') await loadOwnerData();
     render();
+    if (state.account.role !== 'Pet Owner') refreshStaffNotificationBadge();
     openPasswordResetFromLink();
   } catch (error) {
     state.user = null;
