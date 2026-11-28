@@ -592,7 +592,7 @@ function apptActions(a) {
   const report = isVet && a.status === 'In Progress' ? b('medical-report', '🩺 Medical Report', 'ghost') : '';
   if (a.status === "Pending") return b("approve-appointment", "✓ Approve", "", "Approve appointment") + b("decline-appointment", "Reject", "red", "Reject appointment") + b("reschedule-appointment", "🔄 Reschedule", "ghost") + report;
   if (a.status === "Confirmed") return b("start-appointment", "▶ Start", "ghost") + report + b("reschedule-appointment", "🔄 Reschedule", "ghost");
-  if (a.status === "In Progress") return report + b("reschedule-appointment", "🔄 Reschedule", "ghost");
+  if (a.status === "In Progress") return report;
   return report || `<small>Clinic action: ${esc(a.status)}</small>`;
 }
 function openMedicalReport(dbId) {
@@ -1180,7 +1180,7 @@ const FORM = {
     F("date", "Date", { type: "date" }),
     F("time", "Time", { sel: D.slots.map((t) => [t, fmtTime(t)]) }),
     F("purpose", "Purpose", { full: 1 }),
-    F("status", "Status", { sel: ["Pending", "Confirmed", "In Progress"] }),
+    F("status", "Status", { sel: ["Pending", "Confirmed"] }),
   ],
   vaccinations: () => [
     F("petId", "Pet", { sel: petOpts() }),
