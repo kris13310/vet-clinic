@@ -19,6 +19,7 @@ $action = (string)($_GET['action'] ?? 'data');
 
 try {
     $uid = (int)$account['id'];
+    retry_photo_cleanup($pdo, 10);
     $email = (string)($account['email'] ?? '');
     $unread = static function () use ($pdo, $uid): int {
         $c = $pdo->prepare('SELECT COUNT(*) FROM notifications WHERE user_id=? AND is_read=0'); $c->execute([$uid]); return (int)$c->fetchColumn();
@@ -289,14 +290,14 @@ try {
                 if ($newPhoto) $photo = $newPhoto; elseif (!empty($data['remove_photo'])) $photo = null;
                 $pdo->prepare('UPDATE pets SET name=?,species=?,breed=?,age=?,gender=?,notes=?,photo_path=? WHERE id=?')
                     ->execute([$name, $species, $breed !== '' ? $breed : null, $age !== '' ? $age : null, $gender, $notes !== '' ? $notes : null, $photo, $petId]);
-                if ($photo !== $existing['photo_path']) delete_pet_photo($existing['photo_path']);
+                if ($photo !== $existing['photo_path']) delete_pet_photo($existing['photo_path'], $pdo);
                 owner_reply(200, ['success'=>true,'message'=>'Pet profile updated.','id'=>$petId]);
             }
             $prof = $pdo->prepare('SELECT full_name,phone,address FROM users WHERE id=?'); $prof->execute([$uid]); $pr = $prof->fetch() ?: [];
             $newId = db_insert($pdo, 'INSERT INTO pets (name,species,breed,owner_name,owner_email,owner_phone,address,age,gender,notes,photo_path,created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)', [$name, $species, $breed !== '' ? $breed : null, (string)($pr['full_name'] ?? $account['name'] ?? 'Pet Owner'), $email, (string)($pr['phone'] ?? ''), (string)($pr['address'] ?? ''), $age !== '' ? $age : null, $gender, $notes !== '' ? $notes : null, $newPhoto, $uid]);
             owner_reply(201, ['success'=>true,'message'=>'Pet added to your profile.','id'=>$newId]);
         } catch (Throwable $e) {
-            if ($newPhoto) delete_pet_photo($newPhoto); // do not leave an orphan file if the database write failed
+            if ($newPhoto) delete_pet_photo($newPhoto, $pdo); // do not leave an orphan file if the database write failed
             throw $e;
         }
     }
@@ -312,7 +313,7 @@ try {
         $hist->execute([$petId, $petId, $petId]);
         if ((int)$hist->fetchColumn() > 0) owner_reply(409, ['success'=>false,'message'=>'This pet has appointment or clinic medical history, so it cannot be deleted online. Please contact the clinic to archive it.']);
         $pdo->prepare('DELETE FROM pets WHERE id=?')->execute([$petId]);
-        delete_pet_photo($pet['photo_path']);
+        delete_pet_photo($pet['photo_path'], $pdo);
         owner_reply(200, ['success'=>true,'message'=>'Pet deleted.']);
     }
 
@@ -350,7 +351,7 @@ try {
             try { $newUpload = save_pet_photo($_FILES['photo'], 'user_'); $newAvatar = $newUpload; }
             catch (RuntimeException $e) { owner_reply(422, ['success'=>false,'message'=>$e->getMessage()]); }
         }
-        if (!empty($data['remove_photo']) && $data['remove_photo'] === '1') { $newAvatar = null; if ($newUpload) delete_pet_photo($newUpload); $newUpload = null; }
+        if (!empty($data['remove_photo']) && $data['remove_photo'] === '1') { $newAvatar = null; if ($newUpload) delete_pet_photo($newUpload, $pdo); $newUpload = null; }
         $pdo->beginTransaction();
         try {
             $versionUpdate = $pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=?,avatar_path=?,password_reset_token_hash=NULL,password_reset_expires=NULL,auth_version=auth_version+1 WHERE id=? RETURNING auth_version');
@@ -368,7 +369,7 @@ try {
         $_SESSION['account']['avatar_path'] = $newAvatar;
         // Refresh this session after revoking other sessions on profile changes.
         $_SESSION['account']['auth_version'] = $updatedAuthVersion;
-        if ($newAvatar !== $oldAvatar) delete_pet_photo($oldAvatar);
+        if ($newAvatar !== $oldAvatar) delete_pet_photo($oldAvatar, $pdo);
         owner_reply(200, ['success'=>true,'user'=>['name'=>$name,'email'=>$newEmail,'phone'=>$phone,'address'=>$address,'avatar_path'=>$newAvatar,'username'=>(string)($account['username'] ?? '')]]);
     }
 
