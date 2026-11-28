@@ -18,12 +18,14 @@ CREATE TABLE IF NOT EXISTS users (
   status        VARCHAR(10)  NOT NULL DEFAULT 'Active' CHECK (status IN ('Active','Inactive')),
   password_reset_token_hash TEXT,
   password_reset_expires TIMESTAMPTZ,
+  auth_version INTEGER NOT NULL DEFAULT 1,
   created_at    TIMESTAMP    NOT NULL DEFAULT (now() AT TIME ZONE 'Asia/Manila')
 );
 -- usernames and emails are case-insensitive (like the MySQL version)
 CREATE UNIQUE INDEX IF NOT EXISTS users_username_lower ON users (LOWER(username));
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower    ON users (LOWER(email));
 CREATE INDEX IF NOT EXISTS users_password_reset_token_hash_idx ON users (password_reset_token_hash) WHERE password_reset_token_hash IS NOT NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_version INTEGER NOT NULL DEFAULT 1;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token_hash TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires TIMESTAMPTZ;
 
