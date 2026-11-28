@@ -16,8 +16,16 @@ CREATE TABLE IF NOT EXISTS users (
   role          VARCHAR(20)  NOT NULL DEFAULT 'Veterinary Staff'
                 CHECK (role IN ('Administrator','Veterinarian','Veterinary Staff','Pet Owner')),
   status        VARCHAR(10)  NOT NULL DEFAULT 'Active' CHECK (status IN ('Active','Inactive')),
+  auth_version  INTEGER      NOT NULL DEFAULT 1,
+  password_reset_token_hash TEXT,
+  password_reset_expires TIMESTAMPTZ,
   created_at    TIMESTAMP    NOT NULL DEFAULT (now() AT TIME ZONE 'Asia/Manila')
 );
+-- Keep existing databases compatible with session-version validation.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS auth_version INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token_hash TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires TIMESTAMPTZ;
+
 -- usernames and emails are case-insensitive (like the MySQL version)
 CREATE UNIQUE INDEX IF NOT EXISTS users_username_lower ON users (LOWER(username));
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower    ON users (LOWER(email));

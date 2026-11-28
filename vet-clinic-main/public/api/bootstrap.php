@@ -65,3 +65,45 @@ ini_set('session.gc_probability', '1'); ini_set('session.gc_divisor', '50');
 session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'secure' => $https, 'httponly' => true, 'samesite' => 'Lax']);
 session_set_save_handler(new PgSessionHandler($pdo), true);
 session_start();
+
+/*
+ * Revalidate every authenticated API session against the current account record.
+ * This makes deactivation, role changes, password changes and password resets
+ * revoke existing sessions instead of leaving stale privileges active.
+ */
+$sessionAccount = $_SESSION['account'] ?? null;
+if (is_array($sessionAccount) && !empty($sessionAccount['id'])) {
+    try {
+        $accountCheck = $pdo->prepare('SELECT role, status, auth_version FROM users WHERE id = ? LIMIT 1');
+        $accountCheck->execute([(int)$sessionAccount['id']]);
+        $currentAccount = $accountCheck->fetch();
+        $sessionVersion = $sessionAccount['auth_version'] ?? null;
+        $validSession = $currentAccount
+            && ($currentAccount['status'] ?? '') === 'Active'
+            && $sessionVersion !== null
+            && (int)$sessionVersion === (int)$currentAccount['auth_version'];
+        if (!$validSession) {
+            $_SESSION = [];
+            if (ini_get('session.use_cookies')) {
+                $cookie = session_get_cookie_params();
+                setcookie(session_name(), '', time() - 42000, $cookie['path'], $cookie['domain'], $cookie['secure'], $cookie['httponly']);
+            }
+            session_destroy();
+            http_response_code(401);
+            header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: no-store');
+            echo json_encode(['success'=>false, 'message'=>'Your session has expired or your account changed. Please sign in again.']);
+            exit;
+        }
+        // Keep authorization role current even if a role change is made elsewhere.
+        $_SESSION['account']['role'] = (string)$currentAccount['role'];
+    } catch (Throwable $e) {
+        error_log('Session account validation failed: ' . $e->getMessage());
+        http_response_code(503);
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-store');
+        echo json_encode(['success'=>false, 'message'=>'Unable to verify your session. Please try again.']);
+        exit;
+    }
+}
+
