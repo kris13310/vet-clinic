@@ -141,9 +141,9 @@ CREATE TABLE IF NOT EXISTS adoption_applications (
   staff_notes TEXT,
   reviewed_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
   reviewed_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (adoption_id, user_id)
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_adoption_apps_one_pending ON adoption_applications (adoption_id, user_id) WHERE status='Pending';
 CREATE INDEX IF NOT EXISTS idx_adoption_apps_status ON adoption_applications (status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_adoption_apps_user ON adoption_applications (user_id, created_at DESC);
 
