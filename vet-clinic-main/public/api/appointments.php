@@ -73,6 +73,7 @@ try {
             $cur->execute([$id]);
             $row = $cur->fetch();
             if (!$row) return [404, 'Appointment not found.'];
+            if ($row['status'] === 'Completed' && $status !== 'Completed') return [409, 'A completed appointment cannot be reopened or changed.'];
             if ($role === 'Veterinarian' && (int)$row['veterinarian_id'] !== $uid) return [403, 'This appointment is not assigned to your veterinarian account.'];
             if ($status === 'Completed') {
                 if ($role !== 'Veterinarian' || (int)$row['veterinarian_id'] !== $uid) {
