@@ -53,6 +53,8 @@ try {
         if ($err) appt_reply(422, ['success'=>false,'message'=>$err]);
 
         $result = with_slot_lock($pdo, function () use ($pdo, $petId, $date, $time, $purpose, $status) {
+            $slotError = validate_slot($pdo, $date, $time, true);
+            if ($slotError) return [422, $slotError];
             $p = $pdo->prepare('SELECT id FROM pets WHERE id=?'); $p->execute([$petId]);
             if (!$p->fetch()) return [404, 'That pet was not found.'];
             $sameDay = $pdo->prepare("SELECT 1 FROM appointments WHERE pet_id=? AND appointment_date=? AND status IN ('Pending','Confirmed','In Progress') LIMIT 1");
@@ -128,6 +130,8 @@ try {
         if ($err) appt_reply(422, ['success'=>false,'message'=>$err]);
 
         $result = with_slot_lock($pdo, function () use ($pdo, $id, $date, $time, $role, $uid) {
+            $slotError = validate_slot($pdo, $date, $time);
+            if ($slotError) return [422, $slotError];
             $cur = $pdo->prepare('SELECT id, pet_id, veterinarian_id, status FROM appointments WHERE id=? FOR UPDATE');
             $cur->execute([$id]);
             $row = $cur->fetch();
