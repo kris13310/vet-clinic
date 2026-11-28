@@ -257,3 +257,23 @@ body, .app, .app .mn, .app .ct,
 .app tbody tr:hover { background: #eef5f0; }
 .app .li { background: #f1f6f2; border-color: #e0e9e3; }
 .ov-app { --ov-bg:#edf2ef; --ov-card:#f7faf8; --ov-line:#dfe8e2; --ov-soft:#eaf2ed; }
+
+
+/* Keep the responsive table-to-card layout enabled on phones.
+   The general 620px table width is only for horizontally scrollable data tables;
+   .rt tables are explicitly converted to stacked cards by style.css at <=800px. */
+@media (max-width: 600px) {
+  .app .rt {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+  }
+  .app .rt td {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .app .rt td > :is(button, a, .btn) {
+    max-width: 100%;
+    white-space: normal;
+  }
+}
