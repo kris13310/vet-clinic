@@ -544,7 +544,7 @@ function ovAdoptionApplyForm(pet) {
     if (!data.name.trim() || !data.phone.trim() || !data.address.trim()) { msg.textContent = 'Please complete all required contact details.'; msg.className = 'ov-msg error'; return; }
     btn.disabled = true; btn.textContent = 'Submitting…';
     try {
-      const result = await ownerRequest('adoption_apply', {adoption_id: pet.id, phone: data.phone.trim(), address: data.address.trim(), message: data.message.trim()});
+      const result = await ownerRequest('adoption_apply', {adoption_id: pet.id, name: data.name.trim(), phone: data.phone.trim(), address: data.address.trim(), message: data.message.trim()});
       m.close(); await loadOwnerData(); toast(result.message); renderOwnerDashboard();
     } catch (error) { msg.textContent = error.message; msg.className = 'ov-msg error'; btn.disabled = false; btn.textContent = 'Submit application'; }
   };
