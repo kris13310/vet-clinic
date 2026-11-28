@@ -1084,10 +1084,10 @@ function pAdopt() {
     );
   const primary = (a) =>
     a.status === "Available"
-      ? `<button class="btn" data-act="adopt" data-k="adoption" data-i="${a.i}">Adopt</button>`
+      ? '<span class="mu">Open for owner applications</span>'
       : a.status === "Pending"
-        ? `<button class="btn" data-act="finish" data-k="adoption" data-i="${a.i}">Complete</button>`
-        : `<button class="btn" disabled>Adopted ✓</button>`;
+        ? '<span class="mu">Application under review</span>'
+        : '<button class="btn" disabled>Adopted ✓</button>';
   const pendingApps = (D.adoptionApplications || []).filter(a => a.status === "Pending");
   const applicationHtml = pendingApps.map(a => '<article class="card" style="margin:10px 0;padding:14px"><b>' + esc(a.pet_name) + '</b><p class="mu">' + esc(a.applicant_name) + ' · ' + esc(a.email) + ' · ' + esc(a.phone) + '</p><p>' + esc(a.address) + '</p><p>' + esc(a.message || 'No additional message.') + '</p><button class="btn" data-act="adoption-review" data-k="Approved" data-i="' + a.id + '">Approve</button> <button class="btn red" data-act="adoption-review" data-k="Rejected" data-i="' + a.id + '">Reject</button></article>').join("") || '<div class="card">' + empty("No pending adoption applications.") + '</div>';
   $("#content").innerHTML = `
