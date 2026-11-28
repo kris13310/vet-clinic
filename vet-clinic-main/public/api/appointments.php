@@ -59,7 +59,7 @@ try {
             $sameDay->execute([$petId, $date]);
             if ($sameDay->fetchColumn()) return [409, 'This pet already has an active appointment on that date. Choose another date.'];
             if (slot_is_taken($pdo, $date, $time)) return [409, 'That date and time is already reserved. Choose another slot.'];
-            $doctor = current_doctor($pdo);
+            $doctor = current_doctor($pdo, true);
             if (!$doctor) return [409, 'No active veterinarian is assigned to the clinic. Add or activate a veterinarian before booking appointments.'];
             $aid = db_insert($pdo, 'INSERT INTO appointments (pet_id, veterinarian_id, appointment_date, appointment_time, purpose, status) VALUES (?,?,?,?,?,?)', [$petId, $doctor['id'], $date, $time . ':00', $purpose, $status]); // the clinic's one doctor is assigned automatically
             if ($status === 'Confirmed') {
