@@ -117,8 +117,9 @@ try {
             if (!auth_send_reset_email((string)$user['email'], $token)) {
                 $clear = $pdo->prepare('UPDATE users SET password_reset_token_hash = NULL, password_reset_expires = NULL WHERE id = ? AND password_reset_token_hash = ?');
                 $clear->execute([(int)$user['id'], $tokenHash]);
+                // Keep the same public response for existing and unknown accounts to avoid
+                // exposing whether an email address is registered at the clinic.
                 error_log('VETCARE password reset email delivery failed. Check Resend configuration and sender verification.');
-                auth_reply(503, ['success'=>false, 'message'=>'The password reset email could not be sent. Please try again later or contact the clinic.']);
             }
         }
         auth_reply(200, ['success'=>true, 'message'=>'If an account exists for that email, a password reset link has been sent.']);
