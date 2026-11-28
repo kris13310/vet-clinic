@@ -100,6 +100,7 @@ const BADGE = {
   Inactive: "r",
   Adopted: "b",
   "No Records": "k",
+  "No Due Date": "k",
 };
 const VAX_ICON = { "Up-to-Date": "✓ ", "Due Soon": "⏰ ", Overdue: "🚨 " };
 const badge = (v, icon) =>
@@ -142,6 +143,7 @@ const D = {
 
 /* ===== Derived values (statuses are calculated from dates, never typed in) ===== */
 const vaxStatus = (v) => {
+  if (!v.next) return "No Due Date";
   const d = Math.round((parse(v.next) - TODAY) / 864e5);
   return d < 0 ? "Overdue" : d <= 30 ? "Due Soon" : "Up-to-Date";
 };
@@ -854,9 +856,11 @@ function pDash() {
     over = vax.filter((v) => v.status === "Overdue");
   const avail = D.adoption.filter((a) => a.status === "Available").length,
     pend = D.adoption.filter((a) => a.status === "Pending").length;
-  const newPets = D.pets.filter(
-    (p) => (TODAY - parse(p.added)) / 864e5 <= 30,
-  ).length;
+  const monthStart = TODAY_ISO.slice(0, 7) + "-01";
+  const newPets = D.pets.filter((p) => {
+    const added = String(p.added || "").slice(0, 10);
+    return added >= monthStart && added <= TODAY_ISO;
+  }).length;
   const inProg = todays.filter((a) => a.status === "In Progress").length;
   const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
   const stats = [
@@ -930,7 +934,7 @@ function pDash() {
         <div class="sum"><div><b>${D.pets.length}</b><small>Total Pets</small></div><div><b>${new Set(D.pets.map((p) => (p.owner || "").toLowerCase()).filter(Boolean)).size}</b><small>Owners</small></div><div><b>${new Set(D.pets.map((p) => (p.species || "").trim().toLowerCase()).filter(Boolean)).size}</b><small>Animal Types</small></div></div></div>
       <div class="card">${head("Vaccination Reminders", "vaccinations", "Manage")}
         <div class="two"><div class="mini y"><b>${due.length}</b><small>Due Soon</small></div><div class="mini r"><b>${over.length}</b><small>Overdue</small></div></div>
-        ${remind.length ? remind.map((v) => `<div class="li"><span class="tile t4">💉</span><div class="li-m"><b>${esc(v.pet)}</b><small>${esc(v.vaccine)} · ${esc(petOfRec(v).owner || "—")}</small></div><div class="li-r">${badge(v.status)}<small>${fmtDate(v.next)}</small></div></div>`).join("") : empty("All vaccinations are up to date.")}</div>
+        ${remind.length ? remind.map((v, i) => `<div class="li">${petTile(petOfRec(v), i)}<span class="tile t4">💉</span><div class="li-m"><b>${esc(v.pet)}</b><small>${esc(v.vaccine)} · ${esc(petOfRec(v).owner || "—")}</small></div><div class="li-r">${badge(v.status)}<small>${fmtDate(v.next)}</small></div></div>`).join("") : empty("All vaccinations are up to date.")}</div>
     </section>`;
 }
 
