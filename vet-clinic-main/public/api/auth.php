@@ -27,6 +27,8 @@ function public_user(array $row): array {
     ];
 }
 function auth_rate_limit(PDO $pdo, string $bucket, int $maxAttempts, int $windowSeconds): bool {
+    // Expire abandoned IP/account buckets so this table cannot grow forever.
+    $pdo->exec("DELETE FROM public.auth_rate_limits WHERE window_started_at < now() - interval '24 hours'");
     $sql = "INSERT INTO public.auth_rate_limits (bucket_key, window_started_at, attempts)
             VALUES (?, now(), 1)
             ON CONFLICT (bucket_key) DO UPDATE SET
