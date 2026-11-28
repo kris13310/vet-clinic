@@ -23,6 +23,7 @@ function public_user(array $row): array {
         'email' => (string)($row['email'] ?? ''),
         'role' => (string)($row['role'] ?? 'Pet Owner'),
         'status' => (string)($row['status'] ?? 'Active'),
+        'auth_version' => (int)($row['auth_version'] ?? 1),
     ];
 }
 function auth_rate_limit(PDO $pdo, string $bucket, int $maxAttempts, int $windowSeconds): bool {
@@ -128,7 +129,7 @@ try {
         if (!preg_match('/^[a-f0-9]{64}$/i', $token) || strlen($password) < 8 || strlen($password) > 4096) auth_reply(422, ['success'=>false, 'message'=>'Enter a valid reset link and a password of at least 8 characters.']);
         if (!auth_rate_limit($pdo, 'reset-ip:' . $ipKey, 10, 900)) auth_reply(429, ['success'=>false, 'message'=>'Too many reset attempts. Please try again later.']);
         $tokenHash = hash('sha256', $token);
-        $stmt = $pdo->prepare("UPDATE users SET password_hash = ?, password_reset_token_hash = NULL, password_reset_expires = NULL WHERE password_reset_token_hash = ? AND password_reset_expires > now() RETURNING id");
+        $stmt = $pdo->prepare("UPDATE users SET password_hash = ?, password_reset_token_hash = NULL, password_reset_expires = NULL, auth_version = auth_version + 1 WHERE password_reset_token_hash = ? AND password_reset_expires > now() RETURNING id");
         $stmt->execute([password_hash($password, PASSWORD_DEFAULT), $tokenHash]);
         if (!$stmt->fetchColumn()) auth_reply(400, ['success'=>false, 'message'=>'This password reset link is invalid or has expired. Request a new one.']);
         auth_reply(200, ['success'=>true, 'message'=>'Your password has been updated. You can now sign in.']);
@@ -168,7 +169,7 @@ try {
         || !auth_rate_limit($pdo, 'login:' . $ipKey . ':' . $loginKey, 5, 900)) {
         auth_reply(429, ['success'=>false, 'message'=>'Too many sign-in attempts. Please try again in 15 minutes.']);
     }
-    $stmt = $pdo->prepare('SELECT id, full_name, username, email, password_hash, role, status FROM users WHERE LOWER(username) = LOWER(?) LIMIT 1');
+    $stmt = $pdo->prepare('SELECT id, full_name, username, email, password_hash, role, status, auth_version FROM users WHERE LOWER(username) = LOWER(?) LIMIT 1');
     $stmt->execute([$username]);
     $row = $stmt->fetch();
     if (!$row || !password_verify($password, (string)$row['password_hash'])) auth_reply(401, ['success'=>false, 'message'=>'Incorrect username or password.']);
