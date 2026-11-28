@@ -102,7 +102,8 @@ try {
             FROM adoption_applications x JOIN adoption_records a ON a.id=x.adoption_id
             WHERE x.user_id=? ORDER BY x.created_at DESC,x.id DESC");
         $q->execute([$uid]);
-        owner_reply(200, ['success'=>true,'applications'=>$q->fetchAll()]);
+        $available = $pdo->query("SELECT id,pet_name,species,breed,age,gender,health_status,reason,photo_path FROM adoption_records WHERE status='Available' ORDER BY created_at DESC,id DESC")->fetchAll();
+        owner_reply(200, ['success'=>true,'applications'=>$q->fetchAll(),'available'=>$available]);
     }
 
     if ($action === 'notifications') {
