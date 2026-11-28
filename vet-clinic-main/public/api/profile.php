@@ -25,7 +25,9 @@ try {
  if(($data['remove_photo']??'0')==='1'){$avatar=null;if($newUpload)delete_pet_photo($newUpload);$newUpload=null;}
  try {
   $pdo->beginTransaction();
-  $pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=?,avatar_path=?,auth_version=auth_version+1 WHERE id=?')->execute([$name,$email,$phone,$address,$avatar,$uid]);
+  $versionUpdate=$pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=?,avatar_path=?,auth_version=auth_version+1 WHERE id=? RETURNING auth_version');
+  $versionUpdate->execute([$name,$email,$phone,$address,$avatar,$uid]);
+  $updatedAuthVersion=(int)$versionUpdate->fetchColumn();
   if (($account['role'] ?? '') === 'Pet Owner') {
    $pdo->prepare('UPDATE pets SET owner_name=?,owner_email=?,owner_phone=?,address=? WHERE LOWER(TRIM(owner_email))=LOWER(TRIM(?))')
     ->execute([$name,$email,$phone,$address,(string)($account['email'] ?? '')]);
@@ -36,7 +38,7 @@ try {
   if($newUpload)delete_pet_photo($newUpload);
   throw $e;
  }
- $_SESSION['account']['name']=$name;$_SESSION['account']['full_name']=$name;$_SESSION['account']['email']=$email;$_SESSION['account']['avatar_path']=$avatar;$_SESSION['account']['auth_version']=(int)($_SESSION['account']['auth_version']??1)+1;
+ $_SESSION['account']['name']=$name;$_SESSION['account']['full_name']=$name;$_SESSION['account']['email']=$email;$_SESSION['account']['avatar_path']=$avatar;$_SESSION['account']['auth_version']=$updatedAuthVersion;
  if($avatar!==$old)delete_pet_photo($old);
  profile_reply(200,['success'=>true,'message'=>'Profile updated.','user'=>['full_name'=>$name,'email'=>$email,'phone'=>$phone,'address'=>$address,'avatar_path'=>$avatar]]);
 } catch(Throwable $e){error_log('Profile API error: '.$e->getMessage());profile_reply(500,['success'=>false,'message'=>'Unable to update profile. Check the database and photo storage configuration.']);}
