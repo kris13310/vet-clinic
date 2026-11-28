@@ -169,6 +169,7 @@ const petTile = (p, i = 0) => {
 };
 const byTime = (a, b) => (a.date + a.time).localeCompare(b.date + b.time);
 
+let staffNotifPoll = null;
 let state = {
   user: null,
   page: "dashboard",
@@ -1625,7 +1626,12 @@ app.addEventListener("keydown", (e) => {
     }
     if (state.account.role === 'Pet Owner') await loadOwnerData();
     render();
-    if (state.account.role !== 'Pet Owner') refreshStaffNotificationBadge();
+    if (state.account.role !== 'Pet Owner') {
+      await refreshStaffNotificationBadge();
+      if (!staffNotifPoll) staffNotifPoll = setInterval(() => {
+        if (!document.hidden && state.account && state.account.role !== 'Pet Owner') refreshStaffNotificationBadge();
+      }, 40000);
+    }
     openPasswordResetFromLink();
   } catch (error) {
     state.user = null;
