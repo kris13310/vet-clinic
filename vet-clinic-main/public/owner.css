@@ -633,7 +633,5 @@ body.ov-lock { overflow: hidden; }
 @media(max-width:640px){.ov-settings-account{align-items:flex-start;flex-wrap:wrap;padding:18px}.ov-settings-identity{flex-basis:calc(100% - 84px)}.ov-settings-account>.ov-btn{margin-left:82px}.ov-settings-section{padding:18px}.ov-settings-signout{align-items:flex-start;flex-direction:column}.ov-settings-row{gap:10px}}
 
 
-/* Consistent subtle frame for Pet Owner portal images */
-img {
-  border: 2px solid #dce8e2;
-}
+/* Requested frame is limited to Pet Owner pet photos only. */
+.ov-pet-ph .ov-pimg { border: 25px solid #fff; box-sizing: border-box; }
