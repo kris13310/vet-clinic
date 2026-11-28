@@ -589,7 +589,7 @@ function apptActions(a) {
   if (!a.dbId) return `<small>Clinic action: ${esc(a.status)}</small>`;
   const b = (act, label, cls = "", title = "") => `<button class="btn ${cls}" data-act="${act}" data-i="${a.dbId}" title="${title || label}">${label}</button>`;
   const isVet = state.account?.role === 'Veterinarian' && Number(a.veterinarianId) === Number(state.account.id);
-  const report = isVet && a.status !== 'Cancelled' ? b('medical-report', '🩺 Medical Report', 'ghost') : '';
+  const report = isVet && a.status === 'In Progress' ? b('medical-report', '🩺 Medical Report', 'ghost') : '';
   if (a.status === "Pending") return b("approve-appointment", "✓ Approve", "", "Approve appointment") + b("decline-appointment", "Reject", "red", "Reject appointment") + b("reschedule-appointment", "🔄 Reschedule", "ghost") + report;
   if (a.status === "Confirmed") return b("start-appointment", "▶ Start", "ghost") + report + b("reschedule-appointment", "🔄 Reschedule", "ghost");
   if (a.status === "In Progress") return report + b("reschedule-appointment", "🔄 Reschedule", "ghost");
