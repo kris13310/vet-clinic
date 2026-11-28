@@ -152,6 +152,7 @@ try {
             }
             $aid = db_insert($pdo, "INSERT INTO appointments (pet_id, veterinarian_id, appointment_date, appointment_time, purpose, status, notes) VALUES (?,?,?,?,?, 'Pending', ?)", [$pid, $docId, $date, $time . ':00', $purpose, $notes !== '' ? $notes : null]);
             create_notification($pdo, $uid, $aid, 'request', 'Request received', 'Your appointment request for ' . human_date($date) . ' at ' . human_time($time) . ' was sent. It stays Pending until the clinic approves it.');
+            notify_clinic_staff($pdo, $aid, 'owner_request', 'New appointment request', '{owner} requested an appointment for {pet} on {date} at {time}. Review it in Appointments.');
             return [201, 'Appointment request sent successfully. It is Pending until clinic staff approve it.', $aid];
         });
         owner_reply($result[0], ['success'=>$result[0] === 201,'message'=>$result[1]]);
@@ -171,6 +172,7 @@ try {
             }
             $pdo->prepare("UPDATE appointments SET status='Cancelled', cancelled_by='Owner' WHERE id=?")->execute([$aid]);
             create_notification($pdo, $uid, $aid, 'cancelled', 'Appointment cancelled', 'You cancelled the appointment for ' . $r['pet_name'] . ' on ' . human_date((string)$r['appointment_date']) . ' at ' . human_time((string)$r['appointment_time']) . '. The time is available to others again.');
+            notify_clinic_staff($pdo, $aid, 'owner_cancelled', 'Owner cancelled an appointment', '{owner} cancelled the appointment for {pet} on {date} at {time}. The time slot is available again.');
             return [200, 'Appointment cancelled. The time slot is available again.'];
         });
         owner_reply($result[0], ['success'=>$result[0] === 200, 'message'=>$result[1]]);
