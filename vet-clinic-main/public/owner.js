@@ -6,7 +6,7 @@
    TODAY, TODAY_ISO, MONTHS, WEEKDAYS, fmtLong.
    ===================================================================== */
 
-let ownerData = { doctor: null, profile: {}, pets: [], appointments: [], vaccinations: [], medical_reports: [], notifications: [], unread: 0, today: '', schedule: {} };
+let ownerData = { doctor: null, profile: {}, pets: [], appointments: [], vaccinations: [], medical_reports: [], adoption_applications: [], notifications: [], unread: 0, today: '', schedule: {} };
 let ownerLoadError = '';
 let ovPoll = null;
 const ov = { uid: null, filter: 'all', nfilter: 'all', month: '', cal: { days: {}, loading: false, error: '' }, date: '', time: '', slots: [], slotsLoading: false, slotsOpen: true, dayState: 'open', dayLabel: '', petChoice: '', bellOpen: false, menuOpen: false };
@@ -26,18 +26,19 @@ async function ownerRequest(action = 'data', data = null, query = '') {
   if (!response.ok || !result.success) throw new Error(result.message || 'Request failed.');
   return result;
 }
-const emptyOwnerData = () => ({ doctor: null, profile: {}, pets: [], appointments: [], vaccinations: [], medical_reports: [], notifications: [], unread: 0, today: '', schedule: {} });
+const emptyOwnerData = () => ({ doctor: null, profile: {}, pets: [], appointments: [], vaccinations: [], medical_reports: [], adoption_applications: [], notifications: [], unread: 0, today: '', schedule: {} });
 async function loadOwnerData() {
   try {
     const r = await ownerRequest('data');
-    ownerData = { doctor: r.doctor || null, profile: r.profile || {}, pets: r.pets || [], appointments: r.appointments || [], vaccinations: r.vaccinations || [], medical_reports: r.medical_reports || [], notifications: [], unread: r.unread || 0, today: r.today || '', schedule: r.schedule || {} };
+    ownerData = { doctor: r.doctor || null, profile: r.profile || {}, pets: r.pets || [], appointments: r.appointments || [], vaccinations: r.vaccinations || [], medical_reports: r.medical_reports || [], adoption_applications: [], notifications: [], unread: r.unread || 0, today: r.today || '', schedule: r.schedule || {} };
     ownerLoadError = '';
     try { const n = await ownerRequest('notifications'); ownerData.notifications = n.notifications || []; ownerData.unread = n.unread || 0; } catch (e) { /* bell still works from the count */ }
+    try { const a = await ownerRequest('adoption_list'); ownerData.adoption_applications = a.applications || []; } catch (e) { ownerData.adoption_applications = []; }
   } catch (e) { ownerLoadError = e.message; ownerData = emptyOwnerData(); }
 }
 
 /* ---------- Formatting helpers ---------- */
-const ownerPageNames = { 'owner-home': 'Overview', 'owner-appointments': 'Book Appointment', 'owner-pets': 'My Pets', 'owner-notifications': 'Notifications', 'owner-records': 'Medical Records', 'owner-profile': 'Personal Information', 'owner-settings': 'Settings' };
+const ownerPageNames = { 'owner-home': 'Overview', 'owner-appointments': 'Book Appointment', 'owner-pets': 'My Pets', 'owner-notifications': 'Notifications', 'owner-records': 'Medical Records', 'owner-adoption': 'Pet Adoption', 'owner-profile': 'Personal Information', 'owner-settings': 'Settings' };
 const OV_LABEL = { Pending: 'Pending', Confirmed: 'Approved', 'In Progress': 'In Progress', Completed: 'Completed', Cancelled: 'Rejected', Overdue: 'Overdue', Recorded: 'Recorded' };
 const OV_HINT = { Pending: 'Waiting for clinic approval', Confirmed: 'Approved — see you then!', 'In Progress': 'Visit in progress', Completed: 'Visit completed', Cancelled: 'Rejected — please book another time' };
 /* The clinic has one doctor: the account whose role is Veterinarian. Show the name as "Dr. Name". */
@@ -106,9 +107,9 @@ function renderOwnerDashboard() {
   ov.menuOpen = false; ov.bellOpen = false;
   const displayName = me.name || me.full_name || me.username || 'Pet Owner';
   const upcoming = ownerData.appointments.filter(a => ovIsActive(a) && String(a.appointment_date).slice(0, 10) >= ownerToday());
-  const nav = [['owner-home', '⌂', 'Overview', 0], ['owner-appointments', '＋', 'Book Appointment', upcoming.length], ['owner-pets', '🐾', 'My Pets', 0], ['owner-notifications', '🔔', 'Notifications', ownerData.unread], ['owner-records', '💉', 'Medical Records', 0], ['owner-profile', '👤', 'Personal Information', 0], ['owner-settings', '⚙️', 'Settings', 0]];
+  const nav = [['owner-home', '⌂', 'Overview', 0], ['owner-appointments', '＋', 'Book Appointment', upcoming.length], ['owner-pets', '🐾', 'My Pets', 0], ['owner-notifications', '🔔', 'Notifications', ownerData.unread], ['owner-records', '💉', 'Medical Records', 0], ['owner-adoption', '🏠', 'Pet Adoption', 0], ['owner-profile', '👤', 'Personal Information', 0], ['owner-settings', '⚙️', 'Settings', 0]];
   const navHtml = nav.map(([id, ic, label, n]) => `<button class="ov-nav ${page === id ? 'active' : ''}" data-go="${id}"><span class="ov-nav-ic">${ic}</span><span class="ov-nav-t">${label}</span>${n ? `<em ${id === 'owner-notifications' ? 'id="ov-nav-notif"' : ''}>${n > 99 ? '99+' : n}</em>` : (id === 'owner-notifications' ? '<em id="ov-nav-notif" hidden></em>' : '')}</button>`).join('');
-  const builders = { 'owner-home': ovPageHome, 'owner-appointments': ovPageAppointments, 'owner-pets': ovPagePets, 'owner-notifications': ovPageNotifications, 'owner-records': ovPageRecords, 'owner-profile': ovPageProfile, 'owner-settings': ovPageSettings };
+  const builders = { 'owner-home': ovPageHome, 'owner-appointments': ovPageAppointments, 'owner-pets': ovPagePets, 'owner-notifications': ovPageNotifications, 'owner-records': ovPageRecords, 'owner-adoption': ovPageAdoption, 'owner-profile': ovPageProfile, 'owner-settings': ovPageSettings };
 
   app.innerHTML = `<div class="ov-app${clinicThemeMode() === "dark" ? " theme-dark" : ""}">
     <aside class="ov-side" aria-label="Main navigation">
@@ -526,6 +527,32 @@ function ovPageRecords() {
   <section class="ov-card"><h3>Veterinarian Medical Reports</h3>${reports.length ? reports.map(r => `<article class="ov-record-report"><div class="ov-who">${petImg({photo_path:r.pet_photo,species:r.pet_species,name:r.pet_name},'xs')}<div><b>${esc(r.pet_name)}</b><small>${esc(ownerDate(r.appointment_date))} · ${esc(r.veterinarian || 'Veterinarian')}</small></div></div><div class="ov-grid"><div><b>Diagnosis</b><p>${esc(r.diagnosis)}</p></div><div><b>Symptoms</b><p>${esc(r.symptoms)}</p></div><div><b>Observations</b><p>${esc(r.observations || '—')}</p></div><div><b>Treatment</b><p>${esc(r.treatment)}</p></div><div><b>Medication</b><p>${esc(r.medication || '—')}</p></div><div><b>Recommendations</b><p>${esc(r.recommendations || '—')}</p></div><div><b>Follow-up date</b><p>${esc(r.follow_up_date ? ownerDate(r.follow_up_date) : 'Not scheduled')}</p></div></div></article>`).join('') : `<div class="ov-empty"><span>🩺</span><b>No veterinarian reports yet</b><p>Reports submitted after your pet's consultation will appear here.</p></div>`}</section>
   <section class="ov-card"><h3>Vaccination History</h3>${v.length ? `<div class="ov-tablewrap"><table class="ov-table"><thead><tr><th>Pet</th><th>Vaccine</th><th>Date given</th><th>Next due</th><th>Veterinarian</th><th>Notes</th></tr></thead><tbody>${v.map(x => `<tr><td><div class="ov-who">${petImg({ photo_path: x.pet_photo, species: x.pet_species, name: x.pet_name }, 'xs')}<b>${esc(x.pet_name)}</b></div></td><td>💉 ${esc(x.vaccine)}</td><td>${esc(ownerDate(x.date_given))}</td><td>${esc(ownerDate(x.next_due))} ${x.next_due && String(x.next_due) < ownerToday() ? ownerBadge('Overdue') : ''}</td><td>${esc(ovVet(x.veterinarian))}</td><td>${esc(x.notes || '—')}</td></tr>`).join('')}</tbody></table></div>` : `<div class="ov-empty"><span>💚</span><b>No vaccination records yet</b><p>Vaccination records recorded by the clinic will appear here.</p></div>`}</section>`;
 }
+function ovPageAdoption() {
+  const apps = ownerData.adoption_applications || [];
+  const cards = apps.map(a => `<article class="ov-card" style="margin-bottom:14px"><div class="ov-who">${a.photo_path ? `<img class="ov-pimg" src="${esc(a.photo_path)}" alt="">` : '<span class="ov-avatar">🐾</span>'}<div><b>${esc(a.pet_name)}</b><small>${esc([a.species,a.breed].filter(Boolean).join(' · '))}</small></div><span class="ov-status ov-s-${ovSlug(a.application_status)}">${esc(a.application_status)}</span></div><p class="ov-hint">Applied ${esc(ownerDate(a.applied_at))}</p>${a.message ? `<p>${esc(a.message)}</p>` : ''}${a.staff_notes ? `<p><b>Clinic note:</b> ${esc(a.staff_notes)}</p>` : ''}${a.application_status === 'Pending' ? `<div class="ov-actions"><button class="ov-btn danger" data-oact="adoption-withdraw" data-v="${a.application_id}">Withdraw application</button></div>` : ''}</article>`).join('');
+  return `<div class="ov-intro"><div><span class="ov-eyebrow">FIND A COMPANION</span><h2>Pet Adoption</h2><p>Browse pets listed by the clinic and send an adoption application. The clinic will review it and contact you.</p></div></div><section class="ov-card"><h3>My adoption applications</h3>${cards || '<div class="ov-empty"><span>🏠</span><b>No applications yet</b><p>Your applications and their review status will appear here.</p></div>'}</section>`;
+}
+function ovAdoptionApplyForm(pet) {
+  const profile = ownerData.profile || {};
+  const m = ovModal(`<form id="ov-adoption-form"><div class="ov-mhead"><h2>Apply to adopt ${esc(pet.pet_name)}</h2><button type="button" class="ov-icon" data-close aria-label="Close">✕</button></div><p class="ov-hint">Complete your contact details so the clinic can review your application.</p><div class="ov-grid"><label>Full name<input name="name" required maxlength="120" value="${esc(profile.name || state.account?.name || '')}"></label><label>Email<input name="email" type="email" readonly value="${esc(profile.email || state.account?.email || '')}"></label><label>Phone number<input name="phone" required maxlength="40" value="${esc(profile.phone || '')}"></label><label class="full">Home address<textarea name="address" required maxlength="255">${esc(profile.address || '')}</textarea></label><label class="full">Why would you like to adopt? (optional)<textarea name="message" rows="3" maxlength="2000" placeholder="Tell the clinic a little about your home and plans for this pet"></textarea></label></div><p class="ov-msg" id="ov-adoption-msg" role="status"></p><div class="ov-actions"><button type="button" class="ov-btn ghost" data-close>Cancel</button><button type="submit" class="ov-btn">Submit application</button></div></form>`);
+  const form = m.querySelector('#ov-adoption-form');
+  form.onsubmit = async e => {
+    e.preventDefault();
+    const msg = form.querySelector('#ov-adoption-msg'), btn = form.querySelector('[type="submit"]');
+    const data = Object.fromEntries(new FormData(form));
+    if (!data.name.trim() || !data.phone.trim() || !data.address.trim()) { msg.textContent = 'Please complete all required contact details.'; msg.className = 'ov-msg error'; return; }
+    btn.disabled = true; btn.textContent = 'Submitting…';
+    try {
+      const result = await ownerRequest('adoption_apply', {adoption_id: pet.id, phone: data.phone.trim(), address: data.address.trim(), message: data.message.trim()});
+      m.close(); await loadOwnerData(); toast(result.message); renderOwnerDashboard();
+    } catch (error) { msg.textContent = error.message; msg.className = 'ov-msg error'; btn.disabled = false; btn.textContent = 'Submit application'; }
+  };
+}
+async function ovWithdrawAdoption(id) {
+  if (!confirm('Withdraw this adoption application?')) return;
+  try { const result = await ownerRequest('adoption_withdraw', {id}); await loadOwnerData(); toast(result.message); renderOwnerDashboard(); }
+  catch (error) { toast(error.message); }
+}
 function ovPageProfile() {
   const me = state.account || {}, p = ownerData.profile || {}, name = p.name || me.name || '';
   const avatar = p.avatar_path ? `<img class="ov-pimg xl" src="${esc(p.avatar_path)}" alt="Profile picture">` : `<div class="ov-avatar lg">${esc(ovInitials(name))}</div>`;
@@ -647,6 +674,8 @@ document.addEventListener('click', e => {
   else if (a === 'cal-prev' || a === 'cal-next') { const [y, m] = ov.month.split('-').map(Number), d = new Date(y, m - 1 + (a === 'cal-next' ? 1 : -1), 1); ov.month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; ovLoadMonth(); }
   else if (a === 'cal-day') ovPickDate(v);
   else if (a === 'slot') { ov.time = v; ovRenderSlots(); ovRenderSummary(); }
+  else if (a === 'adoption-apply') { const item = ownerData.available_adoptions?.find(x => String(x.id) === String(v)); if (item) ovAdoptionApplyForm(item); }
+  else if (a === 'adoption-withdraw') ovWithdrawAdoption(Number(v));
   else if (a === 'password') ovPasswordForm();
   else if (a === 'pet-add') ovPetForm();
   else if (a === 'pet-view') { const p = pet(); if (p) ovPetView(p); }
