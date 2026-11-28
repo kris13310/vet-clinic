@@ -25,7 +25,7 @@ try {
  if(($data['remove_photo']??'0')==='1'){$avatar=null;if($newUpload)delete_pet_photo($newUpload);$newUpload=null;}
  try {
   $pdo->beginTransaction();
-  $versionUpdate=$pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=?,avatar_path=?,auth_version=auth_version+1 WHERE id=? RETURNING auth_version');
+  $versionUpdate=$pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=?,avatar_path=?,password_reset_token_hash=NULL,password_reset_expires=NULL,auth_version=auth_version+1 WHERE id=? RETURNING auth_version');
   $versionUpdate->execute([$name,$email,$phone,$address,$avatar,$uid]);
   $updatedAuthVersion=(int)$versionUpdate->fetchColumn();
   if (($account['role'] ?? '') === 'Pet Owner') {
