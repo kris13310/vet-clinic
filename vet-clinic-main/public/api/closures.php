@@ -70,7 +70,7 @@ try {
             // Owners who already have an active appointment inside the blocked time are asked to reschedule.
             $sql = "SELECT id FROM appointments WHERE appointment_date=? AND status IN ('Pending','Confirmed')";
             $params = [$date];
-            if (!$whole) { $sql .= ' AND appointment_time >= ? AND appointment_time < ?'; array_push($params, $start . ':00', $end . ':00'); }
+            if (!$whole) { $sql .= ' AND appointment_time < ? AND appointment_time + INTERVAL \'30 minutes\' > ?'; array_push($params, $end . ':00', $start . ':00'); }
             $aff = $pdo->prepare($sql); $aff->execute($params);
             $ids = array_map('intval', array_column($aff->fetchAll(), 'id'));
             $why = $reason !== '' ? $reason : $type;
