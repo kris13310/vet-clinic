@@ -94,6 +94,12 @@ try {
             if ($pdo->inTransaction()) $pdo->rollBack();
             throw $e;
         }
+        if ($id === $meId && isset($_SESSION['account']) && is_array($_SESSION['account'])) {
+            $_SESSION['account']['name'] = $name;
+            $_SESSION['account']['full_name'] = $name;
+            $_SESSION['account']['username'] = $username;
+            $_SESSION['account']['email'] = $email;
+        }
         respond(200, ['success'=>true, 'message'=>$password !== '' ? 'Changes saved and the password was reset.' : 'Changes saved.', 'id'=>$id]);
     }
 
