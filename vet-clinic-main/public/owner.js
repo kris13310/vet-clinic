@@ -6,7 +6,7 @@
    TODAY, TODAY_ISO, MONTHS, WEEKDAYS, fmtLong.
    ===================================================================== */
 
-let ownerData = { doctor: null, profile: {}, pets: [], appointments: [], vaccinations: [], medical_reports: [], adoption_applications: [], notifications: [], unread: 0, today: '', schedule: {} };
+let ownerData = { doctor: null, profile: {}, pets: [], appointments: [], vaccinations: [], medical_reports: [], adoption_applications: [], available_adoptions: [], notifications: [], unread: 0, today: '', schedule: {} };
 let ownerLoadError = '';
 let ovPoll = null;
 const ov = { uid: null, filter: 'all', nfilter: 'all', month: '', cal: { days: {}, loading: false, error: '' }, date: '', time: '', slots: [], slotsLoading: false, slotsOpen: true, dayState: 'open', dayLabel: '', petChoice: '', bellOpen: false, menuOpen: false };
@@ -530,7 +530,8 @@ function ovPageRecords() {
 function ovPageAdoption() {
   const apps = ownerData.adoption_applications || [];
   const cards = apps.map(a => `<article class="ov-card" style="margin-bottom:14px"><div class="ov-who">${a.photo_path ? `<img class="ov-pimg" src="${esc(a.photo_path)}" alt="">` : '<span class="ov-avatar">🐾</span>'}<div><b>${esc(a.pet_name)}</b><small>${esc([a.species,a.breed].filter(Boolean).join(' · '))}</small></div><span class="ov-status ov-s-${ovSlug(a.application_status)}">${esc(a.application_status)}</span></div><p class="ov-hint">Applied ${esc(ownerDate(a.applied_at))}</p>${a.message ? `<p>${esc(a.message)}</p>` : ''}${a.staff_notes ? `<p><b>Clinic note:</b> ${esc(a.staff_notes)}</p>` : ''}${a.application_status === 'Pending' ? `<div class="ov-actions"><button class="ov-btn danger" data-oact="adoption-withdraw" data-v="${a.application_id}">Withdraw application</button></div>` : ''}</article>`).join('');
-  return `<div class="ov-intro"><div><span class="ov-eyebrow">FIND A COMPANION</span><h2>Pet Adoption</h2><p>Browse pets listed by the clinic and send an adoption application. The clinic will review it and contact you.</p></div></div><section class="ov-card"><h3>My adoption applications</h3>${cards || '<div class="ov-empty"><span>🏠</span><b>No applications yet</b><p>Your applications and their review status will appear here.</p></div>'}</section>`;
+  const available = (ownerData.available_adoptions || []).map(p => `<article class="ov-pet"><div class="ov-pet-ph">${p.photo_path ? `<img class="ov-pimg" src="${esc(p.photo_path)}" alt="${esc(p.pet_name)}">` : '<span class="ov-avatar lg">🐾</span>'}</div><div class="ov-pet-b"><h3>${esc(p.pet_name)}</h3><p>${esc([p.species,p.breed,p.age].filter(Boolean).join(' · '))}</p><p>${esc(p.reason || 'Ready for a loving home')}</p><small>Health: ${esc(p.health_status || 'Unknown')}</small></div><div class="ov-pet-a"><button class="ov-btn" data-oact="adoption-apply" data-v="${p.id}">Apply to adopt</button></div></article>`).join('');
+  return `<div class="ov-intro"><div><span class="ov-eyebrow">FIND A COMPANION</span><h2>Pet Adoption</h2><p>Browse pets listed by the clinic and send an adoption application. The clinic will review it and contact you.</p></div></div><section class="ov-card"><h3>Available pets</h3>${available || '<div class="ov-empty"><span>🏠</span><b>No pets available right now</b><p>Please check again later.</p></div>'}</section><section class="ov-card" style="margin-top:20px"><h3>My adoption applications</h3>${cards || '<div class="ov-empty"><span>📄</span><b>No applications yet</b><p>Your applications and their review status will appear here.</p></div>'}</section>`;
 }
 function ovAdoptionApplyForm(pet) {
   const profile = ownerData.profile || {};
