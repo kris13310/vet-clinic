@@ -40,13 +40,24 @@ try {
 
     $pdo->beginTransaction();
     try {
-        $q = $pdo->prepare("SELECT x.id,x.adoption_id,x.user_id,x.applicant_name,x.status,a.pet_name,a.status AS pet_status
-            FROM adoption_applications x JOIN adoption_records a ON a.id=x.adoption_id WHERE x.id=? FOR UPDATE OF x,a");
-        $q->execute([$id]); $app = $q->fetch();
-        if (!$app || $app['status'] !== 'Pending' || $app['pet_status'] !== 'Pending') {
+        // Always lock the listing before its application rows. Owner submission and
+        // withdrawal use the same lock order, avoiding cross-application deadlocks.
+        $lookup = $pdo->prepare('SELECT adoption_id FROM adoption_applications WHERE id=?');
+        $lookup->execute([$id]); $adoptionId = $lookup->fetchColumn();
+        if (!$adoptionId) {
+            $pdo->rollBack();
+            adoption_reply(404, ['success'=>false,'message'=>'Adoption application not found.']);
+        }
+        $listingLock = $pdo->prepare('SELECT id,status,pet_name FROM adoption_records WHERE id=? FOR UPDATE');
+        $listingLock->execute([(int)$adoptionId]); $listing = $listingLock->fetch();
+        $q = $pdo->prepare("SELECT id,adoption_id,user_id,applicant_name,status
+            FROM adoption_applications WHERE id=? AND adoption_id=? FOR UPDATE");
+        $q->execute([$id,(int)$adoptionId]); $app = $q->fetch();
+        if (!$listing || !$app || $app['status'] !== 'Pending' || $listing['status'] !== 'Pending') {
             $pdo->rollBack();
             adoption_reply(409, ['success'=>false,'message'=>'This application is no longer pending. Refresh the list and try again.']);
         }
+        $app['pet_name'] = (string)$listing['pet_name'];
 
         if ($decision === 'Approved') {
             $pdo->prepare("UPDATE adoption_applications SET status='Approved',staff_notes=?,reviewed_by=?,reviewed_at=now() WHERE id=?")
@@ -56,7 +67,7 @@ try {
 
             // Once one applicant is approved, close every competing pending application
             // so no other owner is left with a permanently pending request for an adopted pet.
-            $others = $pdo->prepare("SELECT id,user_id FROM adoption_applications WHERE adoption_id=? AND status='Pending' AND id<>? FOR UPDATE");
+            $others = $pdo->prepare("SELECT id,user_id FROM adoption_applications WHERE adoption_id=? AND status='Pending' AND id<>? ORDER BY id FOR UPDATE");
             $others->execute([(int)$app['adoption_id'],$id]);
             $otherApps = $others->fetchAll();
             if ($otherApps) {
