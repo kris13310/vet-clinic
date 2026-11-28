@@ -175,6 +175,8 @@ CREATE TABLE IF NOT EXISTS auth_rate_limits (
 );
 
 -- login sessions (Vercel containers are temporary, so PHP sessions are kept here)
+CREATE INDEX IF NOT EXISTS auth_rate_limits_window_started_idx ON auth_rate_limits (window_started_at);
+
 CREATE TABLE IF NOT EXISTS php_sessions (
   id         VARCHAR(128) PRIMARY KEY,
   data       TEXT NOT NULL,
