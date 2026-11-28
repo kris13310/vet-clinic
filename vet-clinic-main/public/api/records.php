@@ -151,12 +151,9 @@ try {
             if (!in_array($gender, ['Male', 'Female', 'Unknown'], true)) rec_fail('Choose a valid gender.');
             $existing = null;
             if ($id) {
-                $e = $pdo->prepare('SELECT status,adopted_at,photo_path FROM adoption_records WHERE id=?'); $e->execute([$id]); $existing = $e->fetch();
+                $e = $pdo->prepare('SELECT photo_path FROM adoption_records WHERE id=?'); $e->execute([$id]); $existing = $e->fetch();
                 if (!$existing) rec_fail('Adoption record not found.', 404);
             }
-            // Existing listing status is controlled by owner application review, not the edit form.
-            $status = $existing ? (string)$existing['status'] : 'Available';
-            $adoptedAt = $status === 'Adopted' ? (string)($existing['adopted_at'] ?? date('Y-m-d')) : null;
             $newPhoto = null;
             if (!empty($_FILES['photo']) && (int)$_FILES['photo']['error'] !== UPLOAD_ERR_NO_FILE) {
                 try { $newPhoto = save_pet_photo($_FILES['photo'], 'adoption_'); }
@@ -166,8 +163,9 @@ try {
                 if ($existing) {
                     $photo = $existing['photo_path'];
                     if ($newPhoto) $photo = $newPhoto; elseif (!empty($in['remove_photo'])) $photo = null;
-                    $pdo->prepare("UPDATE adoption_records SET pet_name=?,species=?,breed=?,age=?,gender=?,health_status=?,status=?,reason=?,adopter_name=CASE WHEN ?='Adopted' THEN adopter_name ELSE NULL END,adopted_at=?,photo_path=? WHERE id=?")
-                        ->execute([$name, $species, $breed, $age, $gender, $health ?? 'Unknown', $status, $reason, $status, $adoptedAt, $photo, $id]);
+                    // Editing listing details must never overwrite application-review status.
+                    $pdo->prepare("UPDATE adoption_records SET pet_name=?,species=?,breed=?,age=?,gender=?,health_status=?,reason=?,photo_path=? WHERE id=?")
+                        ->execute([$name, $species, $breed, $age, $gender, $health ?? 'Unknown', $reason, $photo, $id]);
                     if ($photo !== $existing['photo_path']) delete_pet_photo($existing['photo_path']);
                     rec_reply(200, ['success'=>true, 'message'=>'Changes saved.', 'id'=>$id]);
                 }
