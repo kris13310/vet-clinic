@@ -139,6 +139,28 @@ function notify_appointment_owner(PDO $pdo, int $appointmentId, string $type, st
     create_notification($pdo, (int)$r['user_id'], $appointmentId, $type, $ttl, $msg);
 }
 
+/**
+ * Notifies active clinic staff about an owner action on an appointment.
+ * Notifications remain per-user, so each staff member can mark their own as read.
+ */
+function notify_clinic_staff(PDO $pdo, int $appointmentId, string $type, string $title, string $messageTemplate): void {
+    $s = $pdo->prepare("SELECT a.appointment_date, a.appointment_time, p.name AS pet_name, p.owner_name
+        FROM appointments a JOIN pets p ON p.id=a.pet_id WHERE a.id=?");
+    $s->execute([$appointmentId]);
+    $r = $s->fetch();
+    if (!$r) return;
+    $message = strtr($messageTemplate, [
+        '{pet}' => (string)$r['pet_name'],
+        '{owner}' => (string)$r['owner_name'],
+        '{date}' => human_date((string)$r['appointment_date']),
+        '{time}' => human_time((string)$r['appointment_time']),
+    ]);
+    $recipients = $pdo->query("SELECT id FROM users WHERE status='Active' AND role IN ('Administrator','Veterinarian','Veterinary Staff')")->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($recipients as $recipientId) {
+        create_notification($pdo, (int)$recipientId, $appointmentId, $type, $title, $message);
+    }
+}
+
 /* =====================================================================
    PHILIPPINE HOLIDAYS (calculated automatically) + CLINIC CLOSURES
    ===================================================================== */
@@ -241,12 +263,30 @@ function supabase_project_url(): string {
 function storage_public_prefix(): string { return supabase_project_url() . '/storage/v1/object/public/' . rawurlencode(storage_bucket()) . '/'; }
 /** Calls the Supabase Storage REST API with the server-side service key. Returns [httpCode, body, curlError]. */
 function storage_call(string $method, string $path, ?string $body = null, ?string $mime = null): array {
-    $key = (string)getenv('SUPABASE_SERVICE_KEY');
-    $ch = curl_init(supabase_project_url() . '/storage/v1/' . ltrim($path, '/'));
+    $key = trim((string)getenv('SUPABASE_SERVICE_KEY'));
     // legacy service_role keys are JWTs (start with "eyJ") and are also sent as a Bearer token; the newer sb_secret_... keys go in apikey only
     $headers = ['apikey: ' . $key];
     if (str_starts_with($key, 'eyJ')) $headers[] = 'Authorization: Bearer ' . $key;
     if ($mime) $headers[] = 'Content-Type: ' . $mime;
+    $url = supabase_project_url() . '/storage/v1/' . ltrim($path, '/');
+    if (!function_exists('curl_init')) {
+        // Some PHP builds do not include ext-curl. Keep photo upload/delete working with streams.
+        $context = stream_context_create(['http'=>[
+            'method'=>$method,
+            'header'=>implode("\r\n", $headers) . "\r\n",
+            'content'=>$body ?? '',
+            'timeout'=>20,
+            'ignore_errors'=>true,
+        ]]);
+        $resp = @file_get_contents($url, false, $context);
+        $code = 0;
+        foreach (($http_response_header ?? []) as $header) {
+            if (preg_match('/^HTTP\\/\\S+\\s+(\\d{3})/', $header, $m)) $code = (int)$m[1];
+        }
+        $err = $resp === false ? (string)(error_get_last()['message'] ?? 'Storage request failed.') : '';
+        return [$code, is_string($resp) ? $resp : '', $err];
+    }
+    $ch = curl_init($url);
     $opts = [CURLOPT_CUSTOMREQUEST => $method, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 20, CURLOPT_HTTPHEADER => $headers];
     if ($body !== null) $opts[CURLOPT_POSTFIELDS] = $body;
     curl_setopt_array($ch, $opts);
@@ -269,7 +309,11 @@ function delete_pet_photo(?string $path): void {
     if (!$path || strncmp($path, $prefix, strlen($prefix)) !== 0) return;
     $name = rawurldecode(substr($path, strlen($prefix)));
     if (!preg_match('/^[A-Za-z0-9_.-]+$/', $name)) return;
-    storage_call('DELETE', 'object/' . rawurlencode(storage_bucket()) . '/' . rawurlencode($name));
+    [$code, $resp, $err] = storage_call('DELETE', 'object/' . rawurlencode(storage_bucket()) . '/' . rawurlencode($name));
+    // A missing object is already clean; log other failures so orphaned files can be diagnosed.
+    if (!in_array($code, [200, 204, 404], true)) {
+        error_log("Supabase photo deletion failed ($code): $err $resp");
+    }
 }
 
 /**
@@ -277,8 +321,12 @@ function delete_pet_photo(?string $path): void {
  * Change a user's role to Veterinarian (Users page or phpMyAdmin) and that person becomes the doctor in charge.
  * If several active Veterinarian accounts exist, the oldest one is used.
  */
-function current_doctor(PDO $pdo): ?array {
-    $r = $pdo->query("SELECT id, full_name FROM users WHERE role='Veterinarian' AND status='Active' ORDER BY id LIMIT 1")->fetch();
+function current_doctor(PDO $pdo, bool $lockForBooking = false): ?array {
+    // Booking callers use FOR SHARE inside their transaction so an administrator cannot
+    // deactivate/reassign this veterinarian between assignment and appointment insertion.
+    $sql = "SELECT id, full_name FROM users WHERE role='Veterinarian' AND status='Active' ORDER BY id LIMIT 1";
+    if ($lockForBooking) $sql .= ' FOR SHARE';
+    $r = $pdo->query($sql)->fetch();
     return $r ? ['id' => (int)$r['id'], 'name' => (string)$r['full_name']] : null;
 }
 

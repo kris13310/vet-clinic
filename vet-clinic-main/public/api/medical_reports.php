@@ -36,13 +36,27 @@ try {
     $appointmentId = (int)($input['appointment_id'] ?? 0); if ($appointmentId < 1) report_reply(422, ['success'=>false,'message'=>'Select a valid appointment.']);
     $diagnosis=report_text($input,'diagnosis',5000,true); $symptoms=report_text($input,'symptoms',5000,true); $observations=report_text($input,'observations',5000);
     $treatment=report_text($input,'treatment',5000,true); $medication=report_text($input,'medication',5000); $recommendations=report_text($input,'recommendations',5000);
-    $followUp=trim((string)($input['follow_up_date'] ?? '')); if ($followUp !== '' && !valid_date_string($followUp)) report_reply(422,['success'=>false,'message'=>'Enter a valid follow-up date.']);
-    $s=$pdo->prepare('SELECT id,pet_id,veterinarian_id,status FROM appointments WHERE id=?'); $s->execute([$appointmentId]); $a=$s->fetch();
-    if (!$a) report_reply(404,['success'=>false,'message'=>'Appointment not found.']);
-    if ((int)$a['veterinarian_id'] !== $uid) report_reply(403,['success'=>false,'message'=>'This appointment is not assigned to your veterinarian account.']);
-    if ($a['status']==='Cancelled') report_reply(409,['success'=>false,'message'=>'A cancelled appointment cannot receive a medical report.']);
+    $followUp=trim((string)($input['follow_up_date'] ?? ''));
+    if ($followUp !== '' && !valid_date_string($followUp)) report_reply(422,['success'=>false,'message'=>'Enter a valid follow-up date.']);
+    if ($followUp !== '' && $followUp < date('Y-m-d')) report_reply(422,['success'=>false,'message'=>'Follow-up date cannot be in the past.']);
     $pdo->beginTransaction();
     try {
+        // Lock and re-check the appointment in the same transaction as the report save.
+        // This prevents a concurrent cancellation, reassignment, or completion from racing this write.
+        $s=$pdo->prepare('SELECT id,pet_id,veterinarian_id,status FROM appointments WHERE id=? FOR UPDATE');
+        $s->execute([$appointmentId]); $a=$s->fetch();
+        if (!$a) {
+            $pdo->rollBack();
+            report_reply(404,['success'=>false,'message'=>'Appointment not found.']);
+        }
+        if ((int)$a['veterinarian_id'] !== $uid) {
+            $pdo->rollBack();
+            report_reply(403,['success'=>false,'message'=>'This appointment is not assigned to your veterinarian account.']);
+        }
+        if ($a['status']!=='In Progress') {
+            $pdo->rollBack();
+            report_reply(409,['success'=>false,'message'=>'Start the appointment before submitting its medical report.']);
+        }
         $pdo->prepare("INSERT INTO medical_reports (appointment_id,pet_id,veterinarian_id,diagnosis,symptoms,observations,treatment,medication,recommendations,follow_up_date) VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT (appointment_id) DO UPDATE SET pet_id=EXCLUDED.pet_id,veterinarian_id=EXCLUDED.veterinarian_id,diagnosis=EXCLUDED.diagnosis,symptoms=EXCLUDED.symptoms,observations=EXCLUDED.observations,treatment=EXCLUDED.treatment,medication=EXCLUDED.medication,recommendations=EXCLUDED.recommendations,follow_up_date=EXCLUDED.follow_up_date,updated_at=now()")
             ->execute([$appointmentId,(int)$a['pet_id'],$uid,$diagnosis,$symptoms,$observations,$treatment,$medication,$recommendations,$followUp!==''?$followUp:null]);
         $pdo->prepare("UPDATE appointments SET status='Completed' WHERE id=?")->execute([$appointmentId]);

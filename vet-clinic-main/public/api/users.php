@@ -42,7 +42,7 @@ try {
         if (!preg_match('/^[A-Za-z0-9_.-]{3,50}$/', $username)) respond(422, ['success'=>false, 'message'=>'Username must be 3-50 letters, numbers, dots, underscores or hyphens.']);
         if (!filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 190) respond(422, ['success'=>false, 'message'=>'Enter a valid email address.']);
         if (!in_array($status, ['Active', 'Inactive'], true)) respond(422, ['success'=>false, 'message'=>'Choose a valid status.']);
-        if ($password !== '' && strlen($password) < 8) respond(422, ['success'=>false, 'message'=>'Password must be at least 8 characters.']);
+        if ($password !== '' && (strlen($password) < 8 || strlen($password) > 72)) respond(422, ['success'=>false, 'message'=>'Password must be between 8 and 72 bytes.']);
 
         $dup = $pdo->prepare('SELECT username, email FROM users WHERE (LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)) AND id <> ? LIMIT 1');
         $dup->execute([$username, $email, $id]);
@@ -55,16 +55,56 @@ try {
             respond(201, ['success'=>true, 'message'=>'User added.', 'id'=>$newId]);
         }
 
-        $cur = $pdo->prepare('SELECT id, role FROM users WHERE id = ?'); $cur->execute([$id]); $row = $cur->fetch();
+        $cur = $pdo->prepare('SELECT id, role, email FROM users WHERE id = ?'); $cur->execute([$id]); $row = $cur->fetch();
         if (!$row) respond(404, ['success'=>false, 'message'=>'User not found.']);
         if ($id === $meId && $status !== 'Active') respond(422, ['success'=>false, 'message'=>'You cannot deactivate your own account.']);
         $finalRole = (string)$row['role'];
-        if (in_array($finalRole, STAFF_ROLES, true)) {                    // staff may switch between the two staff roles only
+        if (in_array($finalRole, STAFF_ROLES, true)) {
             if (!in_array($newRole, STAFF_ROLES, true)) respond(422, ['success'=>false, 'message'=>'Choose Veterinarian or Veterinary Staff.']);
             $finalRole = $newRole;
-        }                                                                 // Administrator / Pet Owner roles are never changed here
-        $pdo->prepare('UPDATE users SET full_name=?, username=?, email=?, role=?, status=? WHERE id=?')->execute([$name, $username, $email, $finalRole, $status, $id]);
-        if ($password !== '') $pdo->prepare('UPDATE users SET password_hash=? WHERE id=?')->execute([password_hash($password, PASSWORD_DEFAULT), $id]);
+        }
+
+        $replacementVetId = null;
+        $leavingVeterinarian = $row['role'] === 'Veterinarian' && ($finalRole !== 'Veterinarian' || $status !== 'Active');
+        if ($leavingVeterinarian) {
+            $nextVet = $pdo->prepare("SELECT id FROM users WHERE role='Veterinarian' AND status='Active' AND id<>? ORDER BY id LIMIT 1");
+            $nextVet->execute([$id]);
+            $replacementVetId = $nextVet->fetchColumn();
+            $openAppointments = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE veterinarian_id=? AND status IN ('Pending','Confirmed','In Progress')");
+            $openAppointments->execute([$id]);
+            if ((int)$openAppointments->fetchColumn() > 0 && !$replacementVetId) {
+                respond(409, ['success'=>false, 'message'=>'This veterinarian has active appointments. Activate another veterinarian before deactivating or changing this account.']);
+            }
+        }
+
+        $pdo->beginTransaction();
+        try {
+            $versionUpdate = $pdo->prepare('UPDATE users SET full_name=?, username=?, email=?, role=?, status=?, auth_version=auth_version+1, password_reset_token_hash=NULL, password_reset_expires=NULL WHERE id=? RETURNING auth_version');
+            $versionUpdate->execute([$name, $username, $email, $finalRole, $status, $id]);
+            $updatedAuthVersion = (int)$versionUpdate->fetchColumn();
+            if ($password !== '') $pdo->prepare('UPDATE users SET password_hash=? WHERE id=?')->execute([password_hash($password, PASSWORD_DEFAULT), $id]);
+            if ($row['role'] === 'Pet Owner') {
+                $pdo->prepare('UPDATE pets SET owner_email=?, owner_name=? WHERE LOWER(TRIM(owner_email))=LOWER(TRIM(?))')
+                    ->execute([$email, $name, (string)$row['email']]);
+            }
+            if ($replacementVetId) {
+                $pdo->prepare("UPDATE appointments SET veterinarian_id=? WHERE veterinarian_id=? AND status IN ('Pending','Confirmed','In Progress')")
+                    ->execute([(int)$replacementVetId, $id]);
+            }
+            $pdo->commit();
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            throw $e;
+        }
+        if ($id === $meId && isset($_SESSION['account']) && is_array($_SESSION['account'])) {
+            $_SESSION['account']['name'] = $name;
+            $_SESSION['account']['full_name'] = $name;
+            $_SESSION['account']['username'] = $username;
+            $_SESSION['account']['email'] = $email;
+            $_SESSION['account']['role'] = $finalRole;
+            $_SESSION['account']['status'] = $status;
+            $_SESSION['account']['auth_version'] = $updatedAuthVersion;
+        }
         respond(200, ['success'=>true, 'message'=>$password !== '' ? 'Changes saved and the password was reset.' : 'Changes saved.', 'id'=>$id]);
     }
 
@@ -74,6 +114,34 @@ try {
         $cur = $pdo->prepare('SELECT role FROM users WHERE id = ?'); $cur->execute([$id]); $row = $cur->fetch();
         if (!$row) respond(404, ['success'=>false, 'message'=>'User not found.']);
         if (!in_array($row['role'], STAFF_ROLES, true)) respond(403, ['success'=>false, 'message'=>'Administrator and pet owner accounts cannot be deleted. Set them to Inactive instead.']);
+        $history = $pdo->prepare('SELECT (SELECT COUNT(*) FROM medical_reports WHERE veterinarian_id=?) + (SELECT COUNT(*) FROM appointments WHERE veterinarian_id=?) + (SELECT COUNT(*) FROM vaccinations WHERE veterinarian_id=?)');
+        $history->execute([$id, $id, $id]);
+        if ((int)$history->fetchColumn() > 0) {
+            $replacementVetId = null;
+            if ($row['role'] === 'Veterinarian') {
+                $nextVet = $pdo->prepare("SELECT id FROM users WHERE role='Veterinarian' AND status='Active' AND id<>? ORDER BY id LIMIT 1");
+                $nextVet->execute([$id]);
+                $replacementVetId = $nextVet->fetchColumn();
+                $openAppointments = $pdo->prepare("SELECT COUNT(*) FROM appointments WHERE veterinarian_id=? AND status IN ('Pending','Confirmed','In Progress')");
+                $openAppointments->execute([$id]);
+                if ((int)$openAppointments->fetchColumn() > 0 && !$replacementVetId) {
+                    respond(409, ['success'=>false, 'message'=>'This veterinarian has active appointments. Activate another veterinarian before deleting this account.']);
+                }
+            }
+            $pdo->beginTransaction();
+            try {
+                if ($replacementVetId) {
+                    $pdo->prepare("UPDATE appointments SET veterinarian_id=? WHERE veterinarian_id=? AND status IN ('Pending','Confirmed','In Progress')")
+                        ->execute([(int)$replacementVetId, $id]);
+                }
+                $pdo->prepare("UPDATE users SET status='Inactive' WHERE id=?")->execute([$id]);
+                $pdo->commit();
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                throw $e;
+            }
+            respond(200, ['success'=>true, 'message'=>'This staff account is linked to clinic history, so it was deactivated instead of deleted.']);
+        }
         $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$id]);
         respond(200, ['success'=>true, 'message'=>'User deleted.']);
     }

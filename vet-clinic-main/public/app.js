@@ -100,6 +100,7 @@ const BADGE = {
   Inactive: "r",
   Adopted: "b",
   "No Records": "k",
+  "No Due Date": "k",
 };
 const VAX_ICON = { "Up-to-Date": "✓ ", "Due Soon": "⏰ ", Overdue: "🚨 " };
 const badge = (v, icon) =>
@@ -129,6 +130,8 @@ const D = {
   appointments: [],
   vaccinations: [],
   adoption: [],
+  adoptionApplications: [],
+  adoptionApplicationsError: '',
   users: [],
   doctor: null,
   slots: [],
@@ -142,6 +145,7 @@ const D = {
 
 /* ===== Derived values (statuses are calculated from dates, never typed in) ===== */
 const vaxStatus = (v) => {
+  if (!v.next) return "No Due Date";
   const d = Math.round((parse(v.next) - TODAY) / 864e5);
   return d < 0 ? "Overdue" : d <= 30 ? "Due Soon" : "Up-to-Date";
 };
@@ -167,6 +171,7 @@ const petTile = (p, i = 0) => {
 };
 const byTime = (a, b) => (a.date + a.time).localeCompare(b.date + b.time);
 
+let staffNotifPoll = null;
 let state = {
   user: null,
   page: "dashboard",
@@ -239,8 +244,8 @@ function login() {
         <label>Email<span class="field"><i>${ICON.user}</i><input name="email" type="email" autocomplete="email" placeholder="Enter your email"></span></label>
       </div>
       <label>Username<span class="field"><i>${ICON.user}</i><input name="u" autocomplete="username" placeholder="Enter your username" maxlength="50" required></span></label>
-      <label>Password<span class="field"><i>${ICON.lock}</i><input name="p" type="password" autocomplete="current-password" placeholder="Enter your password" required minlength="8"><button type="button" class="eye" id="eye" aria-label="Show password">${ICON.eye}</button></span></label>
-      <label id="confirm-wrap" class="hidden">Confirm password<span class="field"><i>${ICON.lock}</i><input name="confirm" type="password" autocomplete="new-password" placeholder="Re-enter your password"></span></label>
+      <label>Password<span class="field"><i>${ICON.lock}</i><input name="p" type="password" autocomplete="current-password" placeholder="Enter your password" required minlength="8" maxlength="72"><button type="button" class="eye" id="eye" aria-label="Show password">${ICON.eye}</button></span></label>
+      <label id="confirm-wrap" class="hidden">Confirm password<span class="field"><i>${ICON.lock}</i><input name="confirm" type="password" autocomplete="new-password" placeholder="Re-enter your password" maxlength="72"></span></label>
       <div class="opts" id="login-options"><label class="chk"><input type="checkbox" name="r"> Remember me</label><a href="#" id="fp">Forgot password?</a></div>
       <div class="err" id="err" role="alert"></div><button class="signin" id="submit-auth">${ICON.signin} Sign In</button>
       <p class="sub" style="margin-bottom:0"><span id="switch-label">Don't have an account?</span> <a href="#" id="switch-auth" style="color:var(--p);font-weight:600;text-decoration:none">Create account</a></p>
@@ -278,7 +283,7 @@ function login() {
     const showLoginLoading = authMode === 'login';
     if (showLoginLoading && typeof window.showAppLoading === 'function') window.showAppLoading('Signing in to your VETCARE account…');
     try {
-      const result = await authRequest(authMode==='signup'?'register':'login', authMode==='signup' ? {name:f.name.value.trim(),email:f.email.value.trim(),username,password} : {username,password});
+      const result = await authRequest(authMode==='signup'?'register':'login', authMode==='signup' ? {name:f.name.value.trim(),email:f.email.value.trim(),username,password} : {username,password,remember:!!f.r.checked});
       if (authMode === 'signup' && result.user && result.user.status === 'Inactive') {
         setMode('login');
         const loginError = $('#err');
@@ -349,8 +354,8 @@ function showReset(prefillToken = '') {
     <h1>Choose a New Password</h1>
     <p class="sub">Enter a new password for your VETCARE account.</p>
     <label>Reset token<span class="field"><i>${ICON.lock}</i><input name="token" autocomplete="one-time-code" placeholder="Reset token" maxlength="64" value="${esc(prefillToken)}" required></span></label>
-    <label>New password<span class="field"><i>${ICON.lock}</i><input name="password" type="password" autocomplete="new-password" placeholder="At least 8 characters" minlength="8" required></span></label>
-    <label>Confirm password<span class="field"><i>${ICON.lock}</i><input name="confirm" type="password" autocomplete="new-password" placeholder="Enter the password again" required></span></label>
+    <label>New password<span class="field"><i>${ICON.lock}</i><input name="password" type="password" autocomplete="new-password" placeholder="8 to 72 characters" minlength="8" maxlength="72" required></span></label>
+    <label>Confirm password<span class="field"><i>${ICON.lock}</i><input name="confirm" type="password" autocomplete="new-password" placeholder="Enter the password again" maxlength="72" required></span></label>
     <div class="err" id="r-err" role="alert"></div>
     <button class="signin" id="reset-submit">${ICON.signin} Update Password</button>
     <p class="sub" style="margin-bottom:0"><a href="#" id="back-to-login-2" style="color:var(--p);font-weight:600;text-decoration:none">Back to sign in</a></p>
@@ -445,7 +450,7 @@ function buildShell() {
         <div class="hd-t"><h1 id="ttl"></h1><small>${fmtLong(TODAY)}</small></div>
         <div class="hd-r">
           <div class="qs"><span>🔍</span><input id="qs" placeholder="Quick search..." aria-label="Quick search"></div>
-          <button class="bell" data-act="bell" aria-label="Notifications">🔔<i></i></button>
+          <button class="bell" data-act="bell" aria-label="Notifications" aria-haspopup="dialog">🔔<i id="staff-notif-dot" hidden></i></button>
           <div class="me"><span class="av">${me.avatar ? `<img src="${esc(me.avatar)}" alt="">` : esc(me.ini)}</span><span class="me-t"><b>${esc(me.short)}</b><small>${esc(me.role)}</small></span></div>
         </div>
       </header>
@@ -491,13 +496,15 @@ async function apiJson(url, body) {
 const recordRequest = (resource, action, body) => apiJson(`api/records.php?resource=${resource}&action=${action}`, body);
 async function loadRecordsFromDatabase() {
   try {
-    const [pets, vax, adopt, meta, settings] = await Promise.all([
+    const [pets, vax, adopt, meta, settings, adoptionApps] = await Promise.all([
       apiJson("api/records.php?resource=pets"), apiJson("api/records.php?resource=vaccinations"), apiJson("api/records.php?resource=adoption"),
-      apiJson("api/records.php?resource=meta"), apiJson("api/records.php?resource=settings"),
+      apiJson("api/records.php?resource=meta"), apiJson("api/records.php?resource=settings"), apiJson("api/adoption_applications.php?action=list").catch(error => ({applications:[], error:error.message})),
     ]);
     D.pets = (pets.pets || []).map((p) => ({ id: Number(p.id), name: p.name || "", species: p.species || "", breed: p.breed || "", owner: p.owner_name || "", ownerEmail: p.owner_email || "", phone: p.owner_phone || "", address: p.address || "", age: p.age || "", gender: p.gender || "Unknown", notes: p.notes || "", photo: p.photo_path || "", added: String(p.created_at || "").slice(0, 10) }));
-    D.vaccinations = (vax.vaccinations || []).map((v) => ({ id: Number(v.id), petId: Number(v.pet_id), pet: v.pet_name || "", vaccine: v.vaccine || "", given: String(v.date_given || "").slice(0, 10), next: String(v.next_due || v.date_given || "").slice(0, 10), vet: v.vet_name || "Not recorded" }));
+    D.vaccinations = (vax.vaccinations || []).map((v) => ({ id: Number(v.id), petId: Number(v.pet_id), pet: v.pet_name || "", vaccine: v.vaccine || "", given: String(v.date_given || "").slice(0, 10), next: v.next_due ? String(v.next_due).slice(0, 10) : "", vet: v.vet_name || "Not recorded" }));
     D.adoption = (adopt.adoption || []).map((a) => ({ id: Number(a.id), name: a.pet_name || "", species: a.species || "", breed: a.breed || "", age: a.age || "", gender: a.gender || "Unknown", health: a.health_status || "Unknown", status: a.status || "Available", reason: a.reason || "", adopter: a.adopter_name || "", photo: a.photo_path || "" }));
+    D.adoptionApplications = adoptionApps.applications || [];
+    D.adoptionApplicationsError = adoptionApps.error || '';
     D.doctor = meta.doctor || null;
     D.slots = meta.slots || [];
     Object.assign(D.settings, { name: "", email: "", phone: "", address: "" }, settings.settings || {});
@@ -584,15 +591,60 @@ function openClosureForm() {
   };
 }
 
+/* Staff notifications: each clinic account has its own read/unread inbox. */
+async function staffNotifRequest(action = 'list', data = null) {
+  const response = await fetch('api/staff_notifications.php?action=' + encodeURIComponent(action), {
+    method: data ? 'POST' : 'GET', credentials: 'same-origin',
+    headers: data ? {'Content-Type':'application/json'} : {},
+    body: data ? JSON.stringify(data) : undefined
+  });
+  const result = await response.json().catch(() => ({success:false,message:'Invalid server response.'}));
+  if (!response.ok || !result.success) throw new Error(result.message || 'Unable to load notifications.');
+  return result;
+}
+async function refreshStaffNotificationBadge() {
+  if (!['Administrator','Veterinarian','Veterinary Staff'].includes(state.account?.role)) return;
+  try {
+    const result = await staffNotifRequest('list');
+    const dot = $('#staff-notif-dot');
+    if (dot) dot.hidden = !(result.unread > 0);
+  } catch (error) { /* The notification inbox reports its own load errors when opened. */ }
+}
+async function openStaffNotifications() {
+  const m = modal('<div class="staff-notif-panel"><div class="ch"><h2>Notifications</h2><button type="button" class="btn ghost" data-x>Close</button></div><p class="mu" id="staff-notif-status">Loading notifications…</p><div id="staff-notif-list"></div></div>');
+  const list = $('#staff-notif-list', m), status = $('#staff-notif-status', m);
+  async function load() {
+    status.textContent = 'Loading notifications…';
+    try {
+      const result = await staffNotifRequest('list');
+      const rows = result.notifications || [];
+      status.textContent = result.unread ? result.unread + ' unread notification' + (result.unread === 1 ? '' : 's') : 'You are all caught up.';
+      list.innerHTML = rows.length ? (result.unread ? '<div class="acts"><button type="button" class="btn ghost" data-act="staff-notif-all">Mark all as read</button></div>' : '') + rows.map(n => '<article class="card" style="margin:10px 0;padding:14px"><div style="display:flex;justify-content:space-between;gap:12px;align-items:start"><div><b>' + esc(n.title) + '</b><p>' + esc(n.message) + '</p><small class="mu">' + esc(new Date(n.created_at).toLocaleString()) + (n.is_read ? '' : ' · New') + '</small></div>' + (n.is_read ? '' : '<button type="button" class="btn sm ghost" data-act="staff-notif-read" data-i="' + n.id + '">Read</button>') + '</div></article>').join('') : '<div class="card">' + empty('No notifications yet.') + '</div>';
+      const dot = $('#staff-notif-dot');
+      if (dot) dot.hidden = !(result.unread > 0);
+    } catch (error) { status.textContent = error.message; list.innerHTML = ''; }
+  }
+  await load();
+  m.addEventListener('click', async e => {
+    const button = e.target.closest('[data-act="staff-notif-read"],[data-act="staff-notif-all"]');
+    if (!button) return;
+    button.disabled = true;
+    try {
+      await staffNotifRequest('mark_read', button.dataset.act === 'staff-notif-all' ? {all:1} : {id:Number(button.dataset.i)});
+      await load();
+    } catch (error) { status.textContent = error.message; button.disabled = false; }
+  });
+}
+
 /* Staff action buttons for one appointment (all changes are saved in the database and the pet owner is notified). */
 function apptActions(a) {
   if (!a.dbId) return `<small>Clinic action: ${esc(a.status)}</small>`;
   const b = (act, label, cls = "", title = "") => `<button class="btn ${cls}" data-act="${act}" data-i="${a.dbId}" title="${title || label}">${label}</button>`;
   const isVet = state.account?.role === 'Veterinarian' && Number(a.veterinarianId) === Number(state.account.id);
-  const report = isVet && a.status !== 'Cancelled' ? b('medical-report', '🩺 Medical Report', 'ghost') : '';
+  const report = isVet && a.status === 'In Progress' ? b('medical-report', '🩺 Medical Report', 'ghost') : '';
   if (a.status === "Pending") return b("approve-appointment", "✓ Approve", "", "Approve appointment") + b("decline-appointment", "Reject", "red", "Reject appointment") + b("reschedule-appointment", "🔄 Reschedule", "ghost") + report;
   if (a.status === "Confirmed") return b("start-appointment", "▶ Start", "ghost") + report + b("reschedule-appointment", "🔄 Reschedule", "ghost");
-  if (a.status === "In Progress") return report + b("reschedule-appointment", "🔄 Reschedule", "ghost");
+  if (a.status === "In Progress") return report;
   return report || `<small>Clinic action: ${esc(a.status)}</small>`;
 }
 function openMedicalReport(dbId) {
@@ -809,9 +861,11 @@ function pDash() {
     over = vax.filter((v) => v.status === "Overdue");
   const avail = D.adoption.filter((a) => a.status === "Available").length,
     pend = D.adoption.filter((a) => a.status === "Pending").length;
-  const newPets = D.pets.filter(
-    (p) => (TODAY - parse(p.added)) / 864e5 <= 30,
-  ).length;
+  const monthStart = TODAY_ISO.slice(0, 7) + "-01";
+  const newPets = D.pets.filter((p) => {
+    const added = String(p.added || "").slice(0, 10);
+    return added >= monthStart && added <= TODAY_ISO;
+  }).length;
   const inProg = todays.filter((a) => a.status === "In Progress").length;
   const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
   const stats = [
@@ -885,7 +939,7 @@ function pDash() {
         <div class="sum"><div><b>${D.pets.length}</b><small>Total Pets</small></div><div><b>${new Set(D.pets.map((p) => (p.owner || "").toLowerCase()).filter(Boolean)).size}</b><small>Owners</small></div><div><b>${new Set(D.pets.map((p) => (p.species || "").trim().toLowerCase()).filter(Boolean)).size}</b><small>Animal Types</small></div></div></div>
       <div class="card">${head("Vaccination Reminders", "vaccinations", "Manage")}
         <div class="two"><div class="mini y"><b>${due.length}</b><small>Due Soon</small></div><div class="mini r"><b>${over.length}</b><small>Overdue</small></div></div>
-        ${remind.length ? remind.map((v) => `<div class="li"><span class="tile t4">💉</span><div class="li-m"><b>${esc(v.pet)}</b><small>${esc(v.vaccine)} · ${esc(petOfRec(v).owner || "—")}</small></div><div class="li-r">${badge(v.status)}<small>${fmtDate(v.next)}</small></div></div>`).join("") : empty("All vaccinations are up to date.")}</div>
+        ${remind.length ? remind.map((v, i) => `<div class="li">${petTile(petOfRec(v), i)}<div class="li-m"><b>${esc(v.pet)}</b><small>${esc(v.vaccine)} · ${esc(petOfRec(v).owner || "—")}</small></div><div class="li-r">${badge(v.status)}<small>${fmtDate(v.next)}</small></div></div>`).join("") : empty("All vaccinations are up to date.")}</div>
     </section>`;
 }
 
@@ -1032,11 +1086,14 @@ function pAdopt() {
     );
   const primary = (a) =>
     a.status === "Available"
-      ? `<button class="btn" data-act="adopt" data-k="adoption" data-i="${a.i}">Adopt</button>`
+      ? '<span class="mu">Open for owner applications</span>'
       : a.status === "Pending"
-        ? `<button class="btn" data-act="finish" data-k="adoption" data-i="${a.i}">Complete</button>`
-        : `<button class="btn" disabled>Adopted ✓</button>`;
+        ? '<span class="mu">Application under review</span>'
+        : '<button class="btn" disabled>Adopted ✓</button>';
+  const allApps = D.adoptionApplications || [];
+  const applicationHtml = allApps.map(a => '<article class="card" style="margin:10px 0;padding:14px"><div style="display:flex;justify-content:space-between;gap:10px"><b>' + esc(a.pet_name) + '</b><span class="tag">' + esc(a.status) + '</span></div><p class="mu">' + esc(a.applicant_name) + ' · ' + esc(a.email) + ' · ' + esc(a.phone) + '</p><p>' + esc(a.address) + '</p><p>' + esc(a.message || 'No additional message.') + '</p>' + (a.staff_notes ? '<p><b>Clinic note:</b> ' + esc(a.staff_notes) + '</p>' : '') + (a.status === 'Pending' ? '<button class="btn" data-act="adoption-review" data-k="Approved" data-i="' + a.id + '">Approve</button> <button class="btn red" data-act="adoption-review" data-k="Rejected" data-i="' + a.id + '">Reject</button>' : '') + '</article>').join("") || '<div class="card">' + empty("No adoption applications yet.") + '</div>';
   $("#content").innerHTML = `
+    <section class="card"><h2>Adoption applications</h2><p class="mu">Review owner applications before approving an adoption.</p>${D.adoptionApplicationsError ? `<p class="err">${esc(D.adoptionApplicationsError)} Run the adoption applications migration in Supabase to enable this feature.</p>` : applicationHtml}</section>
     <div class="top">${search("Search pets for adoption...")}<button class="btn" data-act="add" data-k="adoption">+ Add Pet for Adoption</button></div>
     <div class="card tabs">${tabs.map(([t, c]) => `<button class="tab ${state.tab === t ? "on" : ""}" data-set="tab:${t}"><i class="dot-${c}"></i>${t}<em>${D.adoption.filter((a) => a.status === t).length}</em></button>`).join("")}</div>
     ${
@@ -1180,13 +1237,13 @@ const FORM = {
     F("date", "Date", { type: "date" }),
     F("time", "Time", { sel: D.slots.map((t) => [t, fmtTime(t)]) }),
     F("purpose", "Purpose", { full: 1 }),
-    F("status", "Status", { sel: ["Pending", "Confirmed", "In Progress"] }),
+    F("status", "Status", { sel: ["Pending", "Confirmed"] }),
   ],
   vaccinations: () => [
     F("petId", "Pet", { sel: petOpts() }),
     F("vaccine", "Vaccine", { sel: VACCINES }),
     F("given", "Date Given", { type: "date" }),
-    F("next", "Next Due", { type: "date" }),
+    F("next", "Next Due", { type: "date", opt: 1 }),
   ],
   adoption: () => [
     F("name", "Name"),
@@ -1195,7 +1252,7 @@ const FORM = {
     F("age", "Age", { ph: "e.g. 2 yrs" }),
     F("gender", "Gender", { sel: ["Male", "Female", "Unknown"] }),
     F("health", "Health", { sel: ["Vaccinated", "Not Vaccinated", "Under Treatment"] }),
-    F("status", "Status", { sel: ["Available", "Pending", "Adopted"] }),
+    // Adoption status is changed only by the application review workflow.
     F("reason", "Reason / Notes", { full: 1, opt: 1 }),
   ],
   users: (edit, rec) => [
@@ -1326,7 +1383,7 @@ const fieldHtml = (f, v) =>
   `<label class="${f.full ? "full" : ""}">${f.l}${
     f.sel
       ? `<select name="${f.k}" ${f.opt ? "" : "required"}>${f.sel.map((o) => { const [val, lab] = optPair(o); return `<option value="${esc(val)}" ${String(val) === String(v ?? "") ? "selected" : ""}>${esc(lab)}</option>`; }).join("")}</select>`
-      : `<input name="${f.k}" type="${f.type || "text"}" value="${f.type === "password" ? "" : esc(v)}" placeholder="${esc(f.ph || "")}" ${f.type === "password" ? 'autocomplete="new-password"' : ""} ${f.opt ? "" : "required"}>`
+      : `<input name="${f.k}" type="${f.type || "text"}" value="${f.type === "password" ? "" : esc(v)}" placeholder="${esc(f.ph || "")}" ${f.type === "password" ? 'autocomplete="new-password" maxlength="72"' : ""} ${f.opt ? "" : "required"}>`
   }</label>`;
 
 async function saveRecord(k, v, old, submittedFormData = null) {
@@ -1349,7 +1406,7 @@ function form(k, i) {
     fs = FORM[k](edit, edit ? r : null);
   if (!edit && (k === "appointments" || k === "vaccinations") && !D.pets.length) { toast("Register a pet first."); return; }
   const m = modal(
-    `<form><h2>${edit ? "Edit " + NOUN[k] : ADD[k]}</h2>${!edit && (k === "appointments" || k === "vaccinations") ? `<p class="mu">${D.doctor ? `Veterinarian in charge: <b>${esc(drName(D.doctor.name))}</b> (assigned automatically)` : "No veterinarian yet. Set a user’s role to Veterinarian and they will be assigned automatically."}</p>` : ""}${k === "pets" ? `<div class="photo-pick"><div class="photo-prev" id="pp-prev">${k === "pets" ? petTile(r, 0) : r.photo ? `<span class="tile has-img"><img src="${esc(r.photo)}" alt=""></span>` : tile(r.species, 0)}</div><div><b>Pet picture</b><small class="mu" style="display:block">JPG, PNG or WebP · up to 2 MB (optional)</small><input type="file" name="photo" id="pp-file" accept="image/jpeg,image/png,image/webp" hidden><input type="hidden" name="remove_photo" value="0"><div class="photo-btns"><button type="button" class="btn ghost" id="pp-choose">📷 Choose picture</button>${edit && r.photo ? '<button type="button" class="btn ghost" id="pp-remove">Remove</button>' : ""}</div></div></div>` : ""}<div class="fg">${fs.map((f) => fieldHtml(f, r[f.k])).join("")}</div><div class="err" id="ferr"></div><div class="acts"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn">${edit ? "Save Changes" : "Save"}</button></div></form>`,
+    `<form><h2>${edit ? "Edit " + NOUN[k] : ADD[k]}</h2>${!edit && (k === "appointments" || k === "vaccinations") ? `<p class="mu">${D.doctor ? `Veterinarian in charge: <b>${esc(drName(D.doctor.name))}</b> (assigned automatically)` : "No veterinarian yet. Set a user’s role to Veterinarian and they will be assigned automatically."}</p>` : ""}${(k === "pets" || k === "adoption") ? `<div class="photo-pick"><div class="photo-prev" id="pp-prev">${k === "pets" ? petTile(r, 0) : r.photo ? `<span class="tile has-img"><img src="${esc(r.photo)}" alt=""></span>` : tile(r.species, 0)}</div><div><b>Pet picture</b><small class="mu" style="display:block">JPG, PNG or WebP · up to 2 MB (optional)</small><input type="file" name="photo" id="pp-file" accept="image/jpeg,image/png,image/webp" hidden><input type="hidden" name="remove_photo" value="0"><div class="photo-btns"><button type="button" class="btn ghost" id="pp-choose">📷 Choose picture</button>${edit && r.photo ? '<button type="button" class="btn ghost" id="pp-remove">Remove</button>' : ""}</div></div></div>` : ""}<div class="fg">${fs.map((f) => fieldHtml(f, r[f.k])).join("")}</div><div class="err" id="ferr"></div><div class="acts"><button type="button" class="btn ghost" data-x>Cancel</button><button class="btn">${edit ? "Save Changes" : "Save"}</button></div></form>`,
   );
   if (k === "pets" || k === "adoption") {
     const file = $("#pp-file", m), prev = $("#pp-prev", m), frm = $("form", m);
@@ -1376,7 +1433,8 @@ function form(k, i) {
       btn = e.submitter || $(".acts .btn:not(.ghost)", m);
     for (const f of fs) v[f.k] = f.type === "password" ? String(v[f.k] ?? "") : String(v[f.k] ?? "").trim();
     if (fs.some((f) => !f.opt && !v[f.k])) return fail("Please fill in every required field.");
-    if (k === "vaccinations" && v.next < v.given) return fail("Next due date must be after the date given.");
+    if (k === "vaccinations" && v.given > TODAY_ISO) return fail("Date given cannot be in the future.");
+    if (k === "vaccinations" && v.next && v.next <= v.given) return fail("Next due date must be after the date given.");
     if (k === "users" && v.password && v.password.length < 8) return fail("Password must be at least 8 characters.");
     btn.disabled = true;
     if (typeof window.showAppLoading === 'function') window.showAppLoading(edit ? 'Saving your changes…' : 'Creating your record…');
@@ -1441,7 +1499,7 @@ async function remove(k, i) {
     label = r.name || r.pet;
   const extra =
     k === "pets"
-      ? " Their appointments and vaccination records will also be removed."
+      ? " Pets with any appointment, vaccination, or medical history cannot be deleted; contact the clinic to preserve those records."
       : "";
   if (!confirm(`Delete "${label}"?${extra}`)) return;
   if (typeof window.showAppLoading === 'function') window.showAppLoading('Deleting record…');
@@ -1453,23 +1511,14 @@ async function remove(k, i) {
   } catch (e) { alert(e.message); }
   finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
 }
-async function adoptionStatus(i, status) {
-  const r = D.adoption[i];
-  let adopter = "";
-  if (status === "Adopted") {
-    adopter = prompt(`Who adopted ${r.name}? (optional)`);
-    if (adopter === null) return;
-  }
-  if (typeof window.showAppLoading === 'function') window.showAppLoading('Updating adoption status…');
-  try {
-    await recordRequest("adoption", "status", { id: r.id, status, adopter_name: adopter.trim() });
-    await loadRecordsFromDatabase();
-    state.tab = status;
-    toast(status === "Adopted" ? `${r.name} has been adopted! 🎉` : `${r.name} is now pending adoption.`);
-    refresh();
-  } catch (e) { alert(e.message); }
-  finally { if (typeof window.finishAppLoading === 'function') window.finishAppLoading(); }
+async function reviewAdoptionApplication(id, decision) {
+  if (!confirm("Are you sure you want to " + decision.toLowerCase() + " this adoption application?")) return;
+  const staff_notes = prompt("Optional note for the applicant (leave blank if none):");
+  if (staff_notes === null) return;
+  try { const result = await apiJson("api/adoption_applications.php?action=review", {id, decision, staff_notes}); await loadRecordsFromDatabase(); toast(result.message || "Application updated."); refresh(); }
+  catch (error) { alert(error.message); }
 }
+
 
 function act(a, k, i) {
   if (a === 'reload-appointments') { state.apptDbLoaded = false; state.apptLoadError = ''; render(); }
@@ -1491,20 +1540,18 @@ function act(a, k, i) {
   else if (a === "edit") form(k, i);
   else if (a === "view") detail(k, i);
   else if (a === "del") remove(k, i);
-  else if (a === "adopt") { adoptionStatus(i, "Pending"); }
-  else if (a === "finish") { adoptionStatus(i, "Adopted"); 
-  } else if (a === "logout") {
+  else if (a === "adoption-review") { reviewAdoptionApplication(i, k); }
+  else if (a === "logout") {
     authRequest('logout').catch(() => {}).finally(() => {
       state.user = null; state.account = null; state.page = 'dashboard'; state.recordsLoaded = false; state.recordsError = ''; state.apptDbLoaded = false;
-      Object.assign(D, { pets: [], appointments: [], vaccinations: [], adoption: [], users: [], doctor: null, slots: [] });
+      Object.assign(D, { pets: [], appointments: [], vaccinations: [], adoption: [], adoptionApplications: [], adoptionApplicationsError: '', users: [], doctor: null, slots: [] });
       login();
     });
   } else if (a === "bell") {
-    const o = D.vaccinations.filter((v) => vaxStatus(v) === "Overdue").length,
-      t = D.appointments.filter((x) => x.date === TODAY_ISO).length;
-    toast(
-      `${plural(o, "overdue vaccination")} · ${plural(t, "appointment")} today`,
-    );
+    openStaffNotifications().catch(error => toast(error.message));
+  } else if (a === "staff-notif-read" || a === "staff-notif-all") {
+    staffNotifRequest('mark_read', a === 'staff-notif-all' ? {all:1} : {id:i})
+      .then(refreshStaffNotificationBadge).catch(error => toast(error.message));
   }
 }
 
@@ -1576,6 +1623,12 @@ app.addEventListener("keydown", (e) => {
     }
     if (state.account.role === 'Pet Owner') await loadOwnerData();
     render();
+    if (state.account.role !== 'Pet Owner') {
+      await refreshStaffNotificationBadge();
+      if (!staffNotifPoll) staffNotifPoll = setInterval(() => {
+        if (!document.hidden && state.account && state.account.role !== 'Pet Owner') refreshStaffNotificationBadge();
+      }, 40000);
+    }
     openPasswordResetFromLink();
   } catch (error) {
     state.user = null;

@@ -31,7 +31,7 @@ try {
         $ids = array_map(static fn($x) => (int)$x['id'], $pets);
         $profile = $pdo->prepare('SELECT full_name AS name,email,phone,address,avatar_path FROM users WHERE id=?'); $profile->execute([$uid]); $prof = $profile->fetch() ?: [];
         $doctor = current_doctor($pdo);
-        $base = ['success'=>true,'profile'=>$prof,'doctor'=>$doctor ? ['name'=>$doctor['name']] : null,'pets'=>$pets,'appointments'=>[],'vaccinations'=>[],'unread'=>$unread(),'today'=>date('Y-m-d'),
+        $base = ['success'=>true,'profile'=>$prof,'doctor'=>$doctor ? ['name'=>$doctor['name']] : null,'pets'=>$pets,'appointments'=>[],'vaccinations'=>[],'medical_reports'=>[],'unread'=>$unread(),'today'=>date('Y-m-d'),
                  'schedule'=>['open'=>CLINIC_OPEN,'close'=>CLINIC_CLOSE,'slot_minutes'=>SLOT_MINUTES,'window_days'=>BOOKING_WINDOW_DAYS]];
         if (!$ids) owner_reply(200, $base);
         $marks = implode(',', array_fill(0, count($ids), '?'));
@@ -96,6 +96,18 @@ try {
         owner_reply(200, ['success'=>true,'date'=>$date,'open'=>$open,'state'=>$tooFar ? 'closed' : $info['state'],'label'=>$tooFar ? 'Too far ahead' : $info['label'],'slots'=>$out]);
     }
 
+    if ($action === 'adoption_list') {
+        $q = $pdo->prepare("SELECT a.id AS adoption_id,a.pet_name,a.species,a.breed,a.age,a.gender,a.health_status,a.reason,a.photo_path,a.status AS pet_status,
+            x.id AS application_id,x.status AS application_status,x.message,x.created_at AS applied_at,x.staff_notes
+            FROM adoption_applications x JOIN adoption_records a ON a.id=x.adoption_id
+            WHERE x.user_id=? ORDER BY x.created_at DESC,x.id DESC");
+        $q->execute([$uid]);
+        $availableStmt = $pdo->prepare("SELECT a.id,a.pet_name,a.species,a.breed,a.age,a.gender,a.health_status,a.reason,a.photo_path FROM adoption_records a WHERE a.status IN ('Available','Pending') AND NOT EXISTS (SELECT 1 FROM adoption_applications x WHERE x.adoption_id=a.id AND x.user_id=? AND x.status='Pending') ORDER BY a.created_at DESC,a.id DESC");
+        $availableStmt->execute([$uid]);
+        $available = $availableStmt->fetchAll();
+        owner_reply(200, ['success'=>true,'applications'=>$q->fetchAll(),'available'=>$available]);
+    }
+
     if ($action === 'notifications') {
         $n = $pdo->prepare('SELECT id,appointment_id,type,title,message,is_read,created_at FROM notifications WHERE user_id=? ORDER BY created_at DESC, id DESC LIMIT 50');
         $n->execute([$uid]);
@@ -108,6 +120,70 @@ try {
     $isMultipart = stripos((string)($_SERVER['CONTENT_TYPE'] ?? ''), 'multipart/form-data') !== false;
     $data = $isMultipart ? $_POST : owner_input();
     if ($isMultipart && !$_POST && !$_FILES && (int)($_SERVER['CONTENT_LENGTH'] ?? 0) > 0) owner_reply(413, ['success'=>false,'message'=>'The upload is too large. Maximum picture size is 2 MB.']);
+
+    /* ---- Submit an adoption application ---- */
+    if ($action === 'adoption_apply') {
+        $adoptionId = (int)($data['adoption_id'] ?? 0);
+        $phone = trim((string)($data['phone'] ?? ''));
+        $address = trim((string)($data['address'] ?? ''));
+        $message = trim((string)($data['message'] ?? ''));
+        $name = trim((string)($data['name'] ?? $account['name'] ?? $account['full_name'] ?? ''));
+        if ($adoptionId < 1 || $name === '' || $email === '' || $phone === '' || $address === '') owner_reply(422, ['success'=>false,'message'=>'Complete your name, email, phone number and address before applying.']);
+        if (mb_strlen($name) > 120 || mb_strlen($phone) > 40 || mb_strlen($address) > 255 || mb_strlen($message) > 2000) owner_reply(422, ['success'=>false,'message'=>'One or more application fields are too long.']);
+        $pdo->beginTransaction();
+        try {
+            $pet = $pdo->prepare("SELECT pet_name FROM adoption_records WHERE id=? AND status IN ('Available','Pending') FOR UPDATE");
+            $pet->execute([$adoptionId]); $listed = $pet->fetch();
+            if (!$listed) { $pdo->rollBack(); owner_reply(409, ['success'=>false,'message'=>'This pet is no longer available for adoption.']); }
+            $exists = $pdo->prepare("SELECT id FROM adoption_applications WHERE adoption_id=? AND user_id=? AND status='Pending'");
+            $exists->execute([$adoptionId,$uid]);
+            if ($exists->fetch()) { $pdo->rollBack(); owner_reply(409, ['success'=>false,'message'=>'You already have a pending application for this pet.']); }
+            $appId = db_insert($pdo, "INSERT INTO adoption_applications (adoption_id,user_id,applicant_name,email,phone,address,message,status) VALUES (?,?,?,?,?,?,?,'Pending')",
+                [$adoptionId,$uid,$name,$email,$phone,$address,$message !== '' ? $message : null]);
+            $pdo->prepare("UPDATE adoption_records SET status='Pending' WHERE id=?")->execute([$adoptionId]);
+            $pdo->prepare("INSERT INTO notifications (user_id,appointment_id,type,title,message,is_read,created_at) VALUES (?,NULL,'adoption','Application submitted',?,0,?)")
+                ->execute([$uid,'Your adoption application for '.$listed['pet_name'].' was sent to the clinic for review.',date('Y-m-d H:i:s')]);
+            $staff = $pdo->query("SELECT id FROM users WHERE status='Active' AND role IN ('Administrator','Veterinarian','Veterinary Staff')")->fetchAll(PDO::FETCH_COLUMN);
+            foreach ($staff as $staffId) {
+                $pdo->prepare("INSERT INTO notifications (user_id,appointment_id,type,title,message,is_read,created_at) VALUES (?,NULL,'adoption_application','New adoption application',?,0,?)")
+                    ->execute([(int)$staffId,$name.' submitted an application for '.$listed['pet_name'].'. Review it in Adoption.',date('Y-m-d H:i:s')]);
+            }
+            $pdo->commit();
+            owner_reply(201, ['success'=>true,'message'=>'Your adoption application has been submitted. The clinic will contact you after reviewing it.','application_id'=>$appId]);
+        } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
+    }
+
+    /* ---- Withdraw a pending adoption application ---- */
+    if ($action === 'adoption_withdraw') {
+        $appId = (int)($data['id'] ?? 0);
+        $pdo->beginTransaction();
+        try {
+            // Lock the listing first, matching application submission and staff review.
+            $lookup = $pdo->prepare("SELECT adoption_id FROM adoption_applications WHERE id=? AND user_id=?");
+            $lookup->execute([$appId,$uid]); $adoptionId = $lookup->fetchColumn();
+            if (!$adoptionId) { $pdo->rollBack(); owner_reply(404, ['success'=>false,'message'=>'Pending application not found.']); }
+            $listingLock = $pdo->prepare('SELECT id,pet_name FROM adoption_records WHERE id=? FOR UPDATE');
+            $listingLock->execute([(int)$adoptionId]); $listing = $listingLock->fetch();
+            $q = $pdo->prepare("SELECT id,adoption_id FROM adoption_applications WHERE id=? AND user_id=? AND adoption_id=? AND status='Pending' FOR UPDATE");
+            $q->execute([$appId,$uid,(int)$adoptionId]); $app = $q->fetch();
+            if (!$listing || !$app) { $pdo->rollBack(); owner_reply(404, ['success'=>false,'message'=>'Pending application not found.']); }
+            $app['pet_name'] = (string)$listing['pet_name'];
+            $pdo->prepare("UPDATE adoption_applications SET status='Withdrawn' WHERE id=?")->execute([$appId]);
+            $remaining = $pdo->prepare("SELECT COUNT(*) FROM adoption_applications WHERE adoption_id=? AND status='Pending'"); $remaining->execute([(int)$app['adoption_id']]);
+            if ((int)$remaining->fetchColumn() === 0) $pdo->prepare("UPDATE adoption_records SET status='Available' WHERE id=? AND status='Pending'")->execute([(int)$app['adoption_id']]);
+            $pdo->prepare("INSERT INTO notifications (user_id,appointment_id,type,title,message,is_read,created_at) VALUES (?,NULL,'adoption','Application withdrawn',?,0,?)")
+                ->execute([$uid,'Your application for '.$app['pet_name'].' was withdrawn.',date('Y-m-d H:i:s')]);
+            // Let the clinic know when an owner withdraws so staff can review the remaining applications.
+            $staff = $pdo->query("SELECT id FROM users WHERE status='Active' AND role IN ('Administrator','Veterinarian','Veterinary Staff')")->fetchAll(PDO::FETCH_COLUMN);
+            $staffMessage = $app['pet_name'].' has an adoption application withdrawn. Check the remaining applications in Adoption.';
+            foreach ($staff as $staffId) {
+                $pdo->prepare("INSERT INTO notifications (user_id,appointment_id,type,title,message,is_read,created_at) VALUES (?,NULL,'adoption_withdrawn','Adoption application withdrawn',?,0,?)")
+                    ->execute([(int)$staffId,$staffMessage,date('Y-m-d H:i:s')]);
+            }
+            $pdo->commit();
+            owner_reply(200, ['success'=>true,'message'=>'Your adoption application was withdrawn.']);
+        } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
+    }
 
     /* ---- Mark notifications as read ---- */
     if ($action === 'mark_read') {
@@ -136,8 +212,12 @@ try {
             if (mb_strlen($petName) > 120) owner_reply(422, ['success'=>false,'message'=>'Pet name is too long.']);
         }
 
-        $docId = current_doctor($pdo)['id'] ?? null; // the clinic's one doctor is assigned automatically
-        $result = with_slot_lock($pdo, function () use ($pdo, $data, $date, $time, $purpose, $notes, $email, $ownerName, $uid, $petId, $docId) {
+        $result = with_slot_lock($pdo, function () use ($pdo, $data, $date, $time, $purpose, $notes, $email, $ownerName, $uid, $petId) {
+            $slotError = validate_slot($pdo, $date, $time);
+            if ($slotError) return [422, $slotError, null];
+            $doctor = current_doctor($pdo, true);
+            if (!$doctor) return [409, 'The clinic has no active veterinarian assigned yet. Please contact the clinic before booking.', null];
+            $docId = (int)$doctor['id'];
             if (slot_is_taken($pdo, $date, $time)) return [409, 'Sorry, that time slot was just reserved. Please choose another time.', null];
             $pid = $petId;
             if ($pid <= 0) {
@@ -152,6 +232,7 @@ try {
             }
             $aid = db_insert($pdo, "INSERT INTO appointments (pet_id, veterinarian_id, appointment_date, appointment_time, purpose, status, notes) VALUES (?,?,?,?,?, 'Pending', ?)", [$pid, $docId, $date, $time . ':00', $purpose, $notes !== '' ? $notes : null]);
             create_notification($pdo, $uid, $aid, 'request', 'Request received', 'Your appointment request for ' . human_date($date) . ' at ' . human_time($time) . ' was sent. It stays Pending until the clinic approves it.');
+            notify_clinic_staff($pdo, $aid, 'owner_request', 'New appointment request', '{owner} requested an appointment for {pet} on {date} at {time}. Review it in Appointments.');
             return [201, 'Appointment request sent successfully. It is Pending until clinic staff approve it.', $aid];
         });
         owner_reply($result[0], ['success'=>$result[0] === 201,'message'=>$result[1]]);
@@ -161,7 +242,7 @@ try {
     if ($action === 'cancel_appointment') {
         $aid = (int)($data['id'] ?? 0);
         $result = with_slot_lock($pdo, function () use ($pdo, $aid, $email, $uid) {
-            $s = $pdo->prepare('SELECT a.id, a.status, a.appointment_date, a.appointment_time, p.name AS pet_name FROM appointments a JOIN pets p ON p.id=a.pet_id WHERE a.id=? AND LOWER(TRIM(p.owner_email))=LOWER(TRIM(?))');
+            $s = $pdo->prepare('SELECT a.id, a.status, a.appointment_date, a.appointment_time, p.name AS pet_name FROM appointments a JOIN pets p ON p.id=a.pet_id WHERE a.id=? AND LOWER(TRIM(p.owner_email))=LOWER(TRIM(?)) FOR UPDATE OF a');
             $s->execute([$aid, $email]); $r = $s->fetch();
             if (!$r) return [403, 'That appointment is not linked to your account.'];
             if (!owner_can_cancel((string)$r['status'], (string)$r['appointment_date'], (string)$r['appointment_time'])) {
@@ -171,6 +252,7 @@ try {
             }
             $pdo->prepare("UPDATE appointments SET status='Cancelled', cancelled_by='Owner' WHERE id=?")->execute([$aid]);
             create_notification($pdo, $uid, $aid, 'cancelled', 'Appointment cancelled', 'You cancelled the appointment for ' . $r['pet_name'] . ' on ' . human_date((string)$r['appointment_date']) . ' at ' . human_time((string)$r['appointment_time']) . '. The time is available to others again.');
+            notify_clinic_staff($pdo, $aid, 'owner_cancelled', 'Owner cancelled an appointment', '{owner} cancelled the appointment for {pet} on {date} at {time}. The time slot is available again.');
             return [200, 'Appointment cancelled. The time slot is available again.'];
         });
         owner_reply($result[0], ['success'=>$result[0] === 200, 'message'=>$result[1]]);
@@ -225,10 +307,11 @@ try {
         $ex = $pdo->prepare('SELECT id, photo_path FROM pets WHERE id=? AND LOWER(TRIM(owner_email))=LOWER(TRIM(?))'); $ex->execute([$petId, $email]); $pet = $ex->fetch();
         if (!$pet) owner_reply(403, ['success'=>false,'message'=>'That pet is not linked to your account.']);
         // Clinic medical history must not disappear because an owner removed a profile.
-        $hist = $pdo->prepare("SELECT (SELECT COUNT(*) FROM vaccinations WHERE pet_id=?) + (SELECT COUNT(*) FROM appointments WHERE pet_id=? AND status IN ('Confirmed','In Progress','Completed')) AS c");
-        $hist->execute([$petId, $petId]);
-        if ((int)$hist->fetchColumn() > 0) owner_reply(409, ['success'=>false,'message'=>'This pet has approved appointments or clinic medical records, so it cannot be deleted online. Please contact the clinic to archive it.']);
-        $pdo->prepare('DELETE FROM pets WHERE id=?')->execute([$petId]); // pending/rejected requests are removed with it (ON DELETE CASCADE)
+        // Preserve every appointment row: the live database may use RESTRICT even for pending or cancelled appointments.
+        $hist = $pdo->prepare("SELECT (SELECT COUNT(*) FROM medical_reports WHERE pet_id=?) + (SELECT COUNT(*) FROM vaccinations WHERE pet_id=?) + (SELECT COUNT(*) FROM appointments WHERE pet_id=?) AS c");
+        $hist->execute([$petId, $petId, $petId]);
+        if ((int)$hist->fetchColumn() > 0) owner_reply(409, ['success'=>false,'message'=>'This pet has appointment or clinic medical history, so it cannot be deleted online. Please contact the clinic to archive it.']);
+        $pdo->prepare('DELETE FROM pets WHERE id=?')->execute([$petId]);
         delete_pet_photo($pet['photo_path']);
         owner_reply(200, ['success'=>true,'message'=>'Pet deleted.']);
     }
@@ -239,7 +322,7 @@ try {
         $newPassword = (string)($data['new_password'] ?? '');
         $confirmPassword = (string)($data['confirm_password'] ?? '');
         if ($currentPassword === '' || $newPassword === '' || $confirmPassword === '') owner_reply(422, ['success'=>false,'message'=>'Complete all password fields.']);
-        if (strlen($newPassword) < 8) owner_reply(422, ['success'=>false,'message'=>'Your new password must be at least 8 characters.']);
+        if (strlen($newPassword) < 8 || strlen($newPassword) > 72) owner_reply(422, ['success'=>false,'message'=>'Your new password must be between 8 and 72 bytes.']);
         if (!hash_equals($newPassword, $confirmPassword)) owner_reply(422, ['success'=>false,'message'=>'The new passwords do not match.']);
         if (hash_equals($currentPassword, $newPassword)) owner_reply(422, ['success'=>false,'message'=>'Choose a password different from your current one.']);
         $check = $pdo->prepare('SELECT password_hash FROM users WHERE id=?');
@@ -247,30 +330,44 @@ try {
         $hash = $check->fetchColumn();
         if (!$hash || !password_verify($currentPassword, (string)$hash)) owner_reply(403, ['success'=>false,'message'=>'Your current password is incorrect.']);
         $updated = password_hash($newPassword, PASSWORD_DEFAULT);
-        $pdo->prepare('UPDATE users SET password_hash=? WHERE id=?')->execute([$updated, $uid]);
+        $versionUpdate = $pdo->prepare('UPDATE users SET password_hash=?, password_reset_token_hash=NULL, password_reset_expires=NULL, auth_version=auth_version+1 WHERE id=? RETURNING auth_version');
+        $versionUpdate->execute([$updated, $uid]);
+        // Keep this browser session valid while the increment revokes other sessions.
+        $_SESSION['account']['auth_version'] = (int)$versionUpdate->fetchColumn();
         owner_reply(200, ['success'=>true,'message'=>'Your password has been updated.']);
     }
 
     /* ---- Update personal information ---- */
     if ($action === 'profile') {
         $name = trim((string)($data['name'] ?? '')); $newEmail = trim((string)($data['email'] ?? '')); $phone = trim((string)($data['phone'] ?? '')); $address = trim((string)($data['address'] ?? ''));
-        $current = $pdo->prepare('SELECT avatar_path FROM users WHERE id=?'); $current->execute([$uid]); $oldAvatar = $current->fetchColumn() ?: null;
-        $newAvatar = $oldAvatar;
-        if (!empty($_FILES['photo']) && (int)($_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) $newAvatar = save_pet_photo($_FILES['photo'], 'user_');
-        if (!empty($data['remove_photo']) && $data['remove_photo'] === '1') $newAvatar = null;
         if ($name === '' || !filter_var($newEmail, FILTER_VALIDATE_EMAIL)) owner_reply(422, ['success'=>false,'message'=>'Enter a valid name and email.']);
         if (mb_strlen($name) > 120 || mb_strlen($newEmail) > 190 || mb_strlen($phone) > 40 || mb_strlen($address) > 255) owner_reply(422, ['success'=>false,'message'=>'One of the fields is too long.']);
         $check = $pdo->prepare('SELECT id FROM users WHERE LOWER(email)=LOWER(?) AND id<>?'); $check->execute([$newEmail, $uid]);
         if ($check->fetch()) owner_reply(409, ['success'=>false,'message'=>'That email is already used by another account.']);
+        $current = $pdo->prepare('SELECT avatar_path FROM users WHERE id=?'); $current->execute([$uid]); $oldAvatar = $current->fetchColumn() ?: null;
+        $newAvatar = $oldAvatar; $newUpload = null;
+        if (!empty($_FILES['photo']) && (int)($_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            try { $newUpload = save_pet_photo($_FILES['photo'], 'user_'); $newAvatar = $newUpload; }
+            catch (RuntimeException $e) { owner_reply(422, ['success'=>false,'message'=>$e->getMessage()]); }
+        }
+        if (!empty($data['remove_photo']) && $data['remove_photo'] === '1') { $newAvatar = null; if ($newUpload) delete_pet_photo($newUpload); $newUpload = null; }
         $pdo->beginTransaction();
         try {
-            $pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=?,avatar_path=? WHERE id=?')->execute([$name, $newEmail, $phone, $address, $newAvatar, $uid]);
+            $versionUpdate = $pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=?,avatar_path=?,password_reset_token_hash=NULL,password_reset_expires=NULL,auth_version=auth_version+1 WHERE id=? RETURNING auth_version');
+            $versionUpdate->execute([$name, $newEmail, $phone, $address, $newAvatar, $uid]);
+            $updatedAuthVersion = (int)$versionUpdate->fetchColumn();
             // Pets are linked by email, so keep them linked when the owner changes it.
             $pdo->prepare('UPDATE pets SET owner_email=?,owner_name=?,owner_phone=?,address=? WHERE LOWER(TRIM(owner_email))=LOWER(TRIM(?))')->execute([$newEmail, $name, $phone, $address, $email]);
             $pdo->commit();
-        } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            if ($newUpload) delete_pet_photo($newUpload);
+            throw $e;
+        }
         $_SESSION['account']['name'] = $name; $_SESSION['account']['full_name'] = $name; $_SESSION['account']['email'] = $newEmail;
         $_SESSION['account']['avatar_path'] = $newAvatar;
+        // Refresh this session after revoking other sessions on profile changes.
+        $_SESSION['account']['auth_version'] = $updatedAuthVersion;
         if ($newAvatar !== $oldAvatar) delete_pet_photo($oldAvatar);
         owner_reply(200, ['success'=>true,'user'=>['name'=>$name,'email'=>$newEmail,'phone'=>$phone,'address'=>$address,'avatar_path'=>$newAvatar,'username'=>(string)($account['username'] ?? '')]]);
     }

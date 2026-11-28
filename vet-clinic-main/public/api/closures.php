@@ -59,23 +59,36 @@ try {
         if (!in_array($type, CLOSURE_TYPES, true)) closure_reply(422, ['success'=>false,'message'=>'Choose a valid type.']);
         if (mb_strlen($reason) > 190) closure_reply(422, ['success'=>false,'message'=>'The reason is too long (max 190 characters).']);
         if (!$whole) {
-            if (!preg_match('/^\d{2}:\d{2}$/', $start) || !preg_match('/^\d{2}:\d{2}$/', $end) || time_to_minutes($start) >= time_to_minutes($end)) closure_reply(422, ['success'=>false,'message'=>'Choose a start time that is earlier than the end time.']);
+            if (!preg_match('/^(?:[01]\\d|2[0-3]):[0-5]\\d$/', $start) || !preg_match('/^(?:[01]\\d|2[0-3]):[0-5]\\d$/', $end) || time_to_minutes($start) >= time_to_minutes($end)) closure_reply(422, ['success'=>false,'message'=>'Enter valid start and end times, with the start earlier than the end.']);
         }
-        $pdo->prepare('INSERT INTO clinic_closures (closure_date, start_time, end_time, type, reason, created_by, created_at) VALUES (?,?,?,?,?,?,?)')
-            ->execute([$date, $whole ? null : $start . ':00', $whole ? null : $end . ':00', $type, $reason !== '' ? $reason : null, (int)$account['id'], date('Y-m-d H:i:s')]);
+        // Serialize closure changes with booking and rescheduling. The closure row,
+        // affected-appointment lookup, and owner notifications commit as one operation.
+        $n = with_slot_lock($pdo, function () use ($pdo, $date, $whole, $start, $end, $type, $reason, $account) {
+            if ($whole) {
+                $overlap = $pdo->prepare('SELECT 1 FROM clinic_closures WHERE closure_date=? LIMIT 1');
+                $overlap->execute([$date]);
+            } else {
+                $overlap = $pdo->prepare('SELECT 1 FROM clinic_closures WHERE closure_date=? AND (start_time IS NULL OR end_time IS NULL OR (start_time < ? AND end_time > ?)) LIMIT 1');
+                $overlap->execute([$date, $end . ':00', $start . ':00']);
+            }
+            if ($overlap->fetchColumn()) return -1; // duplicate/overlapping closure
+            $pdo->prepare('INSERT INTO clinic_closures (closure_date, start_time, end_time, type, reason, created_by, created_at) VALUES (?,?,?,?,?,?,?)')
+                ->execute([$date, $whole ? null : $start . ':00', $whole ? null : $end . ':00', $type, $reason !== '' ? $reason : null, (int)$account['id'], date('Y-m-d H:i:s')]);
 
-        // Owners who already have an active appointment inside the blocked time are asked to reschedule.
-        $sql = "SELECT id FROM appointments WHERE appointment_date=? AND status IN ('Pending','Confirmed')";
-        $params = [$date];
-        if (!$whole) { $sql .= ' AND appointment_time >= ? AND appointment_time < ?'; array_push($params, $start . ':00', $end . ':00'); }
-        $aff = $pdo->prepare($sql); $aff->execute($params);
-        $ids = array_map('intval', array_column($aff->fetchAll(), 'id'));
-        $why = $reason !== '' ? $reason : $type;
-        foreach ($ids as $aid) {
-            notify_appointment_owner($pdo, $aid, 'closure', 'Clinic unavailable on {date}',
-                'The clinic is unavailable on {date} (' . $why . '). Your appointment for {pet} at {time} needs a new schedule. Please book another date or wait for the clinic to reschedule it.');
-        }
-        $n = count($ids);
+            // Owners who already have an active appointment inside the blocked time are asked to reschedule.
+            $sql = "SELECT id FROM appointments WHERE appointment_date=? AND status IN ('Pending','Confirmed')";
+            $params = [$date];
+            if (!$whole) { $sql .= ' AND appointment_time < ? AND appointment_time + INTERVAL \'30 minutes\' > ?'; array_push($params, $end . ':00', $start . ':00'); }
+            $aff = $pdo->prepare($sql); $aff->execute($params);
+            $ids = array_map('intval', array_column($aff->fetchAll(), 'id'));
+            $why = $reason !== '' ? $reason : $type;
+            foreach ($ids as $aid) {
+                notify_appointment_owner($pdo, $aid, 'closure', 'Clinic unavailable on {date}',
+                    'The clinic is unavailable on {date} (' . $why . '). Your appointment for {pet} at {time} needs a new schedule. Please book another date or wait for the clinic to reschedule it.');
+            }
+            return count($ids);
+        });
+        if ($n < 0) closure_reply(409, ['success'=>false,'message'=>'That closure overlaps an existing clinic closure. Edit or remove the existing closure first.']);
         closure_reply(201, ['success'=>true, 'affected'=>$n, 'message'=>'Saved. Pet owners can no longer book that ' . ($whole ? 'day' : 'time') . '.' . ($n ? " $n existing appointment" . ($n === 1 ? '' : 's') . ' affected: the owner' . ($n === 1 ? ' was' : 's were') . ' notified, so reschedule ' . ($n === 1 ? 'it' : 'them') . ' from the Appointments page.' : '')]);
     }
 
@@ -83,8 +96,12 @@ try {
     if ($action === 'delete') {
         $id = (int)($in['id'] ?? 0);
         if (!$id) closure_reply(422, ['success'=>false,'message'=>'Invalid closure.']);
-        $d = $pdo->prepare('DELETE FROM clinic_closures WHERE id=?'); $d->execute([$id]);
-        if (!$d->rowCount()) closure_reply(404, ['success'=>false,'message'=>'That closure was not found.']);
+        $deleted = with_slot_lock($pdo, function () use ($pdo, $id) {
+            $d = $pdo->prepare('DELETE FROM clinic_closures WHERE id=?');
+            $d->execute([$id]);
+            return $d->rowCount();
+        });
+        if (!$deleted) closure_reply(404, ['success'=>false,'message'=>'That closure was not found.']);
         closure_reply(200, ['success'=>true,'message'=>'Closure removed. That time can be booked again.']);
     }
 

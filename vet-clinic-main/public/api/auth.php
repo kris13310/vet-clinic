@@ -23,9 +23,12 @@ function public_user(array $row): array {
         'email' => (string)($row['email'] ?? ''),
         'role' => (string)($row['role'] ?? 'Pet Owner'),
         'status' => (string)($row['status'] ?? 'Active'),
+        'auth_version' => (int)($row['auth_version'] ?? 1),
     ];
 }
 function auth_rate_limit(PDO $pdo, string $bucket, int $maxAttempts, int $windowSeconds): bool {
+    // Expire abandoned IP/account buckets so this table cannot grow forever.
+    $pdo->exec("DELETE FROM public.auth_rate_limits WHERE window_started_at < now() - interval '24 hours'");
     $sql = "INSERT INTO public.auth_rate_limits (bucket_key, window_started_at, attempts)
             VALUES (?, now(), 1)
             ON CONFLICT (bucket_key) DO UPDATE SET
@@ -116,8 +119,9 @@ try {
             if (!auth_send_reset_email((string)$user['email'], $token)) {
                 $clear = $pdo->prepare('UPDATE users SET password_reset_token_hash = NULL, password_reset_expires = NULL WHERE id = ? AND password_reset_token_hash = ?');
                 $clear->execute([(int)$user['id'], $tokenHash]);
+                // Keep the same public response for existing and unknown accounts to avoid
+                // exposing whether an email address is registered at the clinic.
                 error_log('VETCARE password reset email delivery failed. Check Resend configuration and sender verification.');
-                auth_reply(503, ['success'=>false, 'message'=>'The password reset email could not be sent. Please try again later or contact the clinic.']);
             }
         }
         auth_reply(200, ['success'=>true, 'message'=>'If an account exists for that email, a password reset link has been sent.']);
@@ -125,10 +129,10 @@ try {
     if ($action === 'reset') {
         $token = trim((string)($data['token'] ?? ''));
         $password = (string)($data['password'] ?? '');
-        if (!preg_match('/^[a-f0-9]{64}$/i', $token) || strlen($password) < 8 || strlen($password) > 4096) auth_reply(422, ['success'=>false, 'message'=>'Enter a valid reset link and a password of at least 8 characters.']);
+        if (!preg_match('/^[a-f0-9]{64}$/i', $token) || strlen($password) < 8 || strlen($password) > 72) auth_reply(422, ['success'=>false, 'message'=>'Enter a valid reset link and a password between 8 and 72 bytes.']);
         if (!auth_rate_limit($pdo, 'reset-ip:' . $ipKey, 10, 900)) auth_reply(429, ['success'=>false, 'message'=>'Too many reset attempts. Please try again later.']);
         $tokenHash = hash('sha256', $token);
-        $stmt = $pdo->prepare("UPDATE users SET password_hash = ?, password_reset_token_hash = NULL, password_reset_expires = NULL WHERE password_reset_token_hash = ? AND password_reset_expires > now() RETURNING id");
+        $stmt = $pdo->prepare("UPDATE users SET password_hash = ?, password_reset_token_hash = NULL, password_reset_expires = NULL, auth_version = auth_version + 1 WHERE password_reset_token_hash = ? AND password_reset_expires > now() RETURNING id");
         $stmt->execute([password_hash($password, PASSWORD_DEFAULT), $tokenHash]);
         if (!$stmt->fetchColumn()) auth_reply(400, ['success'=>false, 'message'=>'This password reset link is invalid or has expired. Request a new one.']);
         auth_reply(200, ['success'=>true, 'message'=>'Your password has been updated. You can now sign in.']);
@@ -137,6 +141,7 @@ try {
     $username = trim((string)($data['username'] ?? ''));
     $password = (string)($data['password'] ?? '');
     if ($username === '' || $password === '') auth_reply(422, ['success'=>false, 'message'=>'Enter your username and password.']);
+    if (strlen($password) > 72) auth_reply(422, ['success'=>false, 'message'=>'Password cannot exceed 72 bytes.']);
     if ($action === 'register') {
         if (!auth_rate_limit($pdo, 'register-ip:' . $ipKey, 10, 3600)) {
             auth_reply(429, ['success'=>false, 'message'=>'Too many registration attempts. Please try again in an hour.']);
@@ -144,9 +149,9 @@ try {
         $name = trim((string)($data['name'] ?? ''));
         $email = trim((string)($data['email'] ?? ''));
         if ($name === '' || $email === '') auth_reply(422, ['success'=>false, 'message'=>'Enter your full name and email.']);
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) auth_reply(422, ['success'=>false, 'message'=>'Enter a valid email address.']);
-        if (mb_strlen($name) > 120 || mb_strlen($username) > 50 || !preg_match('/^[A-Za-z0-9_.-]+$/', $username)) auth_reply(422, ['success'=>false, 'message'=>'Use a username of up to 50 letters, numbers, dots, underscores, or hyphens.']);
-        if (strlen($password) < 8) auth_reply(422, ['success'=>false, 'message'=>'Password must be at least 8 characters.']);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 190) auth_reply(422, ['success'=>false, 'message'=>'Enter a valid email address (up to 190 characters).']);
+        if (mb_strlen($name) > 120 || !preg_match('/^[A-Za-z0-9_.-]{3,50}$/', $username)) auth_reply(422, ['success'=>false, 'message'=>'Use a username of 3-50 letters, numbers, dots, underscores, or hyphens.']);
+        if (strlen($password) < 8 || strlen($password) > 72) auth_reply(422, ['success'=>false, 'message'=>'Password must be between 8 and 72 bytes.']);
         $check = $pdo->prepare('SELECT username, email FROM users WHERE LOWER(username) = LOWER(:username) OR LOWER(email) = LOWER(:email) LIMIT 1');
         $check->execute(['username'=>$username, 'email'=>$email]);
         $existing = $check->fetch();
@@ -168,13 +173,28 @@ try {
         || !auth_rate_limit($pdo, 'login:' . $ipKey . ':' . $loginKey, 5, 900)) {
         auth_reply(429, ['success'=>false, 'message'=>'Too many sign-in attempts. Please try again in 15 minutes.']);
     }
-    $stmt = $pdo->prepare('SELECT id, full_name, username, email, password_hash, role, status FROM users WHERE LOWER(username) = LOWER(?) LIMIT 1');
+    $stmt = $pdo->prepare('SELECT id, full_name, username, email, password_hash, role, status, auth_version FROM users WHERE LOWER(username) = LOWER(?) LIMIT 1');
     $stmt->execute([$username]);
     $row = $stmt->fetch();
     if (!$row || !password_verify($password, (string)$row['password_hash'])) auth_reply(401, ['success'=>false, 'message'=>'Incorrect username or password.']);
     if (($row['status'] ?? 'Active') !== 'Active') auth_reply(403, ['success'=>false, 'message'=>'This account is inactive or awaiting administrator approval. Please contact the clinic administrator.']);
+    // Successful authentication must not count toward the failed-login throttle.
+    $pdo->prepare('DELETE FROM public.auth_rate_limits WHERE bucket_key IN (?, ?)')
+        ->execute(['login-account:' . $loginKey, 'login:' . $ipKey . ':' . $loginKey]);
     session_regenerate_id(true);
     $_SESSION['account'] = public_user($row);
+    // The session store retains inactive sessions for eight hours; persist the browser cookie for the same period only when requested.
+    if (!empty($data['remember'])) {
+        $cookie = session_get_cookie_params();
+        setcookie(session_name(), session_id(), [
+            'expires' => time() + 28800,
+            'path' => $cookie['path'] ?: '/',
+            'domain' => $cookie['domain'],
+            'secure' => $cookie['secure'],
+            'httponly' => $cookie['httponly'],
+            'samesite' => $cookie['samesite'] ?? 'Lax',
+        ]);
+    }
     auth_reply(200, ['success'=>true, 'user'=>$_SESSION['account']]);
 } catch (Throwable $e) {
     error_log('Authentication endpoint error: '.$e->getMessage());

@@ -730,15 +730,6 @@ body.ov-lock { overflow: hidden; }
 .ov-app.theme-dark .ov-nav.active { background: #087f68; }
 
 
-/* Consistent subtle border around images in the Pet Owner portal. */
-.ov-app img {
-  border: 2px solid #dce8e2;
-}
-.ov-app.theme-dark img {
-  border-color: #365448;
-}
-
-
 /* Calm, cohesive visual refinement for the Pet Owner portal */
 .ov-nav.active {
   background: #18745f;
@@ -872,9 +863,6 @@ body.ov-lock { overflow: hidden; }
   color: #dce5df;
   border-color: #3c4941;
 }
-.ov-app.theme-dark img { border-color: #46574c; }
-
-
 /* Keep the Pet Owner appearance setting balanced on desktop and mobile. */
 .ov-settings-mode {
   display: grid;
@@ -899,7 +887,7 @@ body.ov-lock { overflow: hidden; }
 
 
 /* Pet photo frame and three-dot actions on My Pets cards. */
-.ov-pet-ph .ov-pimg { border: 5px solid #fff; box-sizing: border-box; }
+.ov-pet-ph .ov-pimg { border: 25px solid #fff; box-sizing: border-box; }
 .ov-pet-a { justify-content: flex-end; align-items: center; }
 .ov-pet-menu { position: relative; display: inline-block; }
 .ov-pet-menu > summary { list-style: none; display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--ov-line); border-radius: 11px; background: var(--ov-card); color: var(--ov-p); font-size: 27px; line-height: 1; cursor: pointer; }
@@ -909,7 +897,6 @@ body.ov-lock { overflow: hidden; }
 .ov-pet-menu-list button { width: 100%; padding: 10px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--ov-ink); text-align: left; font: inherit; font-size: 13px; cursor: pointer; }
 .ov-pet-menu-list button:hover { background: var(--ov-soft); }
 .ov-pet-menu-list button.danger { color: #dc4545; }
-.ov-app.theme-dark .ov-pet-ph .ov-pimg { border-color: #29364a; }
 
 
 /* Dark-mode completeness pass: Pet Owner portal and body-mounted dialogs.

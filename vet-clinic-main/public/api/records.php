@@ -104,7 +104,11 @@ try {
         if ($action === 'delete') {
             $e = $pdo->prepare('SELECT photo_path FROM pets WHERE id=?'); $e->execute([$id]); $pet = $e->fetch();
             if (!$pet) rec_fail('Pet not found.', 404);
-            $pdo->prepare('DELETE FROM pets WHERE id=?')->execute([$id]); // appointments and vaccinations are removed by ON DELETE CASCADE
+            // Any appointment row can be protected by a RESTRICT foreign key in an existing database.
+            $history = $pdo->prepare("SELECT (SELECT COUNT(*) FROM medical_reports WHERE pet_id=?) + (SELECT COUNT(*) FROM vaccinations WHERE pet_id=?) + (SELECT COUNT(*) FROM appointments WHERE pet_id=?)");
+            $history->execute([$id, $id, $id]);
+            if ((int)$history->fetchColumn() > 0) rec_fail('This pet has appointment or clinic medical history, so it cannot be deleted. Keep the record to preserve its history.', 409);
+            $pdo->prepare('DELETE FROM pets WHERE id=?')->execute([$id]);
             delete_pet_photo($pet['photo_path']);
             rec_reply(200, ['success'=>true, 'message'=>'Record deleted.']);
         }
@@ -116,17 +120,19 @@ try {
             $petId = (int)($in['petId'] ?? 0); $vaccine = rec_text($in, 'vaccine', 120, true, 'Vaccine');
             $given = trim((string)($in['given'] ?? '')); $next = trim((string)($in['next'] ?? '')); $docId = current_doctor($pdo)['id'] ?? null; // the clinic's one doctor
             if (!valid_date_string($given)) rec_fail('Enter a valid date given.');
-            if (!valid_date_string($next)) rec_fail('Enter a valid next due date.');
-            if ($next < $given) rec_fail('Next due date must be after the date given.');
+            if ($given > date('Y-m-d')) rec_fail('Date given cannot be in the future.');
+            if ($next !== '' && !valid_date_string($next)) rec_fail('Enter a valid next due date.');
+            if ($next !== '' && $next <= $given) rec_fail('Next due date must be after the date given.');
+            $nextDue = $next !== '' ? $next : null;
             $p = $pdo->prepare('SELECT id FROM pets WHERE id=?'); $p->execute([$petId]);
             if (!$p->fetch()) rec_fail('Choose a registered pet.');
             if ($id) {
                 $e = $pdo->prepare('SELECT id FROM vaccinations WHERE id=?'); $e->execute([$id]);
                 if (!$e->fetch()) rec_fail('Vaccination record not found.', 404);
-                $pdo->prepare('UPDATE vaccinations SET pet_id=?,vaccine=?,date_given=?,next_due=?,veterinarian_id=COALESCE(veterinarian_id, ?) WHERE id=?')->execute([$petId, $vaccine, $given, $next, $docId, $id]);
+                $pdo->prepare('UPDATE vaccinations SET pet_id=?,vaccine=?,date_given=?,next_due=?,veterinarian_id=COALESCE(veterinarian_id, ?) WHERE id=?')->execute([$petId, $vaccine, $given, $nextDue, $docId, $id]);
                 rec_reply(200, ['success'=>true, 'message'=>'Changes saved.', 'id'=>$id]);
             }
-            $newId = db_insert($pdo, 'INSERT INTO vaccinations (pet_id,vaccine,date_given,next_due,veterinarian_id) VALUES (?,?,?,?,?)', [$petId, $vaccine, $given, $next, $docId]);
+            $newId = db_insert($pdo, 'INSERT INTO vaccinations (pet_id,vaccine,date_given,next_due,veterinarian_id) VALUES (?,?,?,?,?)', [$petId, $vaccine, $given, $nextDue, $docId]);
             rec_reply(201, ['success'=>true, 'message'=>'Record added.', 'id'=>$newId]);
         }
         if ($action === 'delete') {
@@ -141,15 +147,12 @@ try {
         if ($action === 'save') {
             $name = rec_text($in, 'name', 120, true, 'Name'); $species = rec_text($in, 'species', 40, true, 'Type of animal');
             $breed = rec_text($in, 'breed', 120); $age = rec_text($in, 'age', 40); $health = rec_text($in, 'health', 80); $reason = rec_text($in, 'reason', 2000);
-            $gender = (string)($in['gender'] ?? 'Unknown'); $status = (string)($in['status'] ?? 'Available');
+            $gender = (string)($in['gender'] ?? 'Unknown');
             if (!in_array($gender, ['Male', 'Female', 'Unknown'], true)) rec_fail('Choose a valid gender.');
-            if (!in_array($status, ['Available', 'Pending', 'Adopted'], true)) rec_fail('Choose a valid status.');
-            $adoptedAt = $status === 'Adopted' ? date('Y-m-d') : null;
             $existing = null;
             if ($id) {
-                $e = $pdo->prepare('SELECT adopted_at,photo_path FROM adoption_records WHERE id=?'); $e->execute([$id]); $existing = $e->fetch();
+                $e = $pdo->prepare('SELECT photo_path FROM adoption_records WHERE id=?'); $e->execute([$id]); $existing = $e->fetch();
                 if (!$existing) rec_fail('Adoption record not found.', 404);
-                if ($status === 'Adopted' && $existing['adopted_at']) $adoptedAt = (string)$existing['adopted_at'];
             }
             $newPhoto = null;
             if (!empty($_FILES['photo']) && (int)$_FILES['photo']['error'] !== UPLOAD_ERR_NO_FILE) {
@@ -160,31 +163,29 @@ try {
                 if ($existing) {
                     $photo = $existing['photo_path'];
                     if ($newPhoto) $photo = $newPhoto; elseif (!empty($in['remove_photo'])) $photo = null;
-                    $pdo->prepare('UPDATE adoption_records SET pet_name=?,species=?,breed=?,age=?,gender=?,health_status=?,status=?,reason=?,adopted_at=?,photo_path=? WHERE id=?')
-                        ->execute([$name, $species, $breed, $age, $gender, $health ?? 'Unknown', $status, $reason, $adoptedAt, $photo, $id]);
+                    // Editing listing details must never overwrite application-review status.
+                    $pdo->prepare("UPDATE adoption_records SET pet_name=?,species=?,breed=?,age=?,gender=?,health_status=?,reason=?,photo_path=? WHERE id=?")
+                        ->execute([$name, $species, $breed, $age, $gender, $health ?? 'Unknown', $reason, $photo, $id]);
                     if ($photo !== $existing['photo_path']) delete_pet_photo($existing['photo_path']);
                     rec_reply(200, ['success'=>true, 'message'=>'Changes saved.', 'id'=>$id]);
                 }
-                $newId = db_insert($pdo, 'INSERT INTO adoption_records (pet_name,species,breed,age,gender,health_status,status,reason,adopted_at,photo_path) VALUES (?,?,?,?,?,?,?,?,?,?)', [$name, $species, $breed, $age, $gender, $health ?? 'Unknown', $status, $reason, $adoptedAt, $newPhoto]);
+                // New listings always begin as Available; only application review can change status.
+                $newId = db_insert($pdo, 'INSERT INTO adoption_records (pet_name,species,breed,age,gender,health_status,status,reason,adopted_at,photo_path) VALUES (?,?,?,?,?,?,?,?,?,?)', [$name, $species, $breed, $age, $gender, $health ?? 'Unknown', 'Available', $reason, null, $newPhoto]);
                 rec_reply(201, ['success'=>true, 'message'=>'Record added.', 'id'=>$newId]);
             } catch (Throwable $ex) {
                 if ($newPhoto) delete_pet_photo($newPhoto);
                 throw $ex;
             }
         }
-        if ($action === 'status') {
-            $status = (string)($in['status'] ?? ''); $adopter = rec_text($in, 'adopter_name', 120);
-            if (!in_array($status, ['Available', 'Pending', 'Adopted'], true)) rec_fail('Choose a valid status.');
-            $e = $pdo->prepare('SELECT id FROM adoption_records WHERE id=?'); $e->execute([$id]);
-            if (!$e->fetch()) rec_fail('Adoption record not found.', 404);
-            if ($status === 'Adopted') $pdo->prepare('UPDATE adoption_records SET status=?, adopter_name=COALESCE(?, adopter_name), adopted_at=COALESCE(adopted_at, ?) WHERE id=?')->execute([$status, $adopter, date('Y-m-d'), $id]);
-            else $pdo->prepare('UPDATE adoption_records SET status=?, adopted_at=NULL WHERE id=?')->execute([$status, $id]);
-            rec_reply(200, ['success'=>true, 'message'=>'Status updated.']);
-        }
+        // Adoption status is changed only by adoption_applications.php after an application review.
         if ($action === 'delete') {
+            $e = $pdo->prepare('SELECT photo_path FROM adoption_records WHERE id=?'); $e->execute([$id]); $listing = $e->fetch();
+            if (!$listing) rec_fail('Adoption record not found.', 404);
+            $history = $pdo->prepare('SELECT COUNT(*) FROM adoption_applications WHERE adoption_id=?'); $history->execute([$id]);
+            if ((int)$history->fetchColumn() > 0) rec_fail('This adoption listing has application history, so it cannot be deleted. Keep the record for clinic reference.', 409);
             $d = $pdo->prepare('DELETE FROM adoption_records WHERE id=?'); $d->execute([$id]);
-            if (!$d->rowCount()) rec_fail('Adoption record not found.', 404);
-            rec_reply(200, ['success'=>true, 'message'=>'Record deleted.']);
+            delete_pet_photo($listing['photo_path']);
+            rec_reply(200, ['success'=>true, 'message'=>'Adoption listing deleted.']);
         }
     }
 
