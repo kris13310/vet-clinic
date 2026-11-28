@@ -57,7 +57,11 @@ try {
             if (!$p->fetch()) return [404, 'That pet was not found.'];
             if (slot_is_taken($pdo, $date, $time)) return [409, 'That date and time is already reserved. Choose another slot.'];
             $aid = db_insert($pdo, 'INSERT INTO appointments (pet_id, veterinarian_id, appointment_date, appointment_time, purpose, status) VALUES (?,?,?,?,?,?)', [$petId, current_doctor($pdo)['id'] ?? null, $date, $time . ':00', $purpose, $status]); // the clinic's one doctor is assigned automatically
-            if ($status === 'Confirmed') {\n                notify_appointment_owner($pdo, $aid, 'approved', 'Appointment approved', 'The clinic scheduled and approved an appointment for {pet} on {date} at {time}.');\n            } else {\n                notify_appointment_owner($pdo, $aid, 'request', 'Appointment request recorded', 'The clinic recorded an appointment request for {pet} on {date} at {time}. It is Pending until approved.');\n            }
+            if ($status === 'Confirmed') {
+                notify_appointment_owner($pdo, $aid, 'approved', 'Appointment approved', 'The clinic scheduled and approved an appointment for {pet} on {date} at {time}.');
+            } else {
+                notify_appointment_owner($pdo, $aid, 'request', 'Appointment request recorded', 'The clinic recorded an appointment request for {pet} on {date} at {time}. It is Pending until approved.');
+            }
             return [201, 'Appointment saved.'];
         });
         appt_reply($result[0], ['success'=>$result[0] === 201, 'message'=>$result[1]]);
