@@ -245,7 +245,7 @@ function login() {
       </div>
       <label>Username<span class="field"><i>${ICON.user}</i><input name="u" autocomplete="username" placeholder="Enter your username" maxlength="50" required></span></label>
       <label>Password<span class="field"><i>${ICON.lock}</i><input name="p" type="password" autocomplete="current-password" placeholder="Enter your password" required minlength="8" maxlength="72"><button type="button" class="eye" id="eye" aria-label="Show password">${ICON.eye}</button></span></label>
-      <label id="confirm-wrap" class="hidden">Confirm password<span class="field"><i>${ICON.lock}</i><input name="confirm" type="password" autocomplete="new-password" placeholder="Re-enter your password"></span></label>
+      <label id="confirm-wrap" class="hidden">Confirm password<span class="field"><i>${ICON.lock}</i><input name="confirm" type="password" autocomplete="new-password" placeholder="Re-enter your password" maxlength="72"></span></label>
       <div class="opts" id="login-options"><label class="chk"><input type="checkbox" name="r"> Remember me</label><a href="#" id="fp">Forgot password?</a></div>
       <div class="err" id="err" role="alert"></div><button class="signin" id="submit-auth">${ICON.signin} Sign In</button>
       <p class="sub" style="margin-bottom:0"><span id="switch-label">Don't have an account?</span> <a href="#" id="switch-auth" style="color:var(--p);font-weight:600;text-decoration:none">Create account</a></p>
