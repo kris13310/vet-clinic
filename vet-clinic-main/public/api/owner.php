@@ -342,7 +342,7 @@ try {
         if (!empty($data['remove_photo']) && $data['remove_photo'] === '1') { $newAvatar = null; if ($newUpload) delete_pet_photo($newUpload); $newUpload = null; }
         $pdo->beginTransaction();
         try {
-            $pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=?,avatar_path=? WHERE id=?')->execute([$name, $newEmail, $phone, $address, $newAvatar, $uid]);
+            $pdo->prepare('UPDATE users SET full_name=?,email=?,phone=?,address=?,avatar_path=?,auth_version=auth_version+1 WHERE id=?')->execute([$name, $newEmail, $phone, $address, $newAvatar, $uid]);
             // Pets are linked by email, so keep them linked when the owner changes it.
             $pdo->prepare('UPDATE pets SET owner_email=?,owner_name=?,owner_phone=?,address=? WHERE LOWER(TRIM(owner_email))=LOWER(TRIM(?))')->execute([$newEmail, $name, $phone, $address, $email]);
             $pdo->commit();
@@ -353,6 +353,8 @@ try {
         }
         $_SESSION['account']['name'] = $name; $_SESSION['account']['full_name'] = $name; $_SESSION['account']['email'] = $newEmail;
         $_SESSION['account']['avatar_path'] = $newAvatar;
+        // Refresh this session after revoking other sessions on profile changes.
+        $_SESSION['account']['auth_version'] = (int)($_SESSION['account']['auth_version'] ?? 1) + 1;
         if ($newAvatar !== $oldAvatar) delete_pet_photo($oldAvatar);
         owner_reply(200, ['success'=>true,'user'=>['name'=>$name,'email'=>$newEmail,'phone'=>$phone,'address'=>$address,'avatar_path'=>$newAvatar,'username'=>(string)($account['username'] ?? '')]]);
     }
