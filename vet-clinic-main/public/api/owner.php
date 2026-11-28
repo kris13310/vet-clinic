@@ -158,9 +158,16 @@ try {
         $appId = (int)($data['id'] ?? 0);
         $pdo->beginTransaction();
         try {
-            $q = $pdo->prepare("SELECT x.id,x.adoption_id,a.pet_name FROM adoption_applications x JOIN adoption_records a ON a.id=x.adoption_id WHERE x.id=? AND x.user_id=? AND x.status='Pending' FOR UPDATE OF x,a");
-            $q->execute([$appId,$uid]); $app = $q->fetch();
-            if (!$app) { $pdo->rollBack(); owner_reply(404, ['success'=>false,'message'=>'Pending application not found.']); }
+            // Lock the listing first, matching application submission and staff review.
+            $lookup = $pdo->prepare("SELECT adoption_id FROM adoption_applications WHERE id=? AND user_id=?");
+            $lookup->execute([$appId,$uid]); $adoptionId = $lookup->fetchColumn();
+            if (!$adoptionId) { $pdo->rollBack(); owner_reply(404, ['success'=>false,'message'=>'Pending application not found.']); }
+            $listingLock = $pdo->prepare('SELECT id,pet_name FROM adoption_records WHERE id=? FOR UPDATE');
+            $listingLock->execute([(int)$adoptionId]); $listing = $listingLock->fetch();
+            $q = $pdo->prepare("SELECT id,adoption_id FROM adoption_applications WHERE id=? AND user_id=? AND adoption_id=? AND status='Pending' FOR UPDATE");
+            $q->execute([$appId,$uid,(int)$adoptionId]); $app = $q->fetch();
+            if (!$listing || !$app) { $pdo->rollBack(); owner_reply(404, ['success'=>false,'message'=>'Pending application not found.']); }
+            $app['pet_name'] = (string)$listing['pet_name'];
             $pdo->prepare("UPDATE adoption_applications SET status='Withdrawn' WHERE id=?")->execute([$appId]);
             $remaining = $pdo->prepare("SELECT COUNT(*) FROM adoption_applications WHERE adoption_id=? AND status='Pending'"); $remaining->execute([(int)$app['adoption_id']]);
             if ((int)$remaining->fetchColumn() === 0) $pdo->prepare("UPDATE adoption_records SET status='Available' WHERE id=? AND status='Pending'")->execute([(int)$app['adoption_id']]);
