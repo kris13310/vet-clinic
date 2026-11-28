@@ -104,9 +104,10 @@ try {
         if ($action === 'delete') {
             $e = $pdo->prepare('SELECT photo_path FROM pets WHERE id=?'); $e->execute([$id]); $pet = $e->fetch();
             if (!$pet) rec_fail('Pet not found.', 404);
-            $history = $pdo->prepare("SELECT (SELECT COUNT(*) FROM medical_reports WHERE pet_id=?) + (SELECT COUNT(*) FROM vaccinations WHERE pet_id=?) + (SELECT COUNT(*) FROM appointments WHERE pet_id=? AND status IN ('Confirmed','In Progress','Completed'))");
+            // Any appointment row can be protected by a RESTRICT foreign key in an existing database.
+            $history = $pdo->prepare("SELECT (SELECT COUNT(*) FROM medical_reports WHERE pet_id=?) + (SELECT COUNT(*) FROM vaccinations WHERE pet_id=?) + (SELECT COUNT(*) FROM appointments WHERE pet_id=?)");
             $history->execute([$id, $id, $id]);
-            if ((int)$history->fetchColumn() > 0) rec_fail('This pet has clinic medical history or an approved appointment, so it cannot be deleted. Keep the record to preserve its history.', 409);
+            if ((int)$history->fetchColumn() > 0) rec_fail('This pet has appointment or clinic medical history, so it cannot be deleted. Keep the record to preserve its history.', 409);
             $pdo->prepare('DELETE FROM pets WHERE id=?')->execute([$id]);
             delete_pet_photo($pet['photo_path']);
             rec_reply(200, ['success'=>true, 'message'=>'Record deleted.']);
