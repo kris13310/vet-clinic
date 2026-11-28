@@ -322,6 +322,8 @@ try {
         if (!$hash || !password_verify($currentPassword, (string)$hash)) owner_reply(403, ['success'=>false,'message'=>'Your current password is incorrect.']);
         $updated = password_hash($newPassword, PASSWORD_DEFAULT);
         $pdo->prepare('UPDATE users SET password_hash=?, auth_version=auth_version+1 WHERE id=?')->execute([$updated, $uid]);
+        // Keep this browser session valid while the increment revokes other sessions.
+        $_SESSION['account']['auth_version'] = (int)($_SESSION['account']['auth_version'] ?? 1) + 1;
         owner_reply(200, ['success'=>true,'message'=>'Your password has been updated.']);
     }
 
