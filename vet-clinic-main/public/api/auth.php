@@ -144,8 +144,8 @@ try {
         $name = trim((string)($data['name'] ?? ''));
         $email = trim((string)($data['email'] ?? ''));
         if ($name === '' || $email === '') auth_reply(422, ['success'=>false, 'message'=>'Enter your full name and email.']);
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) auth_reply(422, ['success'=>false, 'message'=>'Enter a valid email address.']);
-        if (mb_strlen($name) > 120 || mb_strlen($username) > 50 || !preg_match('/^[A-Za-z0-9_.-]+$/', $username)) auth_reply(422, ['success'=>false, 'message'=>'Use a username of up to 50 letters, numbers, dots, underscores, or hyphens.']);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 190) auth_reply(422, ['success'=>false, 'message'=>'Enter a valid email address (up to 190 characters).']);
+        if (mb_strlen($name) > 120 || !preg_match('/^[A-Za-z0-9_.-]{3,50}$/', $username)) auth_reply(422, ['success'=>false, 'message'=>'Use a username of 3-50 letters, numbers, dots, underscores, or hyphens.']);
         if (strlen($password) < 8) auth_reply(422, ['success'=>false, 'message'=>'Password must be at least 8 characters.']);
         $check = $pdo->prepare('SELECT username, email FROM users WHERE LOWER(username) = LOWER(:username) OR LOWER(email) = LOWER(:email) LIMIT 1');
         $check->execute(['username'=>$username, 'email'=>$email]);
