@@ -206,6 +206,8 @@ try {
         }
 
         $result = with_slot_lock($pdo, function () use ($pdo, $data, $date, $time, $purpose, $notes, $email, $ownerName, $uid, $petId) {
+            $slotError = validate_slot($pdo, $date, $time);
+            if ($slotError) return [422, $slotError, null];
             $doctor = current_doctor($pdo, true);
             if (!$doctor) return [409, 'The clinic has no active veterinarian assigned yet. Please contact the clinic before booking.', null];
             $docId = (int)$doctor['id'];
